@@ -153,6 +153,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .dex{border:1px dashed var(--line);border-radius:8px;padding:8px;font-size:13px;color:var(--muted);background:var(--card2)}
 .dex b{display:block;color:var(--muted)}.dex small{font-size:11px}
 .dex.on{border-style:solid;border-color:var(--warn);background:var(--card);color:var(--ink)}.dex.on b{color:var(--ink)}
+.npin{width:100%;font:inherit;font-size:18px;padding:10px 12px;border:2px solid var(--line);border-radius:8px;background:var(--card2);color:inherit;margin-top:4px}
 .perks{margin:12px 0}.perks .opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .perks .opt{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 10px;font-size:13px;text-align:left}
 .perks .opt[aria-pressed="true"]{border-color:var(--p);box-shadow:inset 0 0 0 1px var(--p)}
@@ -377,7 +378,7 @@ const isBattle=()=>member()?Math.abs(leanFor(S.party))<3:Math.abs(curD()[4]||0)<
 function distTxt(){const f=distFund();return f<.8?`후원금 적음(×${f})`:f<1?`후원금 보통(×${f}) · 인지도 쌓기 쉬움(+35%)`:`후원금 많음(×${f})`}
 const legalAmt=()=>(350+s().support*15+s().fame*12)*Math.sqrt(TM())*mulFor('fund')*(inOffice()?1:.6)*distFund();
 const bookAmt=()=>Math.round((600+s().fame*40+s().party*15+s().org*15)*(elecKinds(S.year+1).length?1.4:1)*Math.sqrt(TM())*mulFor('fund')*distFund()/10)*10;
-const cashAmt=()=>Math.round((legalAmt()*4.2+800*BM())/10)*10;
+const cashAmt=()=>Math.round((legalAmt()*3.3+600*BM())/10)*10;
 const slushAmt=()=>Math.round((legalAmt()*2.6+400*TM())/10)*10;
 const mh=k=>{const m=mulFor(k);return m>1.05?'▲지역 효과 큼 · ':m<.95?'▼지역 효과 작음 · ':''};
 function runAct(id,mm=1){const a=ACTS.find(z=>z.id===id);const m=mulFor(a.k);if(a.cost)chg({money:-a.cost});return withMode(id==='rest'?'none':'act',()=>a.run(),m,(a.k==='fund'?m:1)*mm)}
@@ -483,7 +484,7 @@ const ACTS=[
   {id:'fund',k:'fund',n:'후원회 모금',cost:0,once:true,req:()=>inOffice()||elecKinds(S.year+1).length>0,reqT:'현직 또는 선거 전년도',d:'합법 정치자금',run(){const m=Math.round((700+s().support*30+s().fame*25)*Math.sqrt(TM())/10)*10;
     chg({money:m});return `소액 후원 ${ri(80,900)}건, ${won(m)}. 영수증 처리가 일이다.`}},
   {id:'study',k:'policy',n:'정책 세미나',cost:200,d:'정책·입법력·행정력↑',run(){chg({policy:4,legis:2,admin:2,mental:-2});
-    return pick(['교수 3명을 모시고 저출생 대책 세미나.','지역 교통 연구모임을 꾸렸다.','공공기관 이전 대응 토론회를 열었다.'])}},
+    return pick(['교수 3명을 모시고 저출산 대책 세미나.','지역 교통 연구모임을 꾸렸다.','공공기관 이전 대응 토론회를 열었다.'])}},
   {id:'volunteer',n:'봉사활동',cost:50,d:'청렴도·지지율↑',run(){chg({integrity:4,support:2,mental:-2});
     if(R()<.12){chg({support:-3});return '연탄 봉사 사진을 찍고 30분 만에 떠났다는 제보가 올라왔다.'}
     return pick(['무료 급식소 배식 봉사.','연탄 1,000장 나르기. 사진은 한 장만.','장애인 복지관 목욕 봉사.'])}},
@@ -809,7 +810,7 @@ const EV=[
 {id:'e_toast',tag:'외교',px:'stage|me^,biz|glass',c:isPres,t:'국빈 만찬 건배사',b:'국빈 만찬에서 건배사를 해야 한다. 통역이 긴장했다.',
  ch:[['상대국 언어로 한 문장',()=>{const ok=R()<.6;chg({fame:5,support:ok?3:-2});return ok?'박수가 터졌다.':'발음이 다른 뜻의 단어가 됐다.'}],
      ['짧고 무난하게',()=>{chg({support:1});return '아무 일도 없었다. 그게 외교다.'}]]},
-{id:'e_birth',tag:'국정',px:'press|me|podium,chart',c:isPres,t:'저출생 대책 발표',b:'합계출산율이 또 최저를 찍었다. 대책 발표를 앞두고 참모들 의견이 갈린다.',
+{id:'e_birth',tag:'국정',px:'press|me|podium,chart',c:isPres,t:'저출산 대책 발표',b:'합계출산율이 또 최저를 찍었다. 대책 발표를 앞두고 참모들 의견이 갈린다.',
  ch:[['파격 현금 지원',()=>{chg({support:4,policy:-1});return '"재정 포퓰리즘" 논쟁이 붙었다.'}],
      ['주거·돌봄 구조 개혁',()=>{chg({policy:5,support:1,admin:3});return '효과는 늦게 나타난다.'}]]},
 // ---- 정권 심판 · 탄핵 정국 ----
@@ -987,7 +988,7 @@ const EV=[
  ch:[['로봇세·AI세 도입 주장',()=>{chg({support:5,policy:3,party:-1});return '"혁신 발목" 비판과 "늦었다" 반응이 동시에.'}],['재교육 바우처 확대',()=>{chg({policy:4,support:2});return '바우처 신청 서버가 다운됐다.'}],['"기술 발전은 못 막는다"',()=>{chg({support:-5,fame:3});return '그 발언이 시위 피켓 문구가 됐다.'}]]},
 {id:'t_deepvote',c:()=>S.year>=2030&&elecKinds(S.year).length>0,tag:'AI',px:'phone|me|exclaim',t:'선거 사흘 전, AI 음성 녹취 유포',b:'내 목소리를 흉내 낸 AI 녹취가 단톡방에 퍼졌다. "지역 주민은 표 찍는 기계"라는 내용이다.',
  ch:[['선관위 신고·포렌식 공개',()=>{const ok=R()<.65;chg({support:ok?2:-5,mental:-6});return ok?'조작 판정이 빨리 나왔다. 동정 여론까지 붙었다.':'판정은 선거 뒤에 나왔다. 이미 늦었다.'}],['"제 목소리가 아닙니다" 영상',()=>{chg({support:-2,fame:4});return '해명 영상도 AI라는 댓글이 달렸다.'}]]},
-{id:'t_birth',c:()=>S.year>=2029&&inOffice(),tag:'저출생',px:'school|cit,me|',t:'초등학교 입학생 0명',b:'지역 초등학교 입학생이 0명이 됐다. 폐교 위기에 학부모들이 "한 명이라도 오게 해 달라"고 한다.',
+{id:'t_birth',c:()=>S.year>=2029&&inOffice(),tag:'저출산',px:'school|cit,me|',t:'초등학교 입학생 0명',b:'지역 초등학교 입학생이 0명이 됐다. 폐교 위기에 학부모들이 "한 명이라도 오게 해 달라"고 한다.',
  ch:[['통학 버스·전학 인센티브',()=>{chg({admin:2,support:3,money:-Math.round(30*TM())});return '이웃 동네에서 세 명이 전학을 왔다.'}],['폐교를 마을 돌봄센터로',()=>{chg({policy:3,support:4});return '폐교가 노인과 아이가 같이 쓰는 공간이 됐다.'}]]},
 {id:'t_climate',c:()=>S.year>=2030,tag:'기후',px:'field|old,me|sun',t:'40도 폭염, 사과 농사가 북쪽으로',b:'기후가 바뀌어 남부 사과밭이 망하고 강원도가 새 사과 산지가 됐다. 농민들은 작목 전환 지원을 요구한다.',
  ch:[['작목 전환 지원금',()=>{chg({support:4,admin:2});return '아열대 작물 시범 농가가 생겼다. 망고가 열렸다.'}],['농업 기후보험 법안',()=>{chg({legis:3,policy:3,support:2});return '여야 공동 발의, 드물게 만장일치.'}]]},
@@ -1049,9 +1050,9 @@ const EV=[
 {id:'pp_purge',w:5,tag:'공천 학살',px:'press|rep,me|cam,exclaim',c:()=>twoParty()&&S.align==='non'&&elecKinds(S.year+1).includes('general')&&!big()&&S.purge!==S.year+1,t:'"공천 살생부"에 내 이름이 있다',b:'총선을 앞두고 당권파가 비주류 현역을 대거 물갈이한다는 "살생부"가 돈다. 내 이름이 세 번째 줄에 있다.',
  ch:()=>{const o=[['주류에 투항한다',()=>{S.align='main';chg({party:5,integrity:-3,mental:-4});return '지도부에 고개를 숙였다. 살생부에서 이름이 지워졌다는 소문.'}],
    ['버틴다',()=>{S.purge=S.year+1;chg({fame:4,support:2});return '"공천 학살 저지" 기자회견을 열었다. 공천 심사에서 감점을 각오해야 한다.'}]];
-   if(s().fame>=35)o.push(['탈당하고 신당을 만든다',()=>{S.q=S.q||[];S.q.unshift({type:'ev',id:'pp_found'});chg({fame:6});return '"정치를 새로 하겠다." 탈당 기자회견장에 기자 80명이 몰렸다.'}]);return o}},
+   if(s().fame>=35)o.push(['탈당하고 신당을 만든다',()=>{S.q=S.q||[];S.q.unshift({type:'pfound'});chg({fame:6});return '"정치를 새로 하겠다." 탈당 기자회견장에 기자 80명이 몰렸다.'}]);return o}},
 {id:'pp_offer',w:2,tag:'신당',px:'office|cit,me,aide|banner',c:()=>(twoParty()&&s().party<25&&s().fame>=40&&!isPres())||(S.party==='ind'&&s().fame>=45&&!isPres()),t:'"제3지대 신당, 당신이 대표를 맡아 주시오"',b:'양당 정치에 질린 현역 의원 넷과 시민단체 인사들이 신당 창당을 제안한다. 대표 자리를 맡아 달라고 한다.',
- ch:[['창당에 나선다',()=>{S.q=S.q||[];S.q.unshift({type:'ev',id:'pp_found'});chg({fame:4});return '창당 준비위원회가 꾸려졌다. 이제 당 이름을 정해야 한다.'}],
+ ch:[['창당에 나선다',()=>{S.q=S.q||[];S.q.unshift({type:'pfound'});chg({fame:4});return '창당 준비위원회가 꾸려졌다. 이제 당 이름을 정해야 한다.'}],
      ['아직은 때가 아니다',()=>{chg({mental:2});return '"간만 보다 끝났다"는 평이 나왔다.'}]]},
 {id:'pp_found',core:true,tag:'창당',px:'stage|aide,me^,aide|banner',t:'신당의 이름을 정하자',b:'창당 대회가 코앞이다. 당명 후보 네 개가 올라왔다. 지지율은 한 자릿수에서 시작할 것이다. 양당 공천은 사라지고, 지역 기반 대신 바람에 기대야 한다.',
  ch:()=>NP_NAMES.map(n=>[`「${n}」`,()=>{foundParty(n);return `「${n}」 창당 대회. 당원 2만 명이 가입했다. 첫 여론조사 지지율 ${S.pop.np}%.`}])},
@@ -1440,7 +1441,7 @@ function buildQueue(){
   if(S.trial&&S.trial.started<S.year)q.push({type:'trial'});
   else if(!S.trial&&S.cases.length&&!isPres()){
     S.cases=S.cases.filter(c=>S.year-c.y<7);
-    const p=S.cases.reduce((a,c)=>a+.025*c.sev,0)+(100-s().integrity)/1500+s().fame/1200;
+    const p=S.cases.reduce((a,c)=>a+.033*c.sev,0)+(100-s().integrity)/1200+s().fame/1200;
     if(R()<p)q.push({type:'detect'});
   }
   if(isPres()&&S.impDone!==S.termEnd&&((s().support<25&&myMaj()===false)||s().support<15||(S.trial&&S.trial.sev>=3))&&R()<.65)q.splice(q.length-1,0,{type:'impeach'});
@@ -2236,6 +2237,7 @@ function renderQueueItem(st){
   else if(it.type==='elec')renderElection(st);
   else if(it.type==='impeach')renderImpeach(st);
   else if(it.type==='pagenda')renderAgenda(st);
+  else if(it.type==='pfound')renderFound(st);
   else if(it.type==='pbudget')renderBudget(st);
 }
 function finish(html){try{SND.fx(/당선!|무죄|기각|통과|완수|창당/.test(html)?'good':/낙선|유죄|구속|탈락|파면|부결/.test(html)?'bad':'coin')}catch(e){}S.res={html,d:deltaHTML()};save();render()}
@@ -2745,6 +2747,19 @@ function pfBar(){if(!twoParty()||!S.pf)return S.party==='np'?`<div class="muted"
 function pfYear(notes){if(!twoParty()||!S.pf)return;S.pf.main=clamp(S.pf.main+ri(-4,4),35,70);
   if((S.year-2027)%2===0&&!S.titles.leader){const keep=R()<S.pf.main/100+.1;if(!keep){S.pf.main=100-S.pf.main+ri(0,6);S.align=S.align==='main'?'non':'main';notes.push(`${PARTIES[S.party].s} 지도부 교체: 이제 내 쪽이 ${S.align==='main'?'주류':'비주류'}`);addLog(`당 지도부가 바뀌어 ${S.align==='main'?'주류가 됐다':'비주류로 밀려났다'}.`)}}
   if(S.titles.leader)S.align='main'}
+function renderFound(st){const sug=NP_NAMES;let v=UI.npTmp||'';
+  st.innerHTML=`${pxTag('창당 대회')}<div class="news"><span class="tag ink">창당</span><h3>신당의 이름을 정하자</h3>
+    <p class="body">창당 대회가 코앞이다. 이름은 무엇이든 괜찮다. "~당"으로 끝나지 않아도 된다. 지지율은 한 자릿수에서 시작하고, 양당 공천 대신 바람에 기대야 한다.</p></div>
+    <label class="label" for="npn">당 이름 (최대 12자)</label>
+    <input id="npn" class="npin" maxlength="12" value="${esc(v)}" placeholder="예: 내일로, 상식연합, 다음세대당" autocomplete="off">
+    <div class="opts" style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0">${sug.map(n=>`<button type="button" class="opt" data-nn="${esc(n)}">${esc(n)}</button>`).join('')}</div>
+    <button class="btn primary" id="npok" ${v.trim()?'':'disabled'}>이 이름으로 창당</button>`;
+  paint('stage|aide,me^,aide|banner');
+  const inp=document.getElementById('npn'),ok=document.getElementById('npok');
+  inp.oninput=()=>{UI.npTmp=inp.value;ok.disabled=!inp.value.trim()};
+  st.querySelectorAll('[data-nn]').forEach(b=>b.onclick=()=>{inp.value=b.dataset.nn;UI.npTmp=inp.value;ok.disabled=false});
+  ok.onclick=()=>{const n=inp.value.replace(/[<>&"'`\\]/g,'').trim().replace(/\s+/g,' ').slice(0,12);if(!n)return;UI.npTmp='';D=[];foundParty(n);
+    finish(`「${esc(n)}」 창당 대회. 당원 2만 명이 가입했다. 첫 여론조사 지지율 ${S.pop.np}%.`)}}
 function renderLeader2(st){const L=S.ldr||(S.ldr={step:0});const fb=Math.min(.12,(S.fac||0)/100);
   if(L.step===0){st.innerHTML=`${pxTag('전당대회')}<div class="news"><span class="tag ink">전당대회</span><h3>당대표 선출 전당대회</h3>
     <p class="body">${PARTIES[S.party].n} 전당대회. 당원 투표 70%와 국민 여론조사 30%를 합산한다. 나는 ${S.align==='main'?'<b>주류</b> 후보로 당원 조직이 탄탄하다':'<b>비주류</b> 후보라 당원 표가 약한 대신 여론에 기대야 한다'}.${fb>0?' 내 계파가 조직표를 몰아준다.':''}</p></div>
@@ -2774,7 +2789,7 @@ const AGENDA={
   chip:{n:'반도체·AI 메가 투자',d:'성장률과 일자리',fx:{policy:3}},
   basic:{n:'기본소득 실험',d:'청년·노인 지지, 재정 논쟁',fx:{support:2}},
   house:{n:'주택 250만 호 공급',d:'집값 안정, 착공까지 오래 걸림',fx:{admin:3}},
-  birth:{n:'저출생 총력전',d:'효과는 느리지만 평가는 크다',fx:{policy:2}},
+  birth:{n:'저출산 총력전',d:'효과는 느리지만 평가는 크다',fx:{policy:2}},
   reform:{n:'검찰·정치 개혁',d:'지지층 결집, 반대 진영 격돌',fx:{party:4}},
   climate:{n:'탄소중립 대전환',d:'국제 평가↑, 산업계 반발',fx:{fame:3}},
   defense:{n:'자주국방·병력 구조 개편',d:'안보 위기에 강함',fx:{admin:2}},
