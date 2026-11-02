@@ -638,6 +638,10 @@ const EV=[
      o.push(['시민의힘에 입당한다',()=>{joinParty('sm',false);return '영입 인재로 입당했다. 중앙당 지원금이 들어왔다.'},{hint:'영입 보너스'}])}
    return o}},
 // ---- 대권 준비 ----
+{id:'p_halt',core:true,tag:'재판 중지',px:'court|judge,me|gavel,xmark',t:'공판기일: "추후 지정"',b:()=>`취임 이튿날, 재판부가 '${S.trialHold?S.trialHold.name:'내'}' 사건의 공판기일을 "추후 지정"으로 바꿨다. 헌법 제84조, 대통령은 재직 중 형사상 소추를 받지 않는다는 조항이다. 야당은 "방탄 대통령", 여당은 "헌법대로"를 외친다. 포털 검색어 1위는 '추후 지정 뜻'.`,
+ ch:[['"헌법이 정한 대로 따르겠다"',()=>{chg({party:4,support:-3,mental:4});return '재판은 멈췄다. 법원 앞 1인 시위자의 피켓에는 "5년 뒤에 봅시다"라고 적혀 있다.'}],
+     ['여당이 "재판중지법"으로 못 박는다',()=>{chg({party:7,support:-7,fame:5,integrity:-3});return '법안 이름을 두고 "방탄법"이냐 "국정안정법"이냐로 싸우다 한 해가 갔다. 어쨌든 재판은 멈췄다.'}],
+     ['"임기 중에도 재판받겠다" 선언',()=>{const t=S.trialHold;S.trial=t;S.trialHold=null;S.trial.started=S.year;chg({support:6,integrity:5,mental:-6});addLog('대통령 재임 중에도 재판을 계속 받기로 했다.');return '헌정 사상 처음으로 현직 대통령이 피고인석에 앉게 됐다. 경호처가 법정 동선을 짜느라 밤을 새웠다.'}]]},
 {id:'p_camp',core:true,tag:'대권',px:'stage|aide,me^,aide|banner',t:'내년 대선, 캠프를 꾸릴까',
  b:()=>`대권 주자 여론조사에 이름이 오르기 시작했다. 대선은 내년이다. 캠프 없이 경선에 나가면 조직에서 밀린다. 지금 인지도 ${s().fame}, 당내입지 ${s().party}.`,
  ch:()=>{const big=Math.round(6000*TM()/10)*10,small=Math.round(2000*TM()/10)*10;return[
@@ -1037,11 +1041,12 @@ function buildQueue(){
   q.push({type:'ev',id:(s().mental<35||S.year%2)?'c_work':'c_promo'});
   chosen.forEach((e,i)=>{q.push({type:'ev',id:e.id});if(i===0&&R()<.6)q.push({type:'fig'})});
   if(!isPres()&&S.age<64&&elecKinds(S.year+1).includes('pres')&&(presPaths().council||presPaths().admin))q.splice(1,0,{type:'ev',id:'p_camp'});
+  if(isPres()&&S.trialHold&&!S.haltShown){S.haltShown=1;q.splice(1,0,{type:'ev',id:'p_halt'})}
   if(!isPres())q.push({type:'ev',id:'c_fund'});
   if(isNat()&&member()&&(S.held.nat||0)+(S.held.natp||0)>=2&&!S.titles.chair&&(S.year-2029)%2===0)q.push({type:'chair'});
   if(isNat()&&member()&&!S.titles.leader&&s().party>=55&&(S.year-2027)%2===0)q.push({type:'leader'});
   if(S.trial&&S.trial.started<S.year)q.push({type:'trial'});
-  else if(!S.trial&&S.cases.length){
+  else if(!S.trial&&S.cases.length&&!isPres()){
     S.cases=S.cases.filter(c=>S.year-c.y<7);
     const p=S.cases.reduce((a,c)=>a+.025*c.sev,0)+(100-s().integrity)/1500+s().fame/1200;
     if(R()<p)q.push({type:'detect'});
@@ -1713,6 +1718,7 @@ function progHTML(){
   return `<div class="prog"><b class="num">${S.year}년</b><span class="dots">${Array.from({length:tot},(_,i)=>`<i class="${i<done?'on':i===done&&S.phase==='queue'?'cur':''}"></i>`).join('')}</span><span class="muted">${S.phase==='summary'?'연말 결산':`일정 ${Math.min(done+1,tot)} / ${tot}`}</span></div>`;
 }
 function trialHTML(){
+  if(!S.trial&&S.trialHold)return `<div class="trialbar"><span class="tag" style="margin:0;background:var(--muted)">재판 중지</span><b>${esc(S.trialHold.name)}</b><span class="muted" style="font-size:13px">대통령 재임 중 정지 · 퇴임하는 ${S.termEnd+1}년에 다시 열림</span></div>`;
   if(!S.trial)return '';const t=S.trial;
   return `<div class="trialbar"><span class="tag" style="margin:0">재판 중</span><b>${esc(t.name)}</b>
     <div class="steps" aria-label="진행 단계">${STAGES.map((_,i)=>`<i class="${i<=t.stage?'on':''}"></i>`).join('')}</div>
@@ -2131,7 +2137,7 @@ function tally(E){
     if(prev!==off){S.titles={}}
     S.office=off;S.termEnd=S.year+(off==='pres'?5:4);S.held[off]=(S.held[off]||0)+1;S.stats.wins++;
     if(o.tier>OFF[S.best].tier||(o.tier===OFF[S.best].tier&&off!==S.best&&off==='nat')){S.best=off;S.bestName=E.name}
-    if(off==='pres')S.ruling=S.party;
+    if(off==='pres'){S.ruling=S.party;S.presFrom=S.year;if(S.trial){S.trialHold=S.trial;S.trial=null;S.haltShown=0;addLog(`대통령 당선으로 '${S.trialHold.name}' 재판이 중지됐다 (헌법 제84조).`)}}
     chg({fame:8,mental:5});S.idle=0;
     S.path=(S.path||[]);S.path.push([S.year,E.name]);addLog(`${E.name} 당선 (${E.share}%).`);
     E.html=`<b>당선!</b> ${E.name}${S.held[off]>1?' ('+S.held[off]+'선)':''}. 득표율 ${E.share}%.${E.riv?` 라이벌 ${E.rname}을 ${(E.share-E.rshare).toFixed(1)}%p 차로 눌렀다.`:''}${refund?' 기탁금·선거비용 '+won(refund)+' 보전.':''}`;
@@ -2185,8 +2191,11 @@ function renderSummary(st){
     <button class="btn primary" id="ny">${S.year+1}년으로 →</button>`;
   document.getElementById('ny').onclick=nextYear;
 }
+function resumeTrial(){const gap=Math.max(0,(S.termEnd||S.year)-(S.presFrom||S.year));
+  if(S.cases&&S.cases.length&&gap)S.cases.forEach(c=>c.y+=gap);
+  if(S.trialHold){S.trial=S.trialHold;S.trialHold=null;S.trial.started=S.year;S.trialResumed=1;addLog(`퇴임과 함께 '${S.trial.name}' 재판이 다시 열린다. 법원이 공판기일을 새로 잡았다.`)}}
 function nextYear(){
-  if(isPres()&&S.termEnd<=S.year){S.leaveSup=s().support;S.exPres=true;S.office='none';S.titles={};S.wrapY=0;addLog('대통령 임기를 마치고 퇴임했다.')}
+  if(isPres()&&S.termEnd<=S.year){S.leaveSup=s().support;S.exPres=true;S.office='none';S.titles={};S.wrapY=0;addLog('대통령 임기를 마치고 퇴임했다.');resumeTrial()}
   if(s().mental<=0&&!wrapMode()){endGame('burnout');return}
   if(wrapMode()){S.wrapY=(S.wrapY||0)+1;if(!S.trial&&(!S.cases.length||S.wrapY>2)){endGame(S.exPres?'pres':'age');return}}
   S.year++;S.age++;
