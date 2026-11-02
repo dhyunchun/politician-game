@@ -60,6 +60,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .hof button{display:flex;justify-content:space-between;gap:10px;border:0;border-bottom:1px dashed var(--line);background:none;padding:6px 2px;text-align:left;font-size:13px;border-radius:4px}
 .hof button:hover{background:var(--card2)}
 .hof button>span:last-child{text-align:right;color:var(--muted)}
+.suspense{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:14px;padding:18px 12px;border-radius:12px;background:#1b1410;color:#f3e6d0;text-align:center}
+.suspense canvas{width:192px;height:144px;image-rendering:pixelated}
+.suspense b{font-family:var(--f-disp);font-weight:400;font-size:20px;letter-spacing:.02em}
+.suspense span{font-size:13px;opacity:.75}
 .viewer.hofv{z-index:45}.viewer.hofv img{max-height:70vh}
 .hofv[hidden]{display:none}
 
@@ -292,6 +296,9 @@ const curD=()=>curR().d[S.dist]||curR().d[0];
 function leanFor(p,withDist=true){if(p==='ind')return 0;const L=curR().lean+(withDist?curD()[4]:0);return p==='jj'?L:-L}
 function leanTxt(v){return v>=8?'텃밭':v>=3?'우세':v<=-8?'험지':v<=-3?'열세':'격전지'}
 function mulFor(k){if(!k)return 1;return (curR().fx[k]||1)*(DTYPE[curD()[3]][k]||1)}
+function hon(off){off=off||S.office;if(off==='none'){const b=S.best&&S.best!=='none'?S.best:null;return b?hon(b):'후보님'}
+  if(off==='pres')return '대통령님';if(off==='gov'){const g=curR().gov;return /지사$/.test(g)?'지사님':'시장님'}
+  if(off==='mayor'){const m=(curD()[2]||'').match(/(구청장|시장|군수)$/);return (m?m[1]:'단체장')+'님'}return '의원님'}
 function offName(off){const R=curR(),d=curD();switch(off){case 'basic':return d[1]+'의원';case 'metro':return R.council+' ('+d[1]+')';case 'mayor':return d[2];case 'nat':return R.n+' '+d[0]+' 국회의원';case 'natp':return '비례대표 국회의원';case 'gov':return R.gov;default:return OFF[off].full}}
 const distName=()=>curR().n+' '+curD()[0];
 function presPaths(){const H=S.held,nt=(H.nat||0)+(H.natp||0);return{council:nt>=2&&(!!S.everChair||!!S.everLeader||nt>=3),admin:(H.gov||0)>=1&&((H.mayor||0)>=1||nt>=1)}}
@@ -446,7 +453,7 @@ const ACTS=[
 /* ============ 이벤트 ============ */
 const EV=[
 // ---- 공통 ----
-{id:'festival',tag:'지역',t:'동네 축제 무대에 올라달래요',b:'"의원님 한 말씀!" 막걸리 잔이 건네지고 사회자가 마이크를 넘긴다.',
+{id:'festival',tag:'지역',t:'동네 축제 무대에 올라달래요',b:()=>`"${hon()} 한 말씀!" 막걸리 잔이 건네지고 사회자가 마이크를 넘긴다.`,
  ch:[['막걸리 원샷 후 건배사',()=>{chg({support:3,fame:2,mental:-3});return '분위기 최고. 다음날 숙취도 최고.'}],
      ['트로트 한 곡',()=>{if(R()<.5+s().speech/200){chg({fame:6,support:2});return '앵콜이 나왔다. 영상이 지역 맘카페에 돌았다.'}chg({fame:3,support:-1});return '음이탈. 그래도 웃음은 줬다.'}],
      ['짧은 인사만',()=>{chg({integrity:1});return '무난했다. 아무도 기억 못 할 것 같다.'}]]},
@@ -622,7 +629,7 @@ const EV=[
    if(inOffice())o.push(['업무추진비 영수증을 부풀린다',()=>runAct('slush'),{hint:'약 '+won(slushAmt())+' · 수사 위험',dark:1}]);
    o.push(['모금은 건너뛰고 지역을 돈다',()=>runAct('street'),{hint:mh('street')+'지지율·조직력'}]);return o}},
 {id:'c_promo',core:true,tag:'홍보',px:()=>['press|aide,me|cam','phone|me^|heart','street|me^,cit,old|'][S.year%3],
- t:()=>big()?['대변인실 회의: 올해의 메시지','"이번 주 메시지 정하시죠"','여론조사 호감도가 정체다'][S.year%3]:['홍보팀 회의: 올해 존재감을 키워라','"요즘 의원님 기사가 안 나옵니다"','지역 여론조사 인지도가 바닥이다'][S.year%3],
+ t:()=>big()?['대변인실 회의: 올해의 메시지','"이번 주 메시지 정하시죠"','여론조사 호감도가 정체다'][S.year%3]:['홍보팀 회의: 올해 존재감을 키워라',`"요즘 ${hon()} 기사가 안 나옵니다"`,'지역 여론조사 인지도가 바닥이다'][S.year%3],
  b:()=>big()?`이제는 내 말 한마디가 다음 날 1면이다. 대변인실이 올해 메시지 전략을 정해 달라고 한다.`:`보좌진이 올해 홍보 전략을 정해 달라고 한다. ${DTYPE[curD()[3]].n} 지역이라 ${DTYPE[curD()[3]].t}.`,
  ch:()=>{const o=[['기자회견을 연다',()=>runAct('press'),{hint:mh('media')+'인지도·언변 · '+won(50)}],
    ['릴스·쇼츠를 찍는다',()=>runAct('shorts'),{hint:mh('shorts')+'대박 또는 역풍 · '+won(100)}],
@@ -701,7 +708,7 @@ const EV=[
 {id:'e_parking',tag:'논란',px:'street|aide,me|car,exclaim',c:inOffice,t:'의원 차량, 장애인 주차구역에',b:'운전기사가 장애인 주차구역에 세운 내 차 사진이 지역 커뮤니티에 올라왔다.',
  ch:[['즉시 사과하고 과태료 납부',()=>{chg({support:-1,integrity:2});return '빠른 사과로 하루 만에 잠잠해졌다.'}],
      ['"기사가 한 일"이라 해명',()=>{chg({support:-5});return '"아랫사람 탓" 프레임이 붙었다.'}]]},
-{id:'e_kid2',tag:'민심',px:'school|cit2,me,cit|',t:'"우리 아빠가 의원님 싫대요"',b:'어린이날 학교 방문. 한 아이가 해맑게 말했다. 기자들이 웃음을 참는다.',
+{id:'e_kid2',tag:'민심',px:'school|cit2,me,cit|',t:()=>`"우리 아빠가 ${hon()} 싫대요"`,b:'어린이날 학교 방문. 한 아이가 해맑게 말했다. 기자들이 웃음을 참는다.',
  ch:[['"아빠한테 안부 전해 줘" 웃어넘긴다',()=>{chg({fame:4,support:3});return '영상이 "대인배"로 퍼졌다.'}],
      ['굳은 표정으로 다음 교실로',()=>{chg({support:-3});return '굳은 표정 캡처가 밈이 됐다.'}]]},
 {id:'e_ghost',tag:'폭로',px:'office|cit,me|book',c:()=>S.lastBook,t:'"그 책, 제가 썼어요"',b:'출판기념회 책을 대필한 작가가 인터뷰에 나왔다. 원고료도 덜 받았다고 한다.',
@@ -1990,6 +1997,27 @@ function renderDetect(st){
     else{chg({support:-4});addLog(`${name} 혐의로 기소.`);finish(`<b>기소됐다.</b><br>내년부터 1심 재판이 열린다. 피고인 신분으로 의정활동을 이어간다.`)}
   });
 }
+function gavelSuspense(st,done){
+  const box=document.createElement('div');box.className='suspense';box.setAttribute('role','status');
+  box.innerHTML='<canvas width="64" height="48" aria-hidden="true"></canvas><b>대법원 선고 중</b><span>"주문. 상고를…"</span>';
+  st.appendChild(box);box.scrollIntoView({block:'center',behavior:'smooth'});
+  const cv=box.querySelector('canvas'),c=cv.getContext&&cv.getContext('2d');
+  const K='#2a1a10',W1='#8a5a32',W2='#b37a46',W3='#d9a066',G='#e2b04a';
+  const r=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h)};
+  const draw=(f)=>{if(!c)return;c.clearRect(0,0,64,48);
+    // 받침(사운드 블록)
+    r(14,39,28,7,K);r(15,39,26,5,W2);r(15,43,26,2,W1);r(16,39,24,1,W3);
+    // 법봉: f=0 들어 올림, 1 중간, 2 내려침 (손잡이 끝을 축으로 회전)
+    const ang=[0.85,0.42,0][f];c.save();c.translate(56,30);c.rotate(ang);
+    r(-30,0,30,4,K);r(-29,1,28,2,W2);r(-29,1,28,1,W3);r(-3,-1,4,6,K);r(-2,0,2,4,W1);   // 손잡이
+    r(-38,-6,12,16,K);r(-37,-5,10,14,W2);r(-37,-5,3,14,W3);r(-30,-5,3,14,W1);r(-37,-2,10,2,G);r(-37,5,10,2,G); // 머리 + 금띠
+    c.restore();
+    if(f===2){r(6,38,5,1,G);r(4,34,4,1,G);r(45,38,5,1,G);r(47,34,4,1,G);r(27,25,1,4,G);r(20,27,1,3,G);r(35,27,1,3,G)}};
+  const seq=[0,1,2,2,0,1,2,2];let i=0;const reduce=matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  draw(reduce?2:0);
+  const iv=reduce?null:setInterval(()=>{draw(seq[i++%seq.length])},170);
+  setTimeout(()=>{if(iv)clearInterval(iv);box.remove();done()},reduce?900:1700);
+}
 function renderTrial(st){
   const t=S.trial;const stg=STAGES[t.stage];
   st.innerHTML=`${pxTag('법정')}<div class="news"><span class="tag">재판</span><h3>${stg} 선고를 앞두고</h3>
@@ -2001,6 +2029,9 @@ function renderTrial(st){
     ${lawyerList(L=>1-pAcq(t,L),'예상 유죄 확률')}`;
   paint('court|judge,me|gavel');
   st.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{
+    if(t.stage===3&&!UI.suspense&&!window.__NOSUSP){UI.suspense=1;st.querySelectorAll('button').forEach(x=>x.disabled=true);gavelSuspense(st,()=>{UI.suspense=0;b.onclick._go()});return}
+    b.onclick._go();});
+  st.querySelectorAll('[data-l]').forEach(b=>b.onclick._go=()=>{
     D=[];t.lawyer=+b.dataset.l;const L=LAW[t.lawyer];chg({money:-L.cost,mental:-6});
     const acq=R()<pAcq(t,L);t.prev=acq;
     if(t.stage<3){addLog(`${stg} ${acq?'무죄':'유죄'} 선고 (${L.n}).`);if(acq)chg({support:2});else chg({support:-3,integrity:-3});
@@ -2065,8 +2096,15 @@ function renderElection(st){
       <div class="choices"><button class="choice" id="p1"><span>비례대표를 신청한다</span><small class="num">심사비 ${won(NOMFEE.natp)}</small></button><button class="choice" id="p0"><span>지역구로 돌아간다</span></button></div>`;
     paint('office|aide,me,aide|desk');
     document.getElementById('p1').onclick=()=>{D=[];chg({money:-NOMFEE.natp});E.d0=D.slice();
-      if(R()<p){E.rank=clamp(Math.round(22-(sc-40)/2+gauss()*3),1,30);E.step='prank'}else{E.pfail=true;E.step='choose';addLog('비례대표 순번 심사 탈락.');UI.toast='비례대표 후보에서 빠졌다. 지역구 출마는 아직 가능하다.'}save();render()};
+      if(R()<p){E.rank=clamp(Math.round(22-(sc-40)/2+gauss()*3),1,30);E.step='prank'}else{E.pfail=true;E.step='pfailed';addLog('비례대표 순번 심사 탈락.')}save();render()};
     document.getElementById('p0').onclick=()=>{E.step='choose';save();render()};return;
+  }
+  if(E.step==='pfailed'){
+    st.innerHTML=`${pxTag('비례대표 순번 심사')}<div class="news"><span class="tag">심사 결과</span><h3>비례대표 후보 명단에 내 이름이 없다</h3>
+      <p class="body">공천관리위원회가 발표한 비례대표 후보 명단에서 빠졌다. 심사비 ${won(NOMFEE.natp)}는 돌려받지 못한다. 이번 총선에서 비례대표는 다시 신청할 수 없지만, 지역구 출마는 아직 가능하다.</p></div>
+      <div class="choices"><button class="choice" id="pf1"><span>지역구 출마를 검토한다</span></button></div>`;
+    paint('office|aide,me|xmark');
+    document.getElementById('pf1').onclick=()=>{E.step='choose';save();render()};return;
   }
   if(E.step==='prank'){
     const exp=Math.round(46*S.pop[S.party]/100),fee=Math.round(1500*TM()/10)*10;
