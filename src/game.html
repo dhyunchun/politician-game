@@ -128,6 +128,20 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .deltas{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .d{font-size:12px;font-family:var(--f-num);padding:2px 7px;border-radius:4px;border:1px solid var(--line)}
 .d.up{color:var(--good);border-color:var(--good)} .d.dn{color:var(--bad);border-color:var(--bad)}
+.bcast{display:flex;align-items:center;gap:10px;background:#101722;color:#fff;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:14px}
+.bcast b{font-family:var(--f-disp);font-weight:400;font-size:17px;flex:1}
+.bcast .live{display:inline-flex;align-items:center;gap:5px;font:700 11px/1 var(--f-num);background:#d12b2b;padding:4px 7px;border-radius:4px}
+.bcast .live i{width:7px;height:7px;border-radius:50%;background:#fff;animation:blink 1s steps(2) infinite}
+.bcast .num{font-family:var(--f-num);font-size:13px;color:#ffd257}
+@keyframes blink{50%{opacity:.2}}
+.exitpoll{border:2px solid var(--ink);border-radius:8px;padding:10px 12px;margin:10px 0;transition:opacity .4s}
+.exitpoll .label{font-size:12px;font-weight:700;color:var(--muted)}
+.exitpoll div{font-size:17px;margin-top:2px}.exitpoll .num{font-family:var(--f-num);font-weight:600}
+.exitpoll small{color:var(--muted)}
+.exitpoll.dim{opacity:.45}
+.callout{min-height:1.6em;margin-top:10px;font-size:15px;text-align:center}
+.callout .ok{color:var(--good)}.callout .bad{color:var(--bad)}.callout .hot{color:var(--warn);font-weight:700}
+@media (prefers-reduced-motion: reduce){.bcast .live i{animation:none}}
 .count{margin:14px 0}
 .count .track{height:26px;border-radius:6px;background:var(--card2);border:1px solid var(--line);position:relative;overflow:hidden}
 .count .fill{position:absolute;inset:0 auto 0 0;width:0;background:var(--p);transition:width 1.6s cubic-bezier(.2,.7,.2,1)}
@@ -360,6 +374,11 @@ const inOffice=()=>S.office!=='none';
 const isCouncil=()=>['basic','metro','nat','natp'].includes(S.office);
 const isAdmin=()=>['mayor','gov'].includes(S.office);
 const isLocalCouncil=()=>['basic','metro'].includes(S.office);
+const CRISES={econ:{n:'경제 위기',dur:3,hit:[3,4,3],ap:-6},virus:{n:'감염병 대유행',dur:2,hit:[-2,4],ap:-3},tragedy:{n:'참사 정국',dur:2,hit:[6,3],ap:-7},security:{n:'안보 위기',dur:1,hit:[-3],ap:3},house:{n:'집값 폭등',dur:3,hit:[2,3,3],ap:-4}};
+const rulingP=()=>S.ruling==='ind'?'jj':S.ruling;
+const crOn=k=>!!(S.crisis&&S.crisis.k===k&&S.crisis.left>0);
+function crAdj(n){if(S.crisis)S.crisis.adj=(S.crisis.adj||0)+n}
+function crRole(){return isPres()?' 대통령으로서 첫 대응이 이후 민심을 좌우한다.':inOffice()?'':' 직함은 없지만 할 수 있는 일은 있다.'}
 const big=()=>!!S&&(isPres()||S.office==='gov'||S.titles.leader>0||S.titles.chair>0);
 const prot=()=>(S.prot&&S.prot[0])||'후배';
 function addFac(n,newbie){S.fac=Math.min(30,(S.fac||0)+n);S.prot=S.prot||[];if(newbie&&S.prot.length<3){let nm=kname();while(nm===S.name)nm=kname();S.prot.push(nm)}}
@@ -885,6 +904,98 @@ const EV=[
 {id:'h_29900',tag:'청탁금지법',px:'market|biz,me|glass',c:inOffice,t:'간담회 정식은 2만9천9백원',b:'지역 상인회 간담회 장소인 한정식집 메뉴판에 "공직자 정식 29,900원"이 새로 생겼다. 반찬은 그대로다.',
  ch:[['더치페이를 고집한다',()=>{chg({integrity:2,support:1,money:-Math.round(30*TM())});return '사장님이 계산기를 두 번 두드렸다.'}],
      ['상인회가 사겠다니 그냥 먹는다',()=>{chg({org:2});if(R()<.15){chg({support:-3});return '메뉴판 사진이 지역 커뮤니티에 올라왔다. 갈비 추가분이 문제였다.'}return '반찬 맛은 그대로였다.'}]]},
+// ---- 전국 정세 (국가적 위기, 여러 해 지속) ----
+{id:'n_econ',core:true,tag:'경제 위기',px:'tv|rep,me|chart,exclaim',t:'환율 1,600원, 기업 연쇄 부도',b:()=>`"외환위기 이후 최악." 환율이 치솟고 중견 기업들이 줄줄이 부도를 냈다. 앞으로 2~3년은 ${PARTIES[rulingP()].s} 정부에 혹독한 시간이 될 것이다.${crRole()}`,
+ ch:()=>isPres()?[
+   ['비상경제 내각, 재정 대거 투입',()=>{chg({admin:4,support:3,mental:-8});crAdj(2);return '추경 30조. 국가 부채 그래프가 가팔라졌지만 급한 불은 껐다.'}],
+   ['구조조정 정면 돌파',()=>{chg({policy:5,support:-6,party:-3});crAdj(1);return '"고통 분담"을 말할 때마다 지지율이 떨어졌다. 경제학자들은 박수를 쳤다.'}],
+   ['"우리 경제 펀더멘털은 튼튼하다"',()=>{chg({support:-9,fame:4});crAdj(-2);return '그 발언은 다음 날 환율 그래프와 나란히 실렸다.'}]]
+ :inOffice()?[
+   ['지역 소상공인 긴급 지원을 챙긴다',()=>{chg({support:5,admin:2,legis:2,mental:-4});return '이자 유예 상담 창구 앞에 줄이 길게 섰다. 그 줄 끝에 내가 있었다.'}],
+   [rulingP()===S.party?'정부를 감싸며 "위기에 단결"':'"무능 정부" 총공세',()=>{const ok=rulingP()!==S.party;chg({party:5,support:ok?3:-3,fame:3});return ok?'공세가 먹혔다. 경제 실정 프레임이 굳어졌다.':'"남 탓 말라"는 댓글과 "그래도 여당"이라는 댓글이 엇갈렸다.'}],
+   ['금 모으기 운동에 돌반지를 낸다',()=>{chg({fame:5,support:3,money:-Math.round(100*TM())});return '돌반지 인증 사진이 지역 신문 1면에 실렸다.'}]]
+ :[['금 모으기 운동 지역 본부를 맡는다',()=>{chg({fame:6,support:3,org:3});return '야인에게도 할 일이 생겼다. 이름이 다시 오르내린다.'}],
+   ['경제 해설 유튜브를 시작한다',()=>{chg({fame:5,speech:3,policy:2});return '"쉽게 풀어 주는 위기 경제" 구독자가 늘었다.'}]]},
+{id:'n_virus',core:true,tag:'감염병',px:'hospital|doc,me|exclaim',t:'신종 감염병, 확진자 폭증',b:()=>`해외에서 시작된 신종 감염병이 국내로 번졌다. 마스크 품귀, 학교 휴업, 자영업자 폐업. 처음엔 정부 중심으로 뭉치지만 길어지면 민심은 지친다.${crRole()}`,
+ ch:()=>isPres()?[
+   ['강력한 거리두기와 전수 검사',()=>{chg({admin:4,support:4,mental:-8});crAdj(2);return '"K-방역" 외신 보도가 나왔다. 자영업자들의 한숨도 같이 커졌다.'}],
+   ['"일상은 지킨다" 경제 우선',()=>{const ok=R()<.45;chg({support:ok?4:-8,policy:2});crAdj(ok?1:-2);return ok?'경제 지표가 버텼다. 도박이 맞아떨어졌다.':'병상이 모자랐다. 뉴스는 매일 사망자 숫자로 시작했다.'}],
+   ['백신 확보에 외교력 총동원',()=>{chg({fame:4,support:2,admin:2});crAdj(1);return '정상 통화 12통. 첫 물량이 들어오는 날 공항에 갔다.'}]]
+ :isAdmin()?[
+   ['선제 방역과 생활지원금',()=>{chg({support:6,admin:4,mental:-6});return '"우리 지역은 다르다"는 말이 돌았다. 재정 담당은 울상이다.'}],
+   ['확진자 동선을 낱낱이 공개',()=>{chg({support:2,integrity:-2,fame:3});return '불안은 줄었고 사생활 침해 논란이 붙었다.'}]]
+ :inOffice()?[
+   ['마스크 배부 현장 사진을 찍는다',()=>{chg({fame:4,support:-2});return '"방역보다 사진"이라는 비판이 따라왔다.'}],
+   ['병상 확보·자영업 손실보상 법안',()=>{chg({legis:4,policy:3,support:3});return '여야 합의로 통과됐다. 드문 장면이었다.'}]]
+ :[['방호복 입고 선별진료소 자원봉사',()=>{chg({support:5,integrity:3,mental:-6});return '땀에 젖은 얼굴 사진이 퍼졌다. 야인 시절 최고의 사진.'}],
+   ['집에서 조용히 지낸다',()=>{chg({mental:6,fame:-3});return '모두가 그랬다.'}]]},
+{id:'n_tragedy',core:true,tag:'대형 참사',px:'night|cit,me,cit|flower',t:'대형 참사, 국가가 어디 있었나',b:()=>`수많은 시민이 목숨을 잃은 대형 참사가 일어났다. 구조와 대응은 늦었고, 유가족들은 "그날 국가는 어디 있었냐"고 묻는다.${crRole()}`,
+ ch:()=>isPres()?[
+   ['국가 책임 인정, 책임자 문책',()=>{chg({support:5,integrity:4,party:-5});crAdj(2);return '장관 두 명이 물러났다. 유가족 대표가 처음으로 고개를 끄덕였다.'}],
+   ['"법적 책임 소재는 수사 결과를 보자"',()=>{chg({support:-10,party:3});crAdj(-2);return '그 문장은 오래 남았다.'}]]
+ :isAdmin()?[
+   ['현장 지휘, 유가족 앞에서 사과',()=>{chg({support:4,admin:3,mental:-10});return '밤새 현장을 지켰다. 사과문을 읽다 목이 메었다.'}],
+   ['"관할 밖의 일"이라며 선긋기',()=>{chg({support:-8,integrity:-3});return '관할 경계선 지도가 뉴스에 등장했다. 최악의 해명이었다.'}]]
+ :inOffice()?[
+   ['진상규명 특별법 발의',()=>{chg({legis:4,support:4,party:rulingP()===S.party?-4:2});return '유가족들이 법안 발의 기자회견에 함께 섰다.'}],
+   ['조용히 분향소를 지킨다',()=>{chg({integrity:3,support:2});return '카메라 없이 밤새 분향소 자원봉사를 했다.'}]]
+ :[['분향소 자원봉사',()=>{chg({integrity:3,support:3,mental:-4});return '이름 없이 국화를 정리했다.'}],
+   ['유가족 법률 지원 모임을 꾸린다',()=>{chg({org:4,fame:3,support:3});return '작은 사무실에 유가족들이 모였다.'}]]},
+{id:'n_security',core:true,tag:'안보 위기',px:'tv|rep,me|exclaim',t:'접경지 포격, 전군 비상',b:()=>`접경 지역 섬에 포탄이 떨어졌다. 전군에 비상이 걸렸고 시장은 출렁인다. 위기 땐 정부 중심으로 뭉치는 경향이 있지만, 대응이 어설프면 역풍도 크다.${crRole()}`,
+ ch:()=>isPres()?[
+   ['"도발엔 단호히" 즉각 대응 사격',()=>{chg({support:6,fame:5,mental:-6});crAdj(2);return '대국민 담화가 짧고 단호했다. 지지율이 올랐다.'}],
+   ['핫라인 가동, 긴장 완화 우선',()=>{const ok=R()<.5;chg({support:ok?3:-5,policy:3});crAdj(ok?1:-1);return ok?'추가 도발은 없었다. "냉정했다"는 평.':'"저자세"라는 공세에 시달렸다.'}]]
+ :[['초당적 협력 성명에 이름을 올린다',()=>{chg({support:3,party:-2,integrity:2});return '"이럴 땐 하나"라는 기사가 났다.'}],
+   [rulingP()===S.party?'정부 대응을 적극 홍보':'"안보 무능" 공세',()=>{chg({party:5,support:rulingP()===S.party?1:-2,fame:3});return '안보는 늘 진영 싸움이 됐다.'}]]},
+{id:'n_house',core:true,tag:'부동산',px:'street|cit,me,old|house,chart',t:'집값 폭등, "벼락거지"가 유행어',b:()=>`수도권 아파트값이 1년 새 30% 올랐다. 청년들은 "영끌"을 하거나 포기했다. 대책이 나올 때마다 집값이 또 오른다는 냉소가 퍼진다.${crRole()}`,
+ ch:()=>isPres()?[
+   ['대출 규제와 보유세 강화',()=>{chg({policy:4,support:-3,party:-2});crAdj(1);return '"세금 폭탄" 현수막과 "이제야" 댓글이 동시에 걸렸다.'}],
+   ['공급 폭탄, 신도시 5곳 발표',()=>{chg({admin:4,support:3});crAdj(1);if(R()<.3)S.flags=Object.assign(S.flags||{},{leakRisk:1});return '발표 전에 그 땅을 산 사람들이 있다는 소문이 돈다.'}],
+   ['"집값은 반드시 잡힌다" 장담',()=>{chg({support:2,fame:3});crAdj(-2);return '이 영상은 1년 뒤 다시 소환될 것이다.'}]]
+ :isAdmin()?[
+   ['재건축 규제를 푼다',()=>{chg({support:curD()[3]==='rich'||curD()[3]==='new'?6:-2,admin:2});return '조합원들은 환호했고 세입자들은 불안해했다.'}],
+   ['공공임대 1만 호 공약',()=>{chg({policy:4,support:3,money:-Math.round(100*TM())});return '"임대 아파트 우리 동네 반대" 현수막도 함께 걸렸다.'}]]
+ :[['청년 주거 법안을 낸다',()=>{chg({policy:3,legis:inOffice()?3:0,support:3});return '청년 단체들이 지지 성명을 냈다.'}],
+   [s().money>=8000?'(내 집도 올랐다) 조용히 지낸다':'"나도 무주택자" 고백',()=>{if(s().money>=8000){chg({support:-4,money:Math.round(1500*TM())});return '재산 공개 때 시세 차익이 화제가 됐다.'}chg({support:5,fame:3});return '월세 계약서 인증이 공감을 얻었다.'}]]},
+{id:'f_econ',w:4,tag:'경제 위기',px:'street|cit,cit,me|banner',c:()=>crOn('econ')&&S.year>S.crisis.y,t:'"일자리를 달라" 청년들이 거리로',b:'위기가 길어지며 청년 실업률이 치솟았다. 광장에 모인 청년들이 정치권을 향해 "말 말고 일자리"라고 외친다.',
+ ch:[['광장으로 가서 직접 듣는다',()=>{const ok=R()<.6;chg({support:ok?4:-3,mental:-5,fame:3});return ok?'마이크 대신 수첩을 들었다. 그 모습이 좋게 보였다.':'"보여주기"라는 야유를 들었다.'}],
+     ['청년 일자리 예산을 밀어붙인다',()=>{chg({policy:3,support:2,party:inOffice()?2:0});return '예산은 늘었고 체감은 더뎠다.'}]]},
+{id:'f_virus',w:4,tempt:true,tag:'감염병',px:'night|aide,me,biz|glass',c:()=>crOn('virus')&&S.year>S.crisis.y&&inOffice(),t:'5인 이상 모임 금지인데, 후원회 만찬이…',b:'방역 지침상 5인 이상 모임 금지. 그런데 큰손 후원자들이 "조용한 룸"에서 만찬을 하자고 한다.',
+ ch:[['룸에서 만난다',()=>{const m=Math.round(800*TM()/10)*10;chg({money:m});if(R()<.45){chg({support:-10,integrity:-6});return `후원금 ${won(m)}. 그리고 같은 식당에 있던 손님의 휴대폰 사진.`}chg({integrity:-3});return `후원금 ${won(m)}. 아무도 몰랐다. 아직은.`}],
+     ['온라인 후원 행사로 돌린다',()=>{chg({support:2,integrity:2,money:Math.round(200*TM())});return '화면 속 후원자들은 꽤 즐거워 보였다.'}]]},
+{id:'f_tragedy',w:4,tag:'대형 참사',px:'hall|cit,me,rep|ballot',c:()=>crOn('tragedy')&&S.year>S.crisis.y&&isCouncil(),t:'참사 진상규명 특별법 표결',b:()=>`유가족들이 1년째 국회 앞에서 농성 중이다. ${rulingP()===S.party?'우리 당 지도부는 "정쟁화"를 우려하며 반대 당론을 정했다.':'우리 당은 찬성 당론이다.'}`,
+ ch:[['찬성',()=>{chg({support:4,integrity:3,party:rulingP()===S.party?-6:3});return '본회의장 방청석에서 유가족들이 울었다.'}],
+     ['당론에 따른다',()=>{chg({party:4,support:rulingP()===S.party?-5:2});return '표결 화면에 내 이름 옆 색깔이 오래 남았다.'}]]},
+{id:'f_house',w:4,tag:'부동산',px:'press|rep,me|house,cam',c:()=>crOn('house')&&S.year>S.crisis.y&&inOffice()&&OFF[S.office].tier>=2,t:'"다주택 고위공직자, 한 채 빼고 팔라"',b:'정부·여당이 고위공직자 다주택 처분 권고를 냈다. 마침 내 배우자 명의로 지방에 작은 아파트가 한 채 더 있다.',
+ ch:[['바로 판다',()=>{chg({integrity:4,support:3,money:Math.round(300*TM())});return '"솔선수범" 기사가 났다. 팔고 나서 집값이 또 올랐다.'}],
+     ['"서울 집을 팔겠다"더니 지방 집을 판다',()=>{chg({support:-6,fame:4,money:Math.round(200*TM())});return '"똘똘한 한 채"라는 말이 나를 따라다녔다.'}],
+     ['"투기 목적 아니다" 버틴다',()=>{chg({support:-4,integrity:-3});return '재산 공개 시즌마다 같은 기사가 반복됐다.'}]]},
+// ---- 야인 (토굴 칩거 모티프) ----
+{id:'y_togul',w:4,tag:'야인',px:'field|me,aide|house',c:()=>!inOffice()&&!wrapMode()&&!S.togul&&S.idle>=1,t:'산골 흙집으로 들어갈까',b:'낙선 뒤 전화가 뚝 끊겼다. 오랜 측근이 남도 산자락의 낡은 흙집을 구해 왔다. "잠시 정치를 내려놓고 칩거하시죠. 사람들은 돌아올 때를 기억합니다."',
+ ch:[['흙집에 칩거한다',()=>{S.togul=S.year;chg({mental:15,fame:-4,party:-3});addLog('정계를 떠나 산골 흙집에서 칩거를 시작했다.');return '휴대폰을 껐다. 첫날 밤은 개구리 소리 때문에 잠을 못 잤다.'}],
+     ['시사 프로 고정 패널로 버틴다',()=>{chg({fame:6,money:Math.round(400*TM()),speech:2,mental:-3});return '매주 화요일 밤 10시, 얼굴은 잊히지 않았다. 대신 말이 가벼워졌다는 평.'}],
+     ['기업 고문으로 들어간다',()=>{chg({money:Math.round(1500*TM()),integrity:-4,fame:-2});return '고문료는 두둑했다. 무엇을 자문하는지는 아무도 묻지 않았다.'}]]},
+{id:'y_visit',w:4,tag:'칩거',px:'field|aide,me,cit|house',c:()=>!inOffice()&&S.togul&&S.year-S.togul>=1,t:'막걸리를 들고 흙집을 찾아오는 사람들',b:'칩거 1년. 당 대표와 대권 주자들이 번갈아 흙집을 찾아온다. 기자들이 마을 입구에 진을 쳤다. "칩거 맞냐"는 기사와 "삼고초려" 기사가 동시에 나온다.',
+ ch:[['마당에서 사진을 찍어 준다',()=>{chg({fame:7,party:5,integrity:-1});return '흙 묻은 장화 차림 사진이 1면에 실렸다. 연출이라는 말도 함께.'}],
+     ['문을 닫고 돌려보낸다',()=>{chg({mental:6,integrity:3,fame:2});return '"문전박대" 기사가 오히려 몸값을 올렸다.'}],
+     ['한 명만 조용히 만난다',()=>{chg({party:3,org:2});return '그날 밤 무슨 이야기가 오갔는지는 둘만 안다.'}]]},
+{id:'y_book',w:3,tag:'칩거',px:'field|me|book,house',c:()=>!inOffice()&&S.togul&&S.year-S.togul>=1&&!S.togulBook,t:'흙집에서 쓴 원고',b:'아궁이 앞에서 쓴 원고가 책 한 권 분량이 됐다. 출판사가 제목을 정해 달라고 한다.',
+ ch:[['『흙집에서 보낸 편지』 (성찰 에세이)',()=>{S.togulBook=1;chg({fame:6,support:4,integrity:2,money:Math.round(200*TM())});return '"반성할 줄 아는 정치인" 서평이 쏟아졌다.'}],
+     ['『저녁이 있는 나라』 (비전 선언)',()=>{S.togulBook=1;chg({fame:5,policy:6,party:2});return '책 제목이 다음 선거 구호 후보로 거론된다.'}],
+     ['책은 내지 않는다',()=>{chg({mental:3});return '원고는 아궁이 옆 상자에 넣어 뒀다.'}]]},
+{id:'y_return',w:6,tag:'하산',px:'field|aide,me^,aide|banner',c:()=>!inOffice()&&!wrapMode()&&S.togul&&S.year-S.togul>=2&&(elecKinds(S.year+1).length>0||elecKinds(S.year).length>0),t:'하산(下山)할 때인가',b:()=>`칩거 ${S.year-S.togul}년. 선거를 앞두고 지지자들이 흙집 앞에 "돌아오라" 현수막을 걸었다. 측근은 "지금이 아니면 영영 늦습니다"라고 말한다.`,
+ ch:[['정계 복귀를 선언한다',()=>{const y=S.year-S.togul;S.togul=0;S.idle=Math.max(0,S.idle-4);chg({fame:10+y,support:6,party:4,mental:-4});addLog(`칩거 ${y}년 만에 정계 복귀를 선언했다.`);return '흙집 마당에서 복귀 기자회견을 열었다. 장화는 벗지 않았다. "국민이 부르면 간다."'}],
+     ['아직 때가 아니다',()=>{chg({mental:4,fame:-3});return '현수막은 비를 맞으며 몇 달을 더 걸려 있었다.'}],
+     ['정계 은퇴를 선언한다',()=>{S.pendingEnd='retire';S.q=[];chg({integrity:5});addLog('흙집에서 정계 은퇴를 선언했다.');return '"이제 정말 농사꾼입니다." 기자들이 마지막으로 장화를 찍어 갔다.'}]]},
+{id:'y_forgot',w:3,tag:'칩거',px:'field|me|house',c:()=>!inOffice()&&S.togul&&S.year-S.togul>=3,t:'아무도 찾아오지 않는 겨울',b:'칩거 3년째 겨울. 기자도, 후배도 발길이 끊겼다. 마을 이장만 가끔 김치를 들고 온다. 휴대폰에 저장된 번호 900개 중 올해 전화가 온 건 11개다.',
+ ch:[['이장과 마을 일을 돕는다',()=>{chg({support:4,org:3,mental:4});return '마을 길 포장 민원을 해결했다. 지역 신문에 작게 실렸다.'}],
+     ['옛 동료들에게 먼저 전화를 돌린다',()=>{chg({party:4,mental:-4});return '반은 받지 않았다. 받은 반은 "언제 나오세요?"라고 물었다.'}]]},
+{id:'y_panel',w:2,tag:'야인',px:'tv|me,rep|cam',c:()=>!inOffice()&&!wrapMode()&&!S.togul&&s().fame>=25,t:'종편 시사 프로 "독설 패널" 섭외',b:'방송사가 "센 말"을 해 줄 고정 패널을 찾는다. 출연료는 회당 80만원. 시청률이 오르면 이름도 다시 오른다.',
+ ch:[['독설 캐릭터로 간다',()=>{chg({fame:8,money:Math.round(300*TM()),support:-2,party:-2});return '"사이다"와 "막말" 사이를 매주 오갔다.'}],
+     ['점잖은 분석가로 간다',()=>{chg({fame:3,policy:3,money:Math.round(200*TM())});return '시청률은 평범했다. 평판은 좋았다.'}]]},
+{id:'y_advisor',w:2,tempt:true,tag:'야인',px:'office|biz,me|env',c:()=>!inOffice()&&!wrapMode()&&OFF[S.best].tier>=2,t:'"고문님, 인허가 쪽에 아는 분 계시죠?"',b:'고문으로 모시겠다는 회사가 사실은 인허가 담당 공무원 연락처를 원한다. 고문료는 매달 꽂힌다.',
+ ch:[['고문을 맡고 전화 몇 통 돌린다',()=>{const m=Math.round(1200*BM()/10)*10;chg({money:m,integrity:-10});addCase('알선수재(고문료)',2);S.stats.bribes++;return `연 ${won(m)}. 통화 기록은 남는다.`}],
+     ['거절한다',()=>{chg({integrity:3});return '"요즘 다 이렇게 산다"며 회사 대표가 혀를 찼다.'}]]},
 // ---- 출신별 이벤트 ----
 {id:'b_law_case',w:2,tempt:true,tag:'변호사 출신',px:'office|biz,me|book,cash',c:()=>S.bg==='lawyer'&&inOffice(),t:'"의원님이 직접 맡아 주시면 좋겠는데요"',b:'옛 로펌 고객이던 지역 건설사가 행정소송을 맡아 달라고 한다. 겸직 신고만 하면 된다지만, 상대는 내가 감시해야 할 지자체다. 수임료는 시세의 세 배.',
  ch:[['수임한다',()=>{const m=Math.round(1500*BM()/10)*10;chg({money:m,legis:2,integrity:-8});if(R()<.35)addCase('변호사 겸직 이해충돌',1);return `수임료 ${won(m)}. 국정감사 피감기관 명단에 그 지자체가 올라와 있다.`}],
@@ -1146,6 +1257,7 @@ function buildQueue(){
   q.push({type:'ev',id:(s().mental<35||S.year%2)?'c_work':'c_promo'});
   chosen.forEach((e,i)=>{q.push({type:'ev',id:e.id});if(i===0&&R()<.6)q.push({type:'fig'})});
   if(!isPres()&&S.age<64&&elecKinds(S.year+1).includes('pres')&&(presPaths().council||presPaths().admin))q.splice(1,0,{type:'ev',id:'p_camp'});
+  if(S.crisis&&S.crisis.fresh){S.crisis.fresh=0;q.splice(1,0,{type:'ev',id:'n_'+S.crisis.k})}
   if(isPres()&&S.trialHold&&!S.haltShown){S.haltShown=1;q.splice(1,0,{type:'ev',id:'p_halt'})}
   if(!isPres())q.push({type:'ev',id:'c_fund'});
   if(isNat()&&member()&&(S.held.nat||0)+(S.held.natp||0)>=2&&!S.titles.chair&&(S.year-2029)%2===0)q.push({type:'chair'});
@@ -1578,9 +1690,25 @@ function personHD(r,X,Y,c,wave,flip){
 
 function crowd(r,rnd){const SG=[3,9,15];const hs=['#1f1f1f','#3a2a20','#4a2f1f','#d2d2d2','#6b4426','#222222'],cs=['#e0a93f','#5b9e6a','#7a6bd1','#d95f5f','#4b8fd1','#c9a36b','#3a9e9a'];
   for(let i=0;i<20;i++){const x=i*13-4+(rnd()*4|0),y=104+(i%2)*5-((i+PF)%3===0?2:0),c=cs[(i*3)%cs.length],h=hs[(i*5)%hs.length];
+    if(PXC&&PXC.k2>=2){const k=PXC.k2;PXC.c.setTransform(k/2,0,0,k/2,0,0);backHD(x*2,y*2,36,c,h,i%3?'#f1c7a0':'#e0b08a');PXC.c.setTransform(k,0,0,k,0,0)}else{
     r(x,y+12,18,14,K);r(x+1,y+13,16,13,c);r(x+1,y+13,2,13,shade(c,1.2));r(x+13,y+13,4,13,shade(c,.75));
-    r(x+4,y,10,13,K);r(x+5,y+1,8,11,h);r(x+6,y+2,3,2,shade(h,1.35));r(x+3,y+5,2,3,K);r(x+13,y+5,2,3,K);r(x+4,y+6,1,1,'#f1c7a0');r(x+13,y+6,1,1,'#d9a888');
+    r(x+4,y,10,13,K);r(x+5,y+1,8,11,h);r(x+6,y+2,3,2,shade(h,1.35));r(x+3,y+5,2,3,K);r(x+13,y+5,2,3,K);r(x+4,y+6,1,1,'#f1c7a0');r(x+13,y+6,1,1,'#d9a888');}
     if(SG.includes(i)){const b=(i+PF)%2;r(x+8,y-16+b,1,18,'#8a5a33');r(x+2,y-26+b,14,11,K);r(x+3,y-25+b,12,9,'#fbfbfb');r(x+5,y-22+b,8,3,i===9?'#2f6be0':'#c2321f')}}}
+/* HD 뒷모습(관중·청중) — 512 좌표 */
+function backHD(X,Y,W,col,hair,skin,bob){const c=PXC.c,q=(x,y,w,h,cl)=>{c.fillStyle=cl;c.fillRect(X+x,Y+y,w,h)};
+  const hw=Math.round(W*.56),hh=hw+2,hx=Math.round((W-hw)/2),sy=hh-2,bh=Math.round(W*.75),cd=shade(col,.78),ch=shade(col,1.16),hd=shade(hair,.72),hl=shade(hair,1.35);
+  for(let i=0;i<bh;i++){const ins=Math.max(0,Math.round(7-i*1.5)),w=W-2*ins;q(ins,sy+i,w,1,K);if(w>2){q(ins+1,sy+i,w-2,1,col);q(ins+1,sy+i,2,1,ch);q(ins+w-4,sy+i,3,1,cd)}}
+  q(ins0(W),sy,W-2*ins0(W),1,K);
+  q(Math.round(W/2)-4,sy-3,8,4,K);q(Math.round(W/2)-3,sy-3,6,4,shade(skin,.86));
+  for(let j=0;j<hh;j++){const t=(j-hh/2+.5)/(hh/2),half=Math.max(1,Math.round(hw/2*Math.sqrt(Math.max(0,1-t*t))));const cx=hx+Math.round(hw/2);
+    q(cx-half-1,j,half*2+2,1,K);q(cx-half,j,half*2,1,j>hh-3?shade(skin,.9):hair);if(j<hh-3){q(cx+half-3,j,3,1,hd)}}
+  const cx=hx+Math.round(hw/2);q(cx-Math.round(hw*.28),2,Math.round(hw*.3),2,hl);q(cx-Math.round(hw*.36),4,2,3,hl);
+  const ey=Math.round(hh*.42);q(hx-2,ey,2,4,K);q(hx-1,ey+1,1,2,skin);q(hx+hw,ey,2,4,K);q(hx+hw,ey+1,1,2,shade(skin,.85));
+}
+function ins0(W){return 7}
+function sitHD(x,y,o,s,P,h){const k=PXC.k2,c=PXC.c;c.setTransform(k/2,0,0,k/2,0,0);c.save();c.beginPath();c.rect(x*2-4,y*2-8,30,35);c.clip();
+  miniHD(x*2,y*2-1,{long:o.long,tie:o.tie},s,P,'#3b3f48',h,false);c.restore();
+  if(o.type&&PF){c.fillStyle=s;c.fillRect(x*2+14,y*2+22,4,2)}c.setTransform(k,0,0,k,0,0)}
 /* --- 배경 인물 --- */
 const NPCP=['#e0a93f','#5b9e6a','#7a6bd1','#d95f5f','#4b8fd1','#c9a36b','#3a9e9a','#8a6d4d','#55606e','#e9e4d8'];
 const NPCH=['#1f1f1f','#3a2a20','#6b4426','#cfcfcf','#2b2421'];
@@ -1633,9 +1761,10 @@ function mini(r,x,y,o={}){const s=o.s||NPCS[(x>>3)%3],P=o.P||'#55606e',L=o.L||'#
   else if(it==='kid'){}
 }
 function miniSit(r,x,y,o={}){const s=o.s||NPCS[(x>>3)%3],P=o.P||'#55606e',h=o.h||'#2b2421';
+  if(PXC&&PXC.k2>=2){sitHD(x,y,o,s,P,h);return}
   r(x+1,y-1,7,8,K);r(x,y+6,9,7,K);r(x+2,y,5,6,s);r(x+2,y,5,2,h);r(x+2,y+2,1,2,h);r(x+3,y+3,1,1,K);r(x+5,y+3,1,1,K);
   r(x+1,y+7,7,6,P);r(x+6,y+7,2,6,shade(P,.75));if(PF&&o.type)r(x+7,y+11,2,1,s)}
-function backHead(r,x,y,col,hair){r(x,y+8,14,12,K);r(x+1,y+9,12,11,col);r(x+1,y+9,2,11,shade(col,1.2));r(x+3,y,8,10,K);r(x+4,y+1,6,8,hair);r(x+5,y+2,2,2,shade(hair,1.4))}
+function backHead(r,x,y,col,hair){if(PXC&&PXC.k2>=2){const k=PXC.k2;PXC.c.setTransform(k/2,0,0,k/2,0,0);backHD(x*2,y*2,28,col,hair,NPCS[(x>>3)&1]||'#f1c7a0');PXC.c.setTransform(k,0,0,k,0,0);return}r(x,y+8,14,12,K);r(x+1,y+9,12,11,col);r(x+1,y+9,2,11,shade(col,1.2));r(x+3,y,8,10,K);r(x+4,y+1,6,8,hair);r(x+5,y+2,2,2,shade(hair,1.4))}
 function smallCar(r,x,y,col){r(x,y+3,32,8,K);r(x+1,y+4,30,6,col);r(x+6,y,18,5,K);r(x+7,y+1,7,3,'#9fd0ee');r(x+16,y+1,7,3,'#9fd0ee');r(x+1,y+4,30,1,shade(col,1.3));disc(r,x+7,y+11,3,K);disc(r,x+25,y+11,3,K);r(x+30,y+5,2,2,'#ffe48a')}
 function bird(r,x,y){const u=PF?1:0;r(x,y+u,2,1,'#3a3a44');r(x+2,y+1-u,1,1,'#3a3a44');r(x+3,y+u,2,1,'#3a3a44')}
 const pal=i=>NPCP[i%NPCP.length],hr=i=>NPCH[i%NPCH.length];
@@ -1782,7 +1911,7 @@ function render(){
 }
 function hdrHTML(){
   const x=s(),o=OFF[S.office],RR=curR(),dt=DTYPE[curD()[3]],pp=presPaths();
-  const titles=[];if(S.titles.chair)titles.push('상임위원장');if(S.titles.leader)titles.push('당대표');if(S.titles.speaker)titles.push('의회 의장');if(member()&&(S.fac||0)>=3)titles.push(`친${S.name.slice(-1)}계 ${(S.fac||0)*3}명`);
+  const titles=[];if(S.titles.chair)titles.push('상임위원장');if(S.titles.leader)titles.push('당대표');if(S.titles.speaker)titles.push('의회 의장');if(S.crisis&&S.crisis.left>0&&S.year>=S.crisis.y)titles.push(`⚠ ${CRISES[S.crisis.k].n} ${S.year-S.crisis.y+1}년차`);if(S.togul&&!inOffice())titles.push(`흙집 칩거 ${S.year-S.togul+1}년차`);if(member()&&(S.fac||0)>=3)titles.push(`친${S.name.slice(-1)}계 ${(S.fac||0)*3}명`);
   const statRow=(k,hl)=>`<div class="stat ${hl?'hl':''}"><span>${LBL[k]}</span><div class="bar"><i style="width:${x[k]}%"></i></div><span class="num">${member()||k!=='party'?x[k]:'—'}</span></div>`;
   const r=o.route;
   const nextE=['local','general','pres'].map(k=>({k,y:nextElecYear(k,S.year-1)})).sort((a,b)=>a.y-b.y)[0];
@@ -2222,19 +2351,39 @@ function renderElection(st){
     return;
   }
   if(E.step==='result'){
-    st.innerHTML=`${pxTag('개표')}<div class="news"><span class="tag ink">개표</span><h3>${E.name} 개표 결과</h3></div>
+    const opp=E.riv?E.rname:null,oppP=E.riv?E.rparty:null;
+    if(E.exit==null){E.exit=+clamp(E.share+gauss()*2.6,1,99).toFixed(1);E.exitR=E.riv?+clamp(E.rshare-(E.exit-E.share)*.8+gauss()*1.2,1,99).toFixed(1):null;E.nz=[gauss()*3.2,gauss()*2.4,R()*6];save()}
+    const exitWin=E.riv?E.exit>E.exitR:E.win,flip=E.riv&&exitWin!==E.win;
+    st.innerHTML=`${pxTag('개표')}<div class="bcast"><span class="live"><i></i>LIVE</span><b>${E.prop?'비례대표 정당 득표 집계':'개표 방송'}</b><span class="num" id="cnt">투표 마감</span></div>
+      <div class="news"><span class="tag ink">개표</span><h3>${E.name} 개표 결과</h3></div>
+      <div class="exitpoll" id="exitp"><span class="label">방송3사 출구조사</span><div><b>${esc(S.name)}</b> <span class="num">${E.exit.toFixed(1)}%</span>${E.riv?` <span class="muted">vs</span> <b>${esc(opp)}</b> <span class="num">${E.exitR.toFixed(1)}%</span>`:''}</div><small>${E.prop?'예상 의석 '+Math.round(46*E.exit/100)+'석 안팎':E.riv?(Math.abs(E.exit-E.exitR)<3?'오차범위 내 초접전':exitWin?'우세 예측':'열세 예측'):(E.win?'당선권 예측':'경합 예측')}</small></div>
       <div class="count"><div class="row" style="justify-content:space-between"><span>${esc(S.name)} <span class="muted">(${PARTIES[E.party||S.party].s})</span></span><span class="pct num" id="pct">0.0%</span></div>
-      <div class="track"><div class="fill" id="fill"></div>${E.prop?'':'<div class="half"></div>'}</div>
-      ${E.riv?`<div class="row" style="justify-content:space-between;margin-top:8px"><span>${esc(E.rname)} <span class="muted">(${PARTIES[E.rparty].s} · 라이벌)</span></span><span class="num" id="pct2">0.0%</span></div><div class="track"><div class="fill" id="fill2" style="background:var(--${E.rparty})"></div><div class="half"></div></div>`:''}${E.prop?'<div class="muted" style="font-size:12px;margin-top:4px">정당 득표율</div>':''}</div>
+      <div class="track"><div class="fill" id="fill" style="transition:none"></div>${E.prop?'':'<div class="half"></div>'}</div>
+      ${E.riv?`<div class="row" style="justify-content:space-between;margin-top:8px"><span>${esc(opp)} <span class="muted">(${PARTIES[oppP].s} · 라이벌)</span></span><span class="num" id="pct2">0.0%</span></div><div class="track"><div class="fill" id="fill2" style="transition:none;background:var(--${oppP})"></div><div class="half"></div></div>`:''}${E.prop?'<div class="muted" style="font-size:12px;margin-top:4px">정당 득표율</div>':''}
+      <div class="callout" id="call" aria-live="polite"></div></div>
       <div id="verdict" hidden>${E.win?`<svg class="win-stamp" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44"/><text x="50" y="76" text-anchor="middle">卜</text></svg>`:''}
-      <div class="result">${E.html}${E.dh}</div><button class="btn primary" id="nx">다음 →</button></div>`;
+      <div class="result">${flip?`<b style="color:var(--warn)">출구조사가 뒤집혔다!</b> `:''}${E.html}${E.dh}</div><button class="btn primary" id="nx">다음 →</button></div>
+      <button class="linkbtn" id="skipc" style="margin-top:6px">건너뛰기</button>`;
     paint(E.win?'ballot|cit,me,old|ballot,heart':'ballot|cit,old|ballot');
-    const fill=document.getElementById('fill'),pct=document.getElementById('pct');
-    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches,dur=reduce?0:1600,t0=performance.now();
-    const fill2=document.getElementById('fill2'),pct2=document.getElementById('pct2');
-    requestAnimationFrame(()=>{fill.style.width=E.share+'%';if(fill2)fill2.style.width=E.rshare+'%'});
-    const tick=n=>{if(!pct.isConnected)return;const k=dur?Math.min(1,(n-t0)/dur):1,e=1-Math.pow(1-k,3);pct.textContent=(E.share*e).toFixed(1)+'%';if(pct2)pct2.textContent=(E.rshare*e).toFixed(1)+'%';if(k<1)requestAnimationFrame(tick);else{const v=document.getElementById('verdict');if(v)v.hidden=false}};
-    requestAnimationFrame(tick);
+    const fill=document.getElementById('fill'),pct=document.getElementById('pct'),fill2=document.getElementById('fill2'),pct2=document.getElementById('pct2'),cnt=document.getElementById('cnt'),call=document.getElementById('call'),skip=document.getElementById('skipc');
+    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches||window.__NOSUSP,T0=reduce?0:1300,T1=reduce?0:3600;let t0=performance.now(),done=false;
+    const [n0,n1,ph]=E.nz;const dev=p=>(n0*(1-p)+n1*Math.sin(p*7+ph)*(1-p)*(1-p));
+    const lab=(p,me,op)=>{if(p<.35)return '';const lead=E.riv?me-op:(E.win?1:-1);const sure=p>.82;
+      if(E.prop)return p>.7?`정당 득표율 ${me.toFixed(1)}% · 비례 ${Math.round(46*me/100)}석 안팎`:'';
+      if(E.riv&&Math.abs(lead)<1.2&&!sure)return '<span class="hot">초접전 · 엎치락뒤치락</span>';
+      return (lead>0)?(sure?'<b class="ok">당선 확실</b>':'당선 유력'):(sure?'<b class="bad">낙선 확실</b>':'낙선 우려')};
+    const finish=()=>{if(done)return;done=true;fill.style.width=E.share+'%';pct.textContent=E.share.toFixed(1)+'%';if(fill2){fill2.style.width=E.rshare+'%';pct2.textContent=E.rshare.toFixed(1)+'%'}
+      cnt.textContent='개표 완료 100%';call.innerHTML=E.prop?'':E.win?'<b class="ok">당선 확정</b>':'<b class="bad">낙선</b>';skip.remove();const v=document.getElementById('verdict');if(v)v.hidden=false};
+    skip.onclick=finish;
+    const tick=n=>{if(!pct.isConnected||done)return;const el=n-t0;
+      if(el<T0){cnt.textContent='출구조사 발표';requestAnimationFrame(tick);return}
+      const document_=document.getElementById('exitp');if(document_)document_.classList.add('dim');
+      const p=Math.min(1,(el-T0)/Math.max(1,T1-T0)),cp=1-Math.pow(1-p,2);
+      const me=clamp(E.share+dev(cp),0,100),op=E.riv?clamp(E.rshare-dev(cp)*.85,0,100):0;
+      fill.style.width=me+'%';pct.textContent=me.toFixed(1)+'%';if(fill2){fill2.style.width=op+'%';pct2.textContent=op.toFixed(1)+'%'}
+      cnt.textContent=`개표율 ${(cp*100).toFixed(1)}%`;call.innerHTML=lab(cp,me,op);
+      if(p<1)requestAnimationFrame(tick);else finish()};
+    if(reduce)finish();else requestAnimationFrame(tick);
     document.getElementById('nx').onclick=()=>{S.cur=null;S.elec=null;save();render();scrollStage()};
   }
 }
@@ -2274,7 +2423,7 @@ function tally(E){
     S.office=off;S.termEnd=S.year+(off==='pres'?5:4);S.held[off]=(S.held[off]||0)+1;S.stats.wins++;
     if(o.tier>OFF[S.best].tier||(o.tier===OFF[S.best].tier&&off!==S.best&&off==='nat')){S.best=off;S.bestName=E.name}
     if(off==='pres'){S.ruling=S.party;S.presFrom=S.year;if(S.trial){S.trialHold=S.trial;S.trial=null;S.haltShown=0;addLog(`대통령 당선으로 '${S.trialHold.name}' 재판이 중지됐다 (헌법 제84조).`)}}
-    chg({fame:8,mental:5});S.idle=0;
+    chg({fame:8,mental:5});S.idle=0;S.togul=0;
     S.path=(S.path||[]);S.path.push([S.year,E.name]);addLog(`${E.name} 당선 (${E.share}%).`);
     E.html=`<b>당선!</b> ${E.name}${S.held[off]>1?' ('+S.held[off]+'선)':''}. 득표율 ${E.share}%.${E.riv?` 라이벌 ${E.rname}을 ${(E.share-E.rshare).toFixed(1)}%p 차로 눌렀다.`:''}${refund?' 기탁금·선거비용 '+won(refund)+' 보전.':''}`;
   } else {
@@ -2310,6 +2459,14 @@ function yearEnd(){
   {const ek=elecKinds(S.year);if(ek.includes('local'))S.maj.local=calcLocalMaj();if(ek.includes('general'))S.maj.nat=calcNatMaj();
    if(ek.length&&myMaj()!==null)notes.push(majLabel())}
   for(const p of ['jj','sm'])S.pop[p]=clamp(Math.round(S.pop[p]+(35-S.pop[p])*.25+ri(-3,3)),15,60);
+  if(S.crisis&&S.crisis.left>0){const C=CRISES[S.crisis.k],i=C.dur-S.crisis.left,rp=rulingP(),adj=S.crisis.adj||0;
+    const hit=Math.max(-6,C.hit[i]-adj);S.pop[rp]=clamp(S.pop[rp]-hit,15,60);S.pop[other(rp)]=clamp(S.pop[other(rp)]+Math.round(hit/2),15,60);
+    S.presAp=clamp((S.presAp==null?50:S.presAp)+C.ap+adj*2,8,80);S.crisis.adj=Math.round(adj/2);
+    notes.push(`${C.n}: 여당 ${PARTIES[rp].s} 지지율 ${hit>0?'-':'+'}${Math.abs(hit)}`);
+    if(member()&&inOffice()&&!isPres()){if(S.party===rp)chg({support:-Math.max(0,Math.round(hit/2))});else chg({support:Math.max(0,Math.round(hit/3))})}
+    S.crisis.left--;if(S.crisis.left<=0){notes.push(`${C.n} 국면이 지나갔다`);addLog(`${C.n} 국면이 끝났다.`);S.lastCrisis=S.year}}
+  else if(!wrapMode()&&S.year-(S.lastCrisis||2026)>=3&&R()<.25){const ks=Object.keys(CRISES).filter(k=>!(S.crisis&&S.crisis.k===k));const k=pick(ks);
+    S.crisis={k,y:S.year+1,left:CRISES[k].dur,fresh:1,adj:0};addLog(`${S.year+1}년, ${CRISES[k].n}이 시작됐다.`)}
   for(const k of ['chair','leader','speaker'])if(S.titles[k]&&S.titles[k]<=S.year){if(k==='leader')S.everLeader=true;S.titles[k]=0}
   if(S.titles.leader)S.everLeader=true;
   if(S.rival){const v=S.rival;
