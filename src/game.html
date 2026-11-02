@@ -20,7 +20,7 @@
 :root[data-theme="dark"]{
   --paper:#111416; --card:#1A1E21; --card2:#22272B; --ink:#ECEEEF; --muted:#9BA2A9; --line:#2E3438;
   --stamp:#E65A44; --jj:#5E8CFF; --sm:#FF5C6E; --ind:#A2A8B0; --good:#4CC27F; --bad:#FF6B57; --warn:#E3A84A; color-scheme:dark}
-body[data-party="jj"]{--p:var(--jj)} body[data-party="sm"]{--p:var(--sm)} body[data-party="ind"]{--p:var(--ind)}
+body[data-party="jj"]{--p:var(--jj)} body[data-party="sm"]{--p:var(--sm)} body[data-party="ind"]{--p:var(--ind)} body[data-party="np"]{--p:#D9731A}
 *{box-sizing:border-box}
 body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;word-break:keep-all;overflow-wrap:break-word;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
@@ -163,6 +163,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .brow small{display:block;color:var(--muted);font-size:12px}
 .bctl{display:flex;align-items:center;gap:6px}.bctl .btn{padding:4px 12px}.cells{font-family:var(--f-num);letter-spacing:1px;color:var(--p);min-width:6.5em;text-align:center}
 .spark{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-left:auto}.spark small{font-size:11px;color:var(--muted)}
+.pfmap{margin-top:8px}.pfmap .label{font-size:12px;font-weight:700;color:var(--muted)}
+.pfbar{display:flex;height:18px;border-radius:5px;overflow:hidden;margin:4px 0 2px;font-size:11px;line-height:18px;color:#fff;font-weight:700}
+.pfbar i{font-style:normal;padding-left:6px;white-space:nowrap;overflow:hidden}.pfbar .m{background:var(--p)}.pfbar .n{background:var(--muted)}.pfbar .o{background:var(--warn)}
+.pfmap small{font-size:12px}
 .count{margin:14px 0}
 .count .track{height:26px;border-radius:6px;background:var(--card2);border:1px solid var(--line);position:relative;overflow:hidden}
 .count .fill{position:absolute;inset:0 auto 0 0;width:0;background:var(--p);transition:width 1.6s cubic-bezier(.2,.7,.2,1)}
@@ -328,7 +332,7 @@ const DTYPE={
 };
 const curR=()=>REGIONS[S.region]||REGIONS.seoul;
 const curD=()=>curR().d[S.dist]||curR().d[0];
-function leanFor(p,withDist=true){if(p==='ind')return 0;const L=curR().lean+(withDist?curD()[4]:0);return p==='jj'?L:-L}
+function leanFor(p,withDist=true){if(p==='ind'||p==='np')return 0;const L=curR().lean+(withDist?curD()[4]:0);return p==='jj'?L:-L}
 function leanTxt(v){return v>=8?'텃밭':v>=3?'우세':v<=-8?'험지':v<=-3?'열세':'격전지'}
 function mulFor(k){if(!k)return 1;return (curR().fx[k]||1)*(DTYPE[curD()[3]][k]||1)}
 function hon(off){off=off||S.office;if(off==='none'){const b=S.best&&S.best!=='none'?S.best:null;return b?hon(b):'후보님'}
@@ -383,7 +387,7 @@ const R=Math.random, ri=(a,b)=>a+Math.floor(R()*(b-a+1)), pick=a=>a[Math.floor(R
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const gauss=()=>{let u=0,v=0;while(!u)u=R();while(!v)v=R();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function won(m){m=Math.round(m);if(Math.abs(m)>=10000){const e=Math.floor(m/10000),r=m%10000;return e+'억'+(r?' '+r.toLocaleString()+'만':'')+'원'}return m.toLocaleString()+'만원'}
+function won(m){m=Math.round(m);if(Math.abs(m)>=10000){const sg=m<0?'-':'',a=Math.abs(m),e=Math.floor(a/10000),r=a%10000;return sg+e+'억'+(r?' '+r.toLocaleString()+'만':'')+'원'}return m.toLocaleString()+'만원'}
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}cloudPut(k)},del(k){try{localStorage.removeItem(k)}catch(e){}cloudPut(k)}};
 function cloudPut(k){try{window.__cloudPut&&window.__cloudPut(k)}catch(e){}}
 
@@ -420,6 +424,7 @@ function newGame(cfg){
   D=[];chg(BG[cfg.bg].fx);D=[];
   {const st=achStore();S.perks=(cfg.perks||[]).filter(id=>{const p=PERKS.find(q=>q[0]===id);return p&&perkOK(p,st)}).slice(0,2);S.perks.forEach(id=>{D=[];chg(PERKS.find(q=>q[0]===id)[4]);D=[]})}
   if(cfg.party==='ind'){S.s.party=0}
+  pfInit();
   if(isHard()){chg({party:15,fame:5});D=[];S.hardStart=true}
   addLog(`35세, ${distName()} 선거구 ${offName(curR().jeju?'metro':'basic')}으로 정치 인생 시작. ${PARTIES[cfg.party].n} 소속.`);
   if(S.hardStart)addLog('험지 자원 출마로 당의 주목을 받았다. 당내입지 +15, 인지도 +5.');
@@ -926,6 +931,29 @@ const EV=[
 {id:'h_29900',tag:'청탁금지법',px:'market|biz,me|glass',c:inOffice,t:'간담회 정식은 2만9천9백원',b:'지역 상인회 간담회 장소인 한정식집 메뉴판에 "공직자 정식 29,900원"이 새로 생겼다. 반찬은 그대로다.',
  ch:[['더치페이를 고집한다',()=>{chg({integrity:2,support:1,money:-Math.round(30*TM())});return '사장님이 계산기를 두 번 두드렸다.'}],
      ['상인회가 사겠다니 그냥 먹는다',()=>{chg({org:2});if(R()<.15){chg({support:-3});return '메뉴판 사진이 지역 커뮤니티에 올라왔다. 갈비 추가분이 문제였다.'}return '반찬 맛은 그대로였다.'}]]},
+// ---- 정당 내부 정치 ----
+{id:'pp_side',w:3,tag:'계파',px:'office|aide,me,riv|',c:()=>twoParty()&&!big()&&inOffice(),t:()=>S.align==='main'?'비주류 모임에서 "같이 하자"는 연락':'당권파 핵심이 밥을 사겠다고 한다',b:()=>S.align==='main'?'비주류 중진들이 당 지도부를 견제할 모임을 만든다며 이름을 올려 달라고 한다. 지도부는 명단을 지켜보고 있다.':'당 지도부 핵심 인사가 저녁을 사며 "이제 우리 쪽으로 오라"고 한다. 공천이 다가온다.',
+ ch:()=>S.align==='main'?[['비주류 모임에 합류',()=>{S.align='non';chg({party:-6,fame:4,integrity:2});return '"소신파" 기사가 났다. 지도부 단톡방에서 조용히 빠졌다.'}],['지도부 곁에 남는다',()=>{chg({party:4});return '"충성파" 꼬리표가 조금 더 짙어졌다.'}]]
+   :[['당권파로 옮긴다',()=>{S.align='main';chg({party:7,support:-2,integrity:-2});return '"철새" 소리를 들었지만 공천 걱정은 줄었다.'}],['비주류를 지킨다',()=>{chg({integrity:3,party:-2});return '밥값은 내가 냈다.'}]]},
+{id:'pp_purge',w:5,tag:'공천 학살',px:'press|rep,me|cam,exclaim',c:()=>twoParty()&&S.align==='non'&&elecKinds(S.year+1).includes('general')&&!big()&&S.purge!==S.year+1,t:'"공천 살생부"에 내 이름이 있다',b:'총선을 앞두고 당권파가 비주류 현역을 대거 물갈이한다는 "살생부"가 돈다. 내 이름이 세 번째 줄에 있다.',
+ ch:()=>{const o=[['주류에 투항한다',()=>{S.align='main';chg({party:5,integrity:-3,mental:-4});return '지도부에 고개를 숙였다. 살생부에서 이름이 지워졌다는 소문.'}],
+   ['버틴다',()=>{S.purge=S.year+1;chg({fame:4,support:2});return '"공천 학살 저지" 기자회견을 열었다. 공천 심사에서 감점을 각오해야 한다.'}]];
+   if(s().fame>=35)o.push(['탈당하고 신당을 만든다',()=>{S.q=S.q||[];S.q.unshift({type:'ev',id:'pp_found'});chg({fame:6});return '"정치를 새로 하겠다." 탈당 기자회견장에 기자 80명이 몰렸다.'}]);return o}},
+{id:'pp_offer',w:2,tag:'신당',px:'office|cit,me,aide|banner',c:()=>(twoParty()&&s().party<25&&s().fame>=40&&!isPres())||(S.party==='ind'&&s().fame>=45&&!isPres()),t:'"제3지대 신당, 당신이 대표를 맡아 주시오"',b:'양당 정치에 질린 현역 의원 넷과 시민단체 인사들이 신당 창당을 제안한다. 대표 자리를 맡아 달라고 한다.',
+ ch:[['창당에 나선다',()=>{S.q=S.q||[];S.q.unshift({type:'ev',id:'pp_found'});chg({fame:4});return '창당 준비위원회가 꾸려졌다. 이제 당 이름을 정해야 한다.'}],
+     ['아직은 때가 아니다',()=>{chg({mental:2});return '"간만 보다 끝났다"는 평이 나왔다.'}]]},
+{id:'pp_found',core:true,tag:'창당',px:'stage|aide,me^,aide|banner',t:'신당의 이름을 정하자',b:'창당 대회가 코앞이다. 당명 후보 네 개가 올라왔다. 지지율은 한 자릿수에서 시작할 것이다. 양당 공천은 사라지고, 지역 기반 대신 바람에 기대야 한다.',
+ ch:()=>NP_NAMES.map(n=>[`「${n}」`,()=>{foundParty(n);return `「${n}」 창당 대회. 당원 2만 명이 가입했다. 첫 여론조사 지지율 ${S.pop.np}%.`}])},
+{id:'np_cash',w:3,tag:'신당',px:'office|aide,me|cash',c:()=>S.party==='np',t:'당 금고가 바닥났다',b:()=>`「${S.npName}」은 국고보조금이 거의 없다. 당직자 월급날이 다가온다.`,
+ ch:[['사재를 턴다',()=>{chg({money:-Math.round(1500*TM()),party:3,org:3});return '대표 개인 통장에서 당직자 월급이 나갔다.'}],
+     ['특별당비를 걷는다',()=>{chg({org:-3,money:Math.round(300*TM())});return '소속 의원들이 투덜대며 냈다.'}],
+     ['큰손 후원자를 찾는다',()=>{chg({money:Math.round(1200*TM()),integrity:-6});if(R()<.3)addCase('불법 정치자금(창당 자금)',2);return '창당 자금 출처를 묻는 기사가 났다.'}]]},
+{id:'np_merge',w:3,tag:'합당',px:'hall|riv,me|',c:()=>S.party==='np'&&S.year-S.npFounded>=2,t:'거대 양당 한 곳이 합당을 제안한다',b:()=>`「${S.npName}」 지지율 ${S.pop.np}%. ${S.pop.np<10?'다음 총선 생존이 위태롭다.':'캐스팅보트를 쥐었다.'} 한 거대 정당이 "당대 당 통합, 공동대표"를 제안한다.`,
+ ch:()=>{const p=S.pop.jj>=S.pop.sm?'jj':'sm';return[[`${PARTIES[p].n}과 합당`,()=>{const nm=S.npName;S.party=p;document.body.dataset.party=p;S.s.party=60;S.pf=null;pfInit();S.align='non';addLog(`「${nm}」, ${PARTIES[p].n}과 합당.`);return `합당 선언. 신당 지지자 절반은 "배신"이라며 떠났다. 이제 ${PARTIES[p].n} 비주류 수장이다.`}],
+   ['독자 노선',()=>{S.pop.np=clamp(S.pop.np+ri(-2,3),3,40);chg({integrity:3,fame:2});return '"끝까지 간다." 지지자들은 열광했고 의원 한 명이 탈당했다.'}]]}},
+{id:'np_poach',w:3,tag:'영입',px:'press|me,aide|podium,cam',c:()=>S.party==='np',t:'현역 의원 영입전',b:'양당에서 공천이 불투명한 현역 의원 셋이 신당 합류를 저울질한다. 영입하면 몸집은 커지지만 "이삭줍기"라는 비판이 붙는다.',
+ ch:[['셋 다 영입한다',()=>{S.pop.np=clamp(S.pop.np+ri(2,5),3,40);chg({org:5,integrity:-2});return '창당 이후 최대 규모 입당식. 뉴스엔 "이삭줍기"도 함께 나왔다.'}],
+     ['한 명만, 깨끗한 사람으로',()=>{S.pop.np=clamp(S.pop.np+1,3,40);chg({integrity:2,org:2});return '조용한 영입. 신당다운 선택이라는 평.'}]]},
 // ---- 대통령 국정 운영 ----
 {id:'pg_cab',core:true,tag:'조각',px:'office|aide,me,aide|desk',t:'첫 내각, 누구로 채울까',b:()=>`취임 첫해. 총리와 장관 18명을 지명해야 한다. ${myMaj()===false?'야당이 과반인 국회 인사청문회가 기다린다.':'청문회는 여당이 주도한다.'}`,
  ch:[['탕평 내각: 야당 인사까지 기용',()=>{S.gov.cab='tang';S.gov.deal=S.year+1;chg({support:5,party:-6,integrity:2});return '"협치 내각" 평가. 여당에서는 "우리는 뭐 했냐"는 불만이 터졌다.'}],
@@ -1271,7 +1299,7 @@ const FIG_GOOD=[
 
 function addCase(name,sev){S.cases.push({name,sev,y:S.year})}
 function joinParty(p,offer){
-  S.party=p;S.joined=true;S.ticket=true;S.s.party=clamp(28+(offer?8:0)+Math.round(s().fame/6),0,100);
+  S.party=p;S.joined=true;S.ticket=true;S.pf=null;S.align='main';S.s.party=clamp(28+(offer?8:0)+Math.round(s().fame/6),0,100);
   chg({money:1500,support:3,fame:4});
   document.body.dataset.party=p;
   addLog(`${PARTIES[p].n} 입당 (영입 인재). 중앙당 지원금·공천 가산점 획득.`);
@@ -1297,7 +1325,7 @@ function buildQueue(){
   if(isPres()&&S.trialHold&&!S.haltShown){S.haltShown=1;q.splice(1,0,{type:'ev',id:'p_halt'})}
   if(!isPres())q.push({type:'ev',id:'c_fund'});
   if(isNat()&&member()&&(S.held.nat||0)+(S.held.natp||0)>=2&&!S.titles.chair&&(S.year-2029)%2===0)q.push({type:'chair'});
-  if(isNat()&&member()&&!S.titles.leader&&s().party>=55&&(S.year-2027)%2===0)q.push({type:'leader'});
+  if(isNat()&&twoParty()&&!S.titles.leader&&s().party>=55&&(S.year-2027)%2===0)q.push({type:'leader'});
   if(S.trial&&S.trial.started<S.year)q.push({type:'trial'});
   else if(!S.trial&&S.cases.length&&!isPres()){
     S.cases=S.cases.filter(c=>S.year-c.y<7);
@@ -1311,7 +1339,7 @@ function buildQueue(){
 }
 
 /* ============ 픽셀 아트 (256×128) ============ */
-const PHEX={jj:'#2f6be0',sm:'#e0384c',ind:'#8a9099'};
+const PHEX={jj:'#2f6be0',sm:'#e0384c',ind:'#8a9099',np:'#e07b1a'};
 const K='#1b1b22';let PF=0,PXS='',PXT=null;
 function hx(c){c=c.replace('#','');return[0,2,4].map(i=>parseInt(c.slice(i,i+2),16))}
 function toHex(a){return'#'+a.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('')}
@@ -1978,6 +2006,7 @@ function hdrHTML(){
       <div class="popbar" role="img" aria-label="정당 지지율"><i style="width:${popJ}%"></i><i style="width:${popS}%"></i></div>
       <span class="num" style="color:var(--sm)">${popS}%</span></div>
     <div class="muted" style="font-size:12px;margin-top:4px">정당 지지율 · 여당: ${S.ruling==='ind'?'무소속 대통령':PARTIES[S.ruling].n} · 대통령 지지율 <b class="num" style="color:${presAp()<30?'var(--bad)':'inherit'}">${presAp()}%</b></div>
+    ${pfBar()}
     <details class="reqs"><summary>출마 조건 보기</summary><ul>${['basic','metro','mayor','nat','natp','gov','pres'].map(o=>`<li><span class="${reqMet(o)?'ok':'no'}">${reqMet(o)?'충족':'미충족'}</span><b>${OFF[o].full}</b> <span class="muted">${{local:'지방선거',general:'총선',pres:'대선'}[ELEC_OF[o]]} ${nextElecYear(ELEC_OF[o],S.year-1)}</span><br><small class="muted">${reqTxt(o)}</small></li>`).join('')}</ul></details>
     <div class="region"><div><span class="label">${esc(RR.n)}</span> ${RR.t}</div>
       <div><span class="label">${esc(curD()[0])}</span> ${dt.n} · ${dt.t}${member()?` · 우리 당 기준 <b>${leanTxt(leanFor(S.party))}</b>`:''}</div><div><span class="label">살림</span> ${distTxt()}</div></div>
@@ -2089,7 +2118,7 @@ function renderQueueItem(st){
   if(it.type==='ev')renderEvent(st,EV.find(e=>e.id===it.id));
   else if(it.type==='fig')renderFig(st);
   else if(it.type==='chair')renderChair(st);
-  else if(it.type==='leader')renderLeader(st);
+  else if(it.type==='leader')renderLeader2(st);
   else if(it.type==='detect')renderDetect(st);
   else if(it.type==='trial')renderTrial(st);
   else if(it.type==='elec')renderElection(st);
@@ -2107,7 +2136,7 @@ function renderEvent(st,e){
 }
 function renderFig(st){
   if(!S.fig){
-    const target=member()?(R()<.7?S.party:other(S.party)):pick(['jj','sm']);
+    const target=twoParty()?(R()<.7?S.party:other(S.party)):pick(['jj','sm']);
     const personal=member()&&target===S.party&&!big()&&R()<.18;
     const good=R()<.42;
     const tpl=personal?null:pick(good?FIG_GOOD:FIG_BAD);
@@ -2287,8 +2316,9 @@ function reqTxt(o){return o==='gov'&&curR().jeju?OFFREQ.gov+' (제주는 도의�
 function eligible(kind){return KIND_OFF[kind].filter(o=>!(curR().jeju&&(o==='basic'||o==='mayor'))&&reqMet(o)&&!(o==='pres'&&isPres())&&!(o==='natp'&&S.elec&&S.elec.pfail))}
 function nomProb(off){
   if(off==='basic'&&S.office==='basic')return .9;
+  if(S.party==='np')return .97;
   let th=OFF[off].th;if(off!=='pres'&&curR().fx.nomTh&&leanFor(S.party,false)>=8)th+=curR().fx.nomTh;
-  const sc=s().party*.35+s().fame*.2+s().support*.2+route(off)*.25+(S.office===off?8:0)+(S.ticket?15:0)+(isHard()&&off!=='pres'?8:0)+(off==='pres'?(S.presCamp===S.year?6:S.presCamp===-S.year?1:-12):0)-(rvSame()?(S.rival.power-50)*.15:0)-(S.trial?15:0)-(s().integrity<30?8:0);
+  const sc=s().party*.35+s().fame*.2+s().support*.2+route(off)*.25+(S.office===off?8:0)+(S.ticket?15:0)+(isHard()&&off!=='pres'?8:0)+(off==='pres'?(S.presCamp===S.year?6:S.presCamp===-S.year?1:-12):0)-(rvSame()?(S.rival.power-50)*.15:0)-(S.trial?15:0)-(s().integrity<30?8:0)+(twoParty()&&S.align?(S.align==='main'?6:-6):0)+(S.purge===S.year?-15:0);
   return clamp(1/(1+Math.exp(-(sc-th)/6)),.03,.97);
 }
 function lvl(p){return p>.75?'높음':p>.45?'보통':p>.2?'낮음':'매우 낮음'}
@@ -2444,7 +2474,7 @@ function tally(E){
   D=E.d0||[];const off=E.off,o=OFF[off],RR=curR(),dt=DTYPE[curD()[3]];chg({money:-E.cost-(E.dep||0)});
   E.name=offName(off);E.party=S.party;
   let p=s().support*.45+s().fame*.22+route(off)*.3+[-8,0,5,11][E.lv]+(S.office===off?5:0);
-  if(member()){p+=(S.pop[S.party]-S.pop[other(S.party)])*.35*(RR.fx.popMul||1);
+  if(member()){p+=(S.party==='np'?(S.pop.np-22):(S.pop[S.party]-S.pop[other(S.party)]))*.35*(RR.fx.popMul||1);
     if(off==='gov')p+=leanFor(S.party,false);else if(off!=='pres')p+=leanFor(S.party);
     if(off!=='pres'){const j=(presAp()-45)*.25;p+=S.ruling===S.party?j:-j*.6}else if(S.ruling===S.party&&!isPres())p+=(presAp()-45)*.3;else p-=(presAp()-45)*.2}
   else if(!RR.fx.indOk)p-=off==='basic'?3:8;
@@ -2465,7 +2495,7 @@ function tally(E){
     S.office=off;S.termEnd=S.year+(off==='pres'?5:4);S.held[off]=(S.held[off]||0)+1;S.stats.wins++;
     if(o.tier>OFF[S.best].tier||(o.tier===OFF[S.best].tier&&off!==S.best&&off==='nat')){S.best=off;S.bestName=E.name}
     if(off==='pres'){S.ruling=S.party;S.presFrom=S.year;if(S.trial){S.trialHold=S.trial;S.trial=null;S.haltShown=0;achMark('halt');addLog(`대통령 당선으로 '${S.trialHold.name}' 재판이 중지됐다 (헌법 제84조).`)}}
-    if(S.togulRet){achMark('togul');S.togulRet=0}if(off==='nat'&&!member())achMark('indnat');if(off==='nat'&&member()&&isHard())achMark('hardnat');if(S.joined&&member())achMark('joinwin');if(E.share>=65)achMark('land');if(E.riv&&E.share-E.rshare<=.5)achMark('squeak');
+    if(S.togulRet){achMark('togul');S.togulRet=0}if(S.party==='np'&&OFF[off].tier>=3)achMark('npwin');if(off==='nat'&&!member())achMark('indnat');if(off==='nat'&&member()&&isHard())achMark('hardnat');if(S.joined&&member())achMark('joinwin');if(E.share>=65)achMark('land');if(E.riv&&E.share-E.rshare<=.5)achMark('squeak');
     chg({fame:8,mental:5});S.idle=0;S.togul=0;
     S.path=(S.path||[]);S.path.push([S.year,E.name]);addLog(`${E.name} 당선 (${E.share}%).`);
     E.html=`<b>당선!</b> ${E.name}${S.held[off]>1?' ('+S.held[off]+'선)':''}. 득표율 ${E.share}%.${E.riv?` 라이벌 ${E.rname}을 ${(E.share-E.rshare).toFixed(1)}%p 차로 눌렀다.`:''}${refund?' 기탁금·선거비용 '+won(refund)+' 보전.':''}`;
@@ -2503,6 +2533,8 @@ function yearEnd(){
   {const ek=elecKinds(S.year);if(ek.includes('local'))S.maj.local=calcLocalMaj();if(ek.includes('general'))S.maj.nat=calcNatMaj();
    if(ek.length&&myMaj()!==null)notes.push(majLabel())}
   for(const p of ['jj','sm'])S.pop[p]=clamp(Math.round(S.pop[p]+(35-S.pop[p])*.25+ri(-3,3)),15,60);
+  if(S.pop.np!=null)S.pop.np=clamp(Math.round(S.pop.np+(11-S.pop.np)*.15+ri(-2,2)),3,40);
+  pfInit();pfYear(notes);
   if(S.crisis&&S.crisis.left>0){const C=CRISES[S.crisis.k],i=C.dur-S.crisis.left,rp=rulingP(),adj=S.crisis.adj||0;
     const hit=Math.max(-6,C.hit[i]-adj);S.pop[rp]=clamp(S.pop[rp]-hit,15,60);S.pop[other(rp)]=clamp(S.pop[other(rp)]+Math.round(hit/2),15,60);
     S.presAp=clamp((S.presAp==null?50:S.presAp)+C.ap+adj*2,8,80);S.crisis.adj=Math.round(adj/2);
@@ -2552,6 +2584,43 @@ const ENDS={
   forgotten:{t:'잊혀진 정치인',b:'10년의 야인 생활. 사람들은 이름을 기억하지 못한다.'},
   retire:{t:'정계 은퇴 선언',b:'스스로 내려놓았다. 기자회견장이 조용했다.'},
 };
+/* ============ 정당 내부 정치 ============ */
+const NP_NAMES=['다음세대당','상식연합','제3지대당','내일로당'];
+const twoParty=()=>S.party==='jj'||S.party==='sm';
+function pfInit(){if(!twoParty())return;if(!S.pf||S.pf.p!==S.party){S.pf={p:S.party,main:ri(48,60)};S.align=S.align||(R()<.5?'main':'non')}}
+function npDefine(){if(S&&S.npName){PARTIES.np={n:S.npName,s:S.npName,no:'3'}}}
+function foundParty(name){S.npName=name;npDefine();const from=S.party;S.party='np';S.pop.np=clamp(Math.round(7+s().fame/8),6,22);S.s.party=95;S.titles.chair=0;S.titles.leader=0;S.pf=null;S.align=null;S.npFounded=S.year;S.ticket=false;
+  document.body.dataset.party='np';addLog(`${from==='ind'?'무소속에서':PARTIES[from].n+'을 탈당하고'} 「${name}」을 창당했다.`);achMark('newparty')}
+function pfBar(){if(!twoParty()||!S.pf)return S.party==='np'?`<div class="muted" style="font-size:12px;margin-top:6px">${esc(S.npName)} 지지율 <b class="num">${S.pop.np}%</b> · 창당 ${S.year-S.npFounded+1}년차 · 당대표 ${esc(S.name)}</div>`:'';
+  const f=(S.fac||0)>=3?Math.min(20,S.fac*1.5):0,m=Math.round(S.pf.main*(100-f)/100),n=Math.round(100-m-f);
+  return `<div class="pfmap"><span class="label">${PARTIES[S.party].s} 당내 구도</span><div class="pfbar" role="img" aria-label="주류 ${m}%, 비주류 ${n}%${f?', 내 계파 '+Math.round(f)+'%':''}"><i class="m" style="width:${m}%">주류 ${m}%</i><i class="n" style="width:${n}%">비주류 ${n}%</i>${f?`<i class="o" style="width:${f}%">친${esc(S.name.slice(-1))}</i>`:''}</div><small class="muted">나는 <b>${S.align==='main'?'주류(당권파)':'비주류'}</b>${f?' · 내 계파 운영 중':''}</small></div>`}
+function pfYear(notes){if(!twoParty()||!S.pf)return;S.pf.main=clamp(S.pf.main+ri(-4,4),35,70);
+  if((S.year-2027)%2===0&&!S.titles.leader){const keep=R()<S.pf.main/100+.1;if(!keep){S.pf.main=100-S.pf.main+ri(0,6);S.align=S.align==='main'?'non':'main';notes.push(`${PARTIES[S.party].s} 지도부 교체: 이제 내 쪽이 ${S.align==='main'?'주류':'비주류'}`);addLog(`당 지도부가 바뀌어 ${S.align==='main'?'주류가 됐다':'비주류로 밀려났다'}.`)}}
+  if(S.titles.leader)S.align='main'}
+function renderLeader2(st){const L=S.ldr||(S.ldr={step:0});const fb=Math.min(.12,(S.fac||0)/100);
+  if(L.step===0){st.innerHTML=`${pxTag('전당대회')}<div class="news"><span class="tag ink">전당대회</span><h3>당대표 선출 전당대회</h3>
+    <p class="body">${PARTIES[S.party].n} 전당대회. 당원 투표 70%와 국민 여론조사 30%를 합산한다. 나는 ${S.align==='main'?'<b>주류</b> 후보로 당원 조직이 탄탄하다':'<b>비주류</b> 후보라 당원 표가 약한 대신 여론에 기대야 한다'}.${fb>0?' 내 계파가 조직표를 몰아준다.':''}</p></div>
+    <div class="choices"><button class="choice" id="c1" ${s().money<3000?'disabled':''}><span>당대표에 출마한다</span><small>${won(3000)}${s().money<3000?' · 자금 부족':''}</small></button><button class="choice" id="c2"><span>최고위원 후보를 밀어준다</span></button></div>`;
+    paint('stage|me^,crowd|banner');
+    document.getElementById('c1').onclick=()=>{D=[];chg({money:-3000});L.d0=D.slice();L.step=1;save();render()};
+    document.getElementById('c2').onclick=()=>{D=[];S.ldr=null;chg({party:4,org:2});finish('<b>킹메이커 역할.</b><br>새 지도부에 빚을 하나 만들었다.')};return}
+  if(L.step===1){st.innerHTML=`${pxTag('TV 토론')}<div class="news"><span class="tag ink">TV 토론</span><h3>당대표 후보 TV 토론</h3><p class="body">상대 후보가 "당을 어디로 끌고 갈 거냐"고 묻는다. 당원과 일반 국민이 원하는 답은 다르다.</p></div>
+    <div class="choices"><button class="choice" data-s="hard"><span>"선명한 야성, 정체성 회복"</span><small>당원 표 ↑ · 여론 ↓</small></button><button class="choice" data-s="mid"><span>"중도로 넓혀야 이긴다"</span><small>여론 ↑ · 당원 표 ↓</small></button><button class="choice" data-s="uni"><span>"계파 없는 통합 지도부"</span><small>양쪽 조금씩</small></button></div>`;
+    paint('tv|me,riv|cam');
+    st.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{const sp=s().speech,good=R()<.35+sp/200;L.stance=b.dataset.s;L.good=good;L.step=2;save();render()});return}
+  if(L.step===2){D=L.d0||[];if(L.mem==null){const adj={hard:[9,-6],mid:[-6,9],uni:[3,3]}[L.stance]||[0,0],g=L.good?4:-3;
+      L.mem=+clamp(42+(s().party-55)*.45+(S.align==='main'?7:-6)+fb*60+adj[0]+g+gauss()*5,15,85).toFixed(1);
+      L.pub=+clamp(40+(s().fame-50)*.35+(s().support-35)*.3+adj[1]+g+gauss()*5,15,85).toFixed(1);
+      L.tot=+(L.mem*.7+L.pub*.3).toFixed(1);L.win=L.tot>50;save()}
+    st.innerHTML=`${pxTag('개표')}<div class="news"><span class="tag ink">전당대회 결과</span><h3>${L.good?'토론은 선방했다':'토론에서 말이 꼬였다'}</h3></div>
+      <div class="count"><div class="row" style="justify-content:space-between"><span>당원 투표 (70%)</span><span class="num">${L.mem}%</span></div><div class="track"><div class="fill" id="lm"></div><div class="half"></div></div>
+      <div class="row" style="justify-content:space-between;margin-top:8px"><span>국민 여론조사 (30%)</span><span class="num">${L.pub}%</span></div><div class="track"><div class="fill" id="lp"></div><div class="half"></div></div>
+      <div class="row" style="justify-content:space-between;margin-top:8px"><b>합산</b><b class="num pct">${L.tot}%</b></div></div>
+      <button class="btn primary" id="lok">결과 확인</button>`;
+    paint('stage|me^,crowd|banner');requestAnimationFrame(()=>{const a=document.getElementById('lm'),b=document.getElementById('lp');if(a)a.style.width=L.mem+'%';if(b)b.style.width=L.pub+'%'});
+    document.getElementById('lok').onclick=()=>{D=L.d0||[];const w=L.win;S.ldr=null;
+      if(w){S.titles.leader=S.year+2;S.everLeader=true;S.align='main';if(S.pf)S.pf.main=Math.max(S.pf.main,55);withMode('ev',()=>chg({fame:12,party:10,speech:3}));addLog(`당대표 당선 (${L.tot}%).`);finish(`<b>당대표 당선!</b> 합산 ${L.tot}%.<br>당의 얼굴이 됐다. 내 쪽이 주류가 됐다.`)}
+      else{chg({party:-4,mental:-8,fame:4});addLog(`전당대회 낙선 (${L.tot}%).`);finish(`<b>낙선.</b> 합산 ${L.tot}%.<br>${L.mem<45?'당원 조직에서 밀렸다.':'여론에서 밀렸다.'} 인지도는 얻었다.`)}};return}}
 /* ============ 대통령 국정 운영 ============ */
 const AGENDA={
   chip:{n:'반도체·AI 메가 투자',d:'성장률과 일자리',fx:{policy:3}},
@@ -2653,6 +2722,8 @@ const ACH=[
  ['presok','그리운 대통령','퇴임 지지율 60% 이상 대통령',x=>x.end==='pres'&&(x.leaveSup||0)>=60],
  ['prestop','역대 1위','퇴임 평가 역대 대통령 1위',x=>x.presEv&&x.presEv.rank===1],
  ['agenda2','공약 완수','국정과제 2개를 모두 완수',x=>x.presEv&&x.presEv.fin>=2],
+ ['newparty','창당','신당을 창당한다',x=>x.ach&&x.ach.newparty],
+ ['npwin','제3지대 금배지','신당 간판으로 국회의원·단체장 당선',x=>x.ach&&x.ach.npwin],
  ['allbg','팔방미인','모든 출신으로 한 번씩 완주',null],
 ];
 const ACHM=Object.fromEntries(ACH.map(a=>[a[0],a]));
@@ -2694,7 +2765,7 @@ const ENDPX={presjail:'court|judge,me,judge|gavel',pres:'hall|aide,me^,aide|bann
 function careerLine(){const p=(S.path||[]);return p.length?p.map(x=>x[1]).filter((v,i,a)=>a.indexOf(v)===i):[OFF[S.best].full]}
 function shareText(){return cardText(cardData())}
 function shareTextOld(){const e=ENDS[S.end];return `[정치인키우기] ${S.name} (${PARTIES[S.party].s}) · ${S.startYear}–${S.year}\n엔딩: ${S.grade||e.t}\n경력: ${careerLine().join(' → ')}\n선거 ${S.stats.wins}승 ${S.stats.losses}패 · 재판 ${S.stats.trials}건 · 청렴도 ${s().integrity}${S.rival?`\n라이벌 ${S.rival.name} 상대 ${S.rival.l}승 ${S.rival.w}패`:''}`}
-function cardData(){return{name:S.name,party:S.party,age:S.age,y0:S.startYear,y1:S.year,end:S.end,grade:S.grade||ENDS[S.end].t,career:careerLine(),
+function cardData(){return{name:S.name,party:S.party,pn:(PARTIES[S.party]||PARTIES.ind).n,age:S.age,y0:S.startYear,y1:S.year,end:S.end,grade:S.grade||ENDS[S.end].t,career:careerLine(),
   w:S.stats.wins,l:S.stats.losses,tr:S.stats.trials,rv:S.rival?{n:S.rival.name,l:S.rival.l,w:S.rival.w}:null,st:{fame:s().fame,support:s().support,integrity:s().integrity},look:Object.assign({},S.look||{})}}
 function hofCard(h){return h.card||{name:h.name,party:h.party,y1:h.y,grade:h.end,career:[h.best],old:1}}
 function cardText(cd){return `[정치인키우기] ${cd.name} (${(PARTIES[cd.party]||PARTIES.ind).s})${cd.y0?` · ${cd.y0}–${cd.y1}`:''}\n엔딩: ${cd.grade}\n경력: ${cd.career.join(' → ')}`+(cd.old?'':`\n선거 ${cd.w}승 ${cd.l}패 · 재판 ${cd.tr}건 · 청렴도 ${cd.st.integrity}${cd.rv?`\n라이벌 ${cd.rv.n} 상대 ${cd.rv.l}승 ${cd.rv.w}패`:''}`)}
@@ -2710,7 +2781,7 @@ function makeCard(cd,img){
     try{drawPx(ENDPX[cd.end]||'stage|me^,crowd|flower',off)}catch(e){}finally{S=S0}
     x.imageSmoothingEnabled=false;x.fillStyle=ink;x.fillRect(32,86,W-64,(W-64)/2+8);x.drawImage(off,36,90,W-72,(W-72)/2);
     let y=90+(W-72)/2+64;
-    x.fillStyle=pc;x.font=`600 22px ${body}`;x.fillText(`${(PARTIES[cd.party]||PARTIES.ind).n}${cd.age?` · ${cd.age}세`:''}`,36,y);y+=56;
+    x.fillStyle=pc;x.font=`600 22px ${body}`;x.fillText(`${cd.pn||(PARTIES[cd.party]||PARTIES.ind).n}${cd.age?` · ${cd.age}세`:''}`,36,y);y+=56;
     x.fillStyle=ink;x.font=`52px ${disp}`;x.fillText(cd.name,36,y);y+=58;
     x.font=`36px ${disp}`;x.fillStyle=cd.end==='pres'?'#1E8A4C':['jail','impeach','presjail'].includes(cd.end)?'#C2321F':ink;x.fillText(cd.grade,36,y);y+=40;
     x.strokeStyle='#D6DADB';x.lineWidth=2;x.beginPath();x.moveTo(36,y);x.lineTo(W-36,y);x.stroke();y+=40;
@@ -2802,7 +2873,7 @@ function renderEnding(){
 
 /* ============ 시작 ============ */
 function initDl(){try{if(window.claude&&window.claude.use)window.claude.use('downloads').then(d=>{UI.dl=d},()=>{})}catch(e){}}
-function fixup(){if(S&&S.v===4&&!S.rival&&S.phase!=='ending'){S.rival=mkRival()}}
+function fixup(){npDefine();if(S&&S.v===4&&!S.rival&&S.phase!=='ending'){S.rival=mkRival()}}
 function boot(data){
   if(data&&data.S&&data.S.v===4)S=data.S;else{const sv=store.get('pol-save');S=null;UI.resume=sv}
   render();setTimeout(initDl,0);
