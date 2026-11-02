@@ -57,7 +57,11 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .chooser button small{color:var(--muted);font-size:12px}
 .chooser button b{font-size:14px}
 .hof{display:flex;flex-direction:column;gap:6px;font-size:13px}
-.hof div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding-bottom:4px}
+.hof button{display:flex;justify-content:space-between;gap:10px;border:0;border-bottom:1px dashed var(--line);background:none;padding:6px 2px;text-align:left;font-size:13px;border-radius:4px}
+.hof button:hover{background:var(--card2)}
+.hof button>span:last-child{text-align:right;color:var(--muted)}
+.viewer.hofv{z-index:45}.viewer.hofv img{max-height:70vh}
+.hofv[hidden]{display:none}
 
 /* ---------- game header ---------- */
 .hdr{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;border-top:6px solid var(--p)}
@@ -1772,8 +1776,16 @@ function renderStart(){
     <div class="row"><button class="btn primary" id="go">출마 등록 · 2026년 시작</button><span class="muted" style="font-size:13px">35세, 2026 지방선거에서 당선된 직후부터 시작합니다. 65세부터는 선거에 나가지 않고 남은 임기와 재판을 정리합니다.</span></div>
   </section>
   <section class="card"><h3 style="font-size:17px;margin-bottom:8px">명예의 전당</h3>
-    ${hof.length?`<div class="hof">${hof.slice(0,8).map(h=>`<div><span><b>${esc(h.name)}</b> <span class="muted">${PARTIES[h.party]?PARTIES[h.party].s:''}</span></span><span>${esc(h.best)} · ${esc(h.end)}</span></div>`).join('')}</div>`:'<p class="muted" style="margin:0">아직 기록이 없습니다. 첫 번째 정치인이 되어 보세요.</p>'}
-  </section>`;
+    ${hof.length?`<p class="muted" style="margin:0 0 8px;font-size:12px">이름을 누르면 그때의 결과 카드를 다시 볼 수 있어요.</p><div class="hof">${hof.slice(0,12).map((h,i)=>`<button type="button" data-hof="${i}"><span><b>${esc(h.name)}</b> <span class="muted">${PARTIES[h.party]?PARTIES[h.party].s:''}${h.y?' · '+h.y:''}</span></span><span>${esc(h.best)} · ${esc(h.end)}</span></button>`).join('')}</div>`:'<p class="muted" style="margin:0">아직 기록이 없습니다. 첫 번째 정치인이 되어 보세요.</p>'}
+  </section>
+  <div class="viewer hofv" id="hofv" hidden role="dialog" aria-label="지난 결과 카드"><img id="hofImg" alt="지난 정치 인생 결과 카드">
+    <div class="row" style="justify-content:center"><button class="btn party" id="hofShare">공유하기</button><button class="btn" id="hofx">닫기</button></div>
+    <textarea id="cpyTxt" readonly hidden></textarea><span id="cpyMsg" style="color:#eceeef;font-size:13px"></span></div>
+  ${sheetHTML()}`;
+  {const hv=document.getElementById('hofv'),hi=document.getElementById('hofImg');let cur=null;
+   $app.querySelectorAll('[data-hof]').forEach(b=>b.onclick=()=>{const h=hof[+b.dataset.hof];if(!h)return;cur=hofCard(h);hi.removeAttribute('src');hv.hidden=false;makeCard(cur,hi);document.getElementById('hofx').focus()});
+   document.getElementById('hofx').onclick=()=>{hv.hidden=true};hv.onclick=e=>{if(e.target===hv)hv.hidden=true};
+   document.getElementById('hofShare').onclick=()=>{if(cur)openSheet(cardText(cur))}}
   const nm=document.getElementById('nm');nm.oninput=()=>c.name=nm.value;
   $app.querySelectorAll('.ballot button').forEach(b=>b.onclick=()=>{c.party=b.dataset.party;renderStart()});
   $app.querySelectorAll('#rg button').forEach(b=>b.onclick=()=>{c.region=b.dataset.k;c.dist=0;renderStart()});
@@ -2199,40 +2211,55 @@ function endGame(kind){
   if(kind==='presjail')grade=`${S.exPres?'퇴임 후 감옥 간 대통령':'임기 중 구속된 대통령'} ${S.name}`;
   if(kind==='age'&&S.taint)grade='유죄 판결로 얼룩진 은퇴';
   S.grade=grade;
-  const hof=store.get('pol-hof')||[];hof.unshift({name:S.name,party:S.party,best:S.bestName||OFF[S.best].n,end:grade||ENDS[kind].t,y:S.year});store.set('pol-hof',hof.slice(0,30));
+  const hof=store.get('pol-hof')||[];hof.unshift({name:S.name,party:S.party,best:S.bestName||OFF[S.best].n,end:grade||ENDS[kind].t,y:S.year,card:cardData()});store.set('pol-hof',hof.slice(0,30));
   store.del('pol-save');render();window.scrollTo(0,0);
 }
 const ENDPX={presjail:'court|judge,me,judge|gavel',pres:'hall|aide,me^,aide|banner',impeach:'court|judge,me,judge|gavel,xmark',jail:'court|judge,me|gavel',burnout:'hospital|doc,me|',age:'stage|me^,crowd|flower',forgotten:'night|me|',retire:'press|me|podium,cam'};
 function careerLine(){const p=(S.path||[]);return p.length?p.map(x=>x[1]).filter((v,i,a)=>a.indexOf(v)===i):[OFF[S.best].full]}
-function shareText(){const e=ENDS[S.end];return `[정치인키우기] ${S.name} (${PARTIES[S.party].s}) · ${S.startYear}–${S.year}\n엔딩: ${S.grade||e.t}\n경력: ${careerLine().join(' → ')}\n선거 ${S.stats.wins}승 ${S.stats.losses}패 · 재판 ${S.stats.trials}건 · 청렴도 ${s().integrity}${S.rival?`\n라이벌 ${S.rival.name} 상대 ${S.rival.l}승 ${S.rival.w}패`:''}`}
-function makeCard(){
-  const img=document.getElementById('shareImg');if(!img)return;
+function shareText(){return cardText(cardData())}
+function shareTextOld(){const e=ENDS[S.end];return `[정치인키우기] ${S.name} (${PARTIES[S.party].s}) · ${S.startYear}–${S.year}\n엔딩: ${S.grade||e.t}\n경력: ${careerLine().join(' → ')}\n선거 ${S.stats.wins}승 ${S.stats.losses}패 · 재판 ${S.stats.trials}건 · 청렴도 ${s().integrity}${S.rival?`\n라이벌 ${S.rival.name} 상대 ${S.rival.l}승 ${S.rival.w}패`:''}`}
+function cardData(){return{name:S.name,party:S.party,age:S.age,y0:S.startYear,y1:S.year,end:S.end,grade:S.grade||ENDS[S.end].t,career:careerLine(),
+  w:S.stats.wins,l:S.stats.losses,tr:S.stats.trials,rv:S.rival?{n:S.rival.name,l:S.rival.l,w:S.rival.w}:null,st:{fame:s().fame,support:s().support,integrity:s().integrity},look:Object.assign({},S.look||{})}}
+function hofCard(h){return h.card||{name:h.name,party:h.party,y1:h.y,grade:h.end,career:[h.best],old:1}}
+function cardText(cd){return `[정치인키우기] ${cd.name} (${(PARTIES[cd.party]||PARTIES.ind).s})${cd.y0?` · ${cd.y0}–${cd.y1}`:''}\n엔딩: ${cd.grade}\n경력: ${cd.career.join(' → ')}`+(cd.old?'':`\n선거 ${cd.w}승 ${cd.l}패 · 재판 ${cd.tr}건 · 청렴도 ${cd.st.integrity}${cd.rv?`\n라이벌 ${cd.rv.n} 상대 ${cd.rv.l}승 ${cd.rv.w}패`:''}`)}
+function makeCard(cd,img){
+  cd=cd||cardData();img=img||document.getElementById('shareImg');if(!img)return;UI.cardBlob=null;UI.cardName=cd.name;UI.cardGrade=cd.grade;
   const go=()=>{try{
     const W=720,H=1000,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');if(!x)return;
-    const pc=PHEX[S.party]||'#8a9099',ink='#15191E',paper='#F3F1EC',mut='#5D646C',disp='"Black Han Sans","Malgun Gothic",sans-serif',body='"IBM Plex Sans KR","Malgun Gothic",sans-serif',num='"IBM Plex Mono",monospace';
+    const pc=PHEX[cd.party]||'#8a9099',ink='#15191E',paper='#F3F1EC',mut='#5D646C',disp='"Black Han Sans","Malgun Gothic",sans-serif',body='"IBM Plex Sans KR","Malgun Gothic",sans-serif',num='"IBM Plex Mono",monospace';
     x.fillStyle=paper;x.fillRect(0,0,W,H);x.fillStyle=pc;x.fillRect(0,0,W,14);
-    x.fillStyle=ink;x.font=`30px ${disp}`;x.fillText('정치인키우기',36,62);x.font=`600 22px ${num}`;x.fillStyle=mut;x.textAlign='right';x.fillText(`${S.startYear}–${S.year}`,W-36,62);x.textAlign='left';
-    const off=document.createElement('canvas');off.width=512;off.height=256;PF=0;drawPx(ENDPX[S.end]||'street|me|',off);
+    x.fillStyle=ink;x.font=`30px ${disp}`;x.fillText('정치인키우기',36,62);x.font=`600 22px ${num}`;x.fillStyle=mut;x.textAlign='right';x.fillText(cd.y0?`${cd.y0}–${cd.y1}`:`${cd.y1}`,W-36,62);x.textAlign='left';
+    const off=document.createElement('canvas');off.width=512;off.height=256;PF=0;
+    const S0=S;if(!S0||S0.name!==cd.name||S0.year!==cd.y1)S={party:cd.party,look:cd.look||{},s:{fame:50,support:50,integrity:50},year:cd.y1,held:{},titles:{}};
+    try{drawPx(ENDPX[cd.end]||'stage|me^,crowd|flower',off)}catch(e){}finally{S=S0}
     x.imageSmoothingEnabled=false;x.fillStyle=ink;x.fillRect(32,86,W-64,(W-64)/2+8);x.drawImage(off,36,90,W-72,(W-72)/2);
     let y=90+(W-72)/2+64;
-    x.fillStyle=pc;x.font=`600 22px ${body}`;x.fillText(`${PARTIES[S.party].n} · ${S.age}세`,36,y);y+=56;
-    x.fillStyle=ink;x.font=`52px ${disp}`;x.fillText(S.name,36,y);y+=58;
-    const g=S.grade||ENDS[S.end].t;x.font=`36px ${disp}`;x.fillStyle=S.end==='pres'?'#1E8A4C':['jail','impeach','presjail'].includes(S.end)?'#C2321F':ink;x.fillText(g,36,y);y+=40;
+    x.fillStyle=pc;x.font=`600 22px ${body}`;x.fillText(`${(PARTIES[cd.party]||PARTIES.ind).n}${cd.age?` · ${cd.age}세`:''}`,36,y);y+=56;
+    x.fillStyle=ink;x.font=`52px ${disp}`;x.fillText(cd.name,36,y);y+=58;
+    x.font=`36px ${disp}`;x.fillStyle=cd.end==='pres'?'#1E8A4C':['jail','impeach','presjail'].includes(cd.end)?'#C2321F':ink;x.fillText(cd.grade,36,y);y+=40;
     x.strokeStyle='#D6DADB';x.lineWidth=2;x.beginPath();x.moveTo(36,y);x.lineTo(W-36,y);x.stroke();y+=40;
-    x.fillStyle=mut;x.font=`700 18px ${body}`;x.fillText('경력',36,y);x.fillStyle=ink;x.font=`500 22px ${body}`;
-    let line='',ly=y;const parts=careerLine();for(let i=0;i<parts.length;i++){const seg=(i?' → ':'')+parts[i];if(x.measureText(line+seg).width>W-150){x.fillText(line,120,ly);ly+=32;line=parts[i]}else line+=seg}x.fillText(line,120,ly);y=ly+48;
+    x.fillStyle=mut;x.font=`700 18px ${body}`;x.fillText(cd.old?'최고 직위':'경력',36,y);x.fillStyle=ink;x.font=`500 22px ${body}`;
+    let line='',ly=y;const parts=cd.career;for(let i=0;i<parts.length;i++){const seg=(i?' → ':'')+parts[i];if(x.measureText(line+seg).width>W-150){x.fillText(line,120,ly);ly+=32;line=parts[i]}else line+=seg}x.fillText(line,120,ly);y=ly+48;
+    if(!cd.old){
     const stat=(lab,val,xx)=>{x.fillStyle=mut;x.font=`700 18px ${body}`;x.fillText(lab,xx,y);x.fillStyle=ink;x.font=`600 30px ${num}`;x.fillText(val,xx,y+38)};
-    stat('선거',`${S.stats.wins}승 ${S.stats.losses}패`,36);stat('재판',`${S.stats.trials}건`,250);stat(S.rival?'라이벌전':'청렴도',S.rival?`${S.rival.l}승 ${S.rival.w}패`:`${s().integrity}`,440);y+=86;
-    [['인지도','fame'],['지지율','support'],['청렴도','integrity']].forEach(([l,k])=>{x.fillStyle=mut;x.font=`700 16px ${body}`;x.fillText(l,36,y);x.fillStyle='#D6DADB';x.fillRect(120,y-14,W-240,14);x.fillStyle=k==='integrity'?ink:pc;x.fillRect(120,y-14,(W-240)*s()[k]/100,14);x.fillStyle=ink;x.font=`600 16px ${num}`;x.textAlign='right';x.fillText(String(s()[k]),W-36,y);x.textAlign='left';y+=30});
+    stat('선거',`${cd.w}승 ${cd.l}패`,36);stat('재판',`${cd.tr}건`,250);stat(cd.rv?'라이벌전':'청렴도',cd.rv?`${cd.rv.l}승 ${cd.rv.w}패`:`${cd.st.integrity}`,440);y+=86;
+    [['인지도','fame'],['지지율','support'],['청렴도','integrity']].forEach(([l,k])=>{x.fillStyle=mut;x.font=`700 16px ${body}`;x.fillText(l,36,y);x.fillStyle='#D6DADB';x.fillRect(120,y-14,W-240,14);x.fillStyle=k==='integrity'?ink:pc;x.fillRect(120,y-14,(W-240)*cd.st[k]/100,14);x.fillStyle=ink;x.font=`600 16px ${num}`;x.textAlign='right';x.fillText(String(cd.st[k]),W-36,y);x.textAlign='left';y+=30})}
+    else{x.fillStyle=mut;x.font=`500 18px ${body}`;x.fillText('예전 기록이라 세부 전적은 남아 있지 않아요.',36,y)}
     x.fillStyle=pc;x.fillRect(0,H-14,W,14);x.fillStyle=mut;x.font=`500 18px ${body}`;x.fillText('나도 키워 보기 · 정치인키우기',36,H-36);
     img.src=c.toDataURL('image/png');try{c.toBlob(b=>{UI.cardBlob=b},'image/png')}catch(e){}
   }catch(e){}};
   (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(go,go);
 }
+function sheetHTML(){return `<div class="sheetbg" id="sheet" hidden><div class="sheet" role="dialog" aria-label="공유하기">
+    <div class="grab"></div><div class="sheethead"><b>공유하기</b><button class="linkbtn" id="shx">닫기</button></div>
+    <div class="sheetprev"><img id="sheetImg" alt="결과 카드"><span class="muted" id="sheetGrade"></span></div>
+    <div class="apps" id="apps"></div><p class="muted" id="shMsg" style="font-size:13px;min-height:1.4em;margin:8px 0 0"></p>
+  </div></div>
+  <div class="viewer" id="viewer" hidden><img id="viewImg" alt="결과 카드 크게 보기"><p>이미지를 길게 누르거나 오른쪽 클릭해서 저장하세요.</p><button class="btn" id="vx">닫기</button></div>`}
 const GAME_URL=window.__GAME_URL||'https://claude.ai/artifact/NyESfQPSDvNWpyfy5hborW';
 function openSheet(txt){
-  const sh=document.getElementById('sheet'),apps=document.getElementById('apps'),m=document.getElementById('shMsg'),src=document.getElementById('shareImg').src;
-  document.getElementById('sheetImg').src=src;m.textContent='';
+  const sh=document.getElementById('sheet'),apps=document.getElementById('apps'),m=document.getElementById('shMsg'),src=(document.getElementById('hofImg')&&!document.getElementById('hofv').hidden?document.getElementById('hofImg'):document.getElementById('shareImg')).src;
+  document.getElementById('sheetImg').src=src;m.textContent='';{const g=document.getElementById('sheetGrade');if(g)g.textContent=UI.cardGrade||''}
   const full=`${txt}\n\n나도 정치인 키워 보기 → ${GAME_URL}`,E=encodeURIComponent;
   const copyText=(after)=>{const ok=()=>m.textContent=after;const fb=()=>{const ta=document.getElementById('cpyTxt');ta.value=full;ta.hidden=false;sh.hidden=true;ta.select();document.getElementById('cpyMsg').textContent='복사가 막혀 있어요. 아래 문구를 선택해 복사하세요.'};
     try{navigator.clipboard.writeText(full).then(ok,fb)}catch(e){fb()}};
@@ -2243,7 +2270,7 @@ function openSheet(txt){
   const saveImg=async(after)=>{const b=UI.cardBlob;if(!b){m.textContent='이미지를 만드는 중이에요. 잠시 뒤 다시 눌러 주세요.';return}
     let d=null;try{d=UI.dl||(window.claude&&window.claude.use?await window.claude.use('downloads'):null)}catch(e){}
     if(!d){view();m.textContent='이 화면에서는 저장 창을 열 수 없어요. 크게 띄운 이미지를 길게 눌러 저장하세요.';return}
-    try{await d.save({filename:`정치인키우기-${S.name}.png`,data:b});m.textContent=after||'저장했어요. 휴대폰에서는 공유 창이나 갤러리에서 원하는 앱으로 보내세요.'}
+    try{await d.save({filename:`정치인키우기-${UI.cardName||(S&&S.name)||'결과'}.png`,data:b});m.textContent=after||'저장했어요. 휴대폰에서는 공유 창이나 갤러리에서 원하는 앱으로 보내세요.'}
     catch(e){const c=e&&e.code;m.textContent=c==='declined'?'저장을 취소했어요.':c==='rate_limited'?'이미 저장 창이 열려 있어요. 잠시 뒤 다시 눌러 주세요.':'이 화면에서는 저장이 막혀 있어요. 크게 띄운 이미지를 길게 눌러 저장하세요.';if(c!=='declined'&&c!=='rate_limited')view()}};
   A.push({n:'이미지 저장',c:'#2f6be0',g:'↓',f:()=>saveImg()});
   A.push({n:'카카오톡',c:'#FEE500',fc:'#3a1d1d',g:'톡',f:()=>{copyText('문구를 복사했어요.');saveImg('이미지를 저장했어요. 카카오톡에서 사진으로 보내고 복사한 문구를 붙여넣으세요.')}});
@@ -2287,12 +2314,7 @@ function renderEnding(){
     <div class="row" style="margin-top:12px"><button class="btn party" id="cpy">공유하기</button><span id="cpyMsg" class="muted" style="font-size:13px"></span></div>
     <textarea id="cpyTxt" readonly hidden></textarea>
   </section>${logHTML()}
-  <div class="sheetbg" id="sheet" hidden><div class="sheet" role="dialog" aria-label="공유하기">
-    <div class="grab"></div><div class="sheethead"><b>공유하기</b><button class="linkbtn" id="shx">닫기</button></div>
-    <div class="sheetprev"><img id="sheetImg" alt="결과 카드"><span class="muted">${esc(S.grade||ENDS[S.end].t)}</span></div>
-    <div class="apps" id="apps"></div><p class="muted" id="shMsg" style="font-size:13px;min-height:1.4em;margin:8px 0 0"></p>
-  </div></div>
-  <div class="viewer" id="viewer" hidden><img id="viewImg" alt="결과 카드 크게 보기"><p>이미지를 길게 누르거나 오른쪽 클릭해서 저장하세요.</p><button class="btn" id="vx">닫기</button></div>`;
+  ${sheetHTML()}`;
   document.getElementById('again').onclick=()=>{S=null;UI.cfg=null;render()};
   paint(ENDPX[S.end]||'street|me|');
   const txt=shareText();const cb=document.getElementById('cpy'),msg=document.getElementById('cpyMsg'),ta=document.getElementById('cpyTxt');ta.value=txt;
