@@ -31,6 +31,14 @@ const ls = {
 const localTs = () => +(localStorage.getItem("pol-ts") || 0);
 const ref = () => doc(fs, "users", user.uid, "games", "politician");
 const key = (h) => [h.name, h.party, h.best, h.end, h.y].join("|");
+// 업적 도감: 얻은 업적은 합치고(먼저 얻은 날짜 유지), 엔딩 횟수는 큰 쪽을 쓴다.
+function mergeAch(a, b) {
+  if (!a) return b || null; if (!b) return a;
+  const out = { ach: { ...(b.ach || {}) }, ends: { ...(b.ends || {}) }, runs: Math.max(a.runs || 0, b.runs || 0) };
+  for (const [k, v] of Object.entries(a.ach || {})) out.ach[k] = out.ach[k] ? Math.min(out.ach[k], v) : v;
+  for (const [k, v] of Object.entries(a.ends || {})) out.ends[k] = Math.max(out.ends[k] || 0, v);
+  return out;
+}
 function mergeHof(a, b) {
   const seen = new Set(), out = [];
   for (const h of [...(a || []), ...(b || [])]) { const k = key(h); if (!seen.has(k)) { seen.add(k); out.push(h); } }
@@ -49,7 +57,7 @@ async function push() {
   clearTimeout(pushTimer); pushTimer = null;
   setState("sync");
   try {
-    const body = { save: ls.get("pol-save"), hof: ls.get("pol-hof") || [] };
+    const body = { save: ls.get("pol-save"), hof: ls.get("pol-hof") || [], ach: ls.get("pol-ach") || null };
     await setDoc(ref(), { json: JSON.stringify(body), updated: localTs() || Date.now() });
     setState("ok");
   } catch (e) { console.warn(e); setState("err"); }
@@ -62,16 +70,19 @@ async function pull() {
     const snap = await getDoc(ref());
     const cloud = snap.exists() ? (() => { try { return { ...JSON.parse(snap.data().json), updated: snap.data().updated || 0 }; } catch { return null; } })() : null;
     const hof = mergeHof(cloud && cloud.hof, ls.get("pol-hof"));
+    const ach = mergeAch(cloud && cloud.ach, ls.get("pol-ach"));
     if (cloud && cloud.updated > localTs()) {
       const busy = window.__polBusy && window.__polBusy();
       ls.set("pol-save", cloud.save || null);
       ls.set("pol-hof", hof);
+      ls.set("pol-ach", ach);
       try { localStorage.setItem("pol-ts", String(cloud.updated)); } catch {}
       if (window.__polRefresh) window.__polRefresh(busy);
       if (cloud.save) toast("다른 기기에서 하던 판을 불러왔어요. ‘이어하기’로 계속하세요.");
       setState("ok");
     } else {
       ls.set("pol-hof", hof);
+      ls.set("pol-ach", ach);
       await push();
     }
   } catch (e) { console.warn(e); setState("err"); }

@@ -142,6 +142,22 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .callout{min-height:1.6em;margin-top:10px;font-size:15px;text-align:center}
 .callout .ok{color:var(--good)}.callout .bad{color:var(--bad)}.callout .hot{color:var(--warn);font-weight:700}
 @media (prefers-reduced-motion: reduce){.bcast .live i{animation:none}}
+.achtoast{position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:70;display:flex;gap:10px;align-items:center;background:#1d2a44;color:#fff;padding:10px 16px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.3);font-size:14px;line-height:1.3;transition:opacity .5s,transform .5s}
+.achtoast span{font-size:26px}.achtoast.out{opacity:0;transform:translate(-50%,-10px)}
+.dexov{position:fixed;inset:0;z-index:65;background:rgba(10,12,16,.55);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:20px 12px}
+.dexov[hidden]{display:none}
+.dexbox{background:var(--card);border-radius:14px;max-width:720px;width:100%;padding:18px}
+.dexbox h4{font-family:var(--f-disp);font-weight:400;font-size:17px;margin:16px 0 8px}
+.dexhead{display:flex;gap:10px;align-items:baseline}.dexhead b{font-family:var(--f-disp);font-weight:400;font-size:22px}.dexhead .muted{flex:1;font-size:13px}
+.dexgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.dex{border:1px dashed var(--line);border-radius:8px;padding:8px;font-size:13px;color:var(--muted);background:var(--card2)}
+.dex b{display:block;color:var(--muted)}.dex small{font-size:11px}
+.dex.on{border-style:solid;border-color:var(--warn);background:var(--card);color:var(--ink)}.dex.on b{color:var(--ink)}
+.perks{margin:12px 0}.perks .opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.perks .opt{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 10px;font-size:13px;text-align:left}
+.perks .opt[aria-pressed="true"]{border-color:var(--p);box-shadow:inset 0 0 0 1px var(--p)}
+.newach{margin:12px 0;padding:10px 12px;border-radius:10px;background:rgba(183,121,31,.12);display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:14px}
+.newach span{background:var(--card);border-radius:999px;padding:2px 10px;font-size:13px}
 .count{margin:14px 0}
 .count .track{height:26px;border-radius:6px;background:var(--card2);border:1px solid var(--line);position:relative;overflow:hidden}
 .count .fill{position:absolute;inset:0 auto 0 0;width:0;background:var(--p);transition:width 1.6s cubic-bezier(.2,.7,.2,1)}
@@ -397,6 +413,7 @@ function newGame(cfg){
   S.maj={local:calcLocalMaj(),nat:R()<.5?'jj':'sm'};
   S.look=Object.assign({},cfg.look||{});
   D=[];chg(BG[cfg.bg].fx);D=[];
+  {const st=achStore();S.perks=(cfg.perks||[]).filter(id=>{const p=PERKS.find(q=>q[0]===id);return p&&perkOK(p,st)}).slice(0,2);S.perks.forEach(id=>{D=[];chg(PERKS.find(q=>q[0]===id)[4]);D=[]})}
   if(cfg.party==='ind'){S.s.party=0}
   if(isHard()){chg({party:15,fame:5});D=[];S.hardStart=true}
   addLog(`35세, ${distName()} 선거구 ${offName(curR().jeju?'metro':'basic')}으로 정치 인생 시작. ${PARTIES[cfg.party].n} 소속.`);
@@ -672,7 +689,7 @@ const EV=[
 {id:'p_halt',core:true,tag:'재판 중지',px:'court|judge,me|gavel,xmark',t:'공판기일: "추후 지정"',b:()=>`취임 이튿날, 재판부가 '${S.trialHold?S.trialHold.name:'내'}' 사건의 공판기일을 "추후 지정"으로 바꿨다. 헌법 제84조, 대통령은 재직 중 형사상 소추를 받지 않는다는 조항이다. 야당은 "방탄 대통령", 여당은 "헌법대로"를 외친다. 포털 검색어 1위는 '추후 지정 뜻'.`,
  ch:[['"헌법이 정한 대로 따르겠다"',()=>{chg({party:4,support:-3,mental:4});return '재판은 멈췄다. 법원 앞 1인 시위자의 피켓에는 "5년 뒤에 봅시다"라고 적혀 있다.'}],
      ['여당이 "재판중지법"으로 못 박는다',()=>{chg({party:7,support:-7,fame:5,integrity:-3});return '법안 이름을 두고 "방탄법"이냐 "국정안정법"이냐로 싸우다 한 해가 갔다. 어쨌든 재판은 멈췄다.'}],
-     ['"임기 중에도 재판받겠다" 선언',()=>{const t=S.trialHold;S.trial=t;S.trialHold=null;S.trial.started=S.year;chg({support:6,integrity:5,mental:-6});addLog('대통령 재임 중에도 재판을 계속 받기로 했다.');return '헌정 사상 처음으로 현직 대통령이 피고인석에 앉게 됐다. 경호처가 법정 동선을 짜느라 밤을 새웠다.'}]]},
+     ['"임기 중에도 재판받겠다" 선언',()=>{const t=S.trialHold;S.trial=t;S.trialHold=null;S.trial.started=S.year;chg({support:6,integrity:5,mental:-6});addLog('대통령 재임 중에도 재판을 계속 받기로 했다.');achMark('facesue');return '헌정 사상 처음으로 현직 대통령이 피고인석에 앉게 됐다. 경호처가 법정 동선을 짜느라 밤을 새웠다.'}]]},
 {id:'p_camp',core:true,tag:'대권',px:'stage|aide,me^,aide|banner',t:'내년 대선, 캠프를 꾸릴까',
  b:()=>`대권 주자 여론조사에 이름이 오르기 시작했다. 대선은 내년이다. 캠프 없이 경선에 나가면 조직에서 밀린다. 지금 인지도 ${s().fame}, 당내입지 ${s().party}.`,
  ch:()=>{const big=Math.round(6000*TM()/10)*10,small=Math.round(2000*TM()/10)*10;return[
@@ -984,7 +1001,7 @@ const EV=[
      ['『저녁이 있는 나라』 (비전 선언)',()=>{S.togulBook=1;chg({fame:5,policy:6,party:2});return '책 제목이 다음 선거 구호 후보로 거론된다.'}],
      ['책은 내지 않는다',()=>{chg({mental:3});return '원고는 아궁이 옆 상자에 넣어 뒀다.'}]]},
 {id:'y_return',w:6,tag:'하산',px:'field|aide,me^,aide|banner',c:()=>!inOffice()&&!wrapMode()&&S.togul&&S.year-S.togul>=2&&(elecKinds(S.year+1).length>0||elecKinds(S.year).length>0),t:'하산(下山)할 때인가',b:()=>`칩거 ${S.year-S.togul}년. 선거를 앞두고 지지자들이 흙집 앞에 "돌아오라" 현수막을 걸었다. 측근은 "지금이 아니면 영영 늦습니다"라고 말한다.`,
- ch:[['정계 복귀를 선언한다',()=>{const y=S.year-S.togul;S.togul=0;S.idle=Math.max(0,S.idle-4);chg({fame:10+y,support:6,party:4,mental:-4});addLog(`칩거 ${y}년 만에 정계 복귀를 선언했다.`);return '흙집 마당에서 복귀 기자회견을 열었다. 장화는 벗지 않았다. "국민이 부르면 간다."'}],
+ ch:[['정계 복귀를 선언한다',()=>{const y=S.year-S.togul;S.togul=0;S.togulRet=1;S.idle=Math.max(0,S.idle-4);chg({fame:10+y,support:6,party:4,mental:-4});addLog(`칩거 ${y}년 만에 정계 복귀를 선언했다.`);return '흙집 마당에서 복귀 기자회견을 열었다. 장화는 벗지 않았다. "국민이 부르면 간다."'}],
      ['아직 때가 아니다',()=>{chg({mental:4,fame:-3});return '현수막은 비를 맞으며 몇 달을 더 걸려 있었다.'}],
      ['정계 은퇴를 선언한다',()=>{S.pendingEnd='retire';S.q=[];chg({integrity:5});addLog('흙집에서 정계 은퇴를 선언했다.');return '"이제 정말 농사꾼입니다." 기자들이 마지막으로 장화를 찍어 갔다.'}]]},
 {id:'y_forgot',w:3,tag:'칩거',px:'field|me|house',c:()=>!inOffice()&&S.togul&&S.year-S.togul>=3,t:'아무도 찾아오지 않는 겨울',b:'칩거 3년째 겨울. 기자도, 후배도 발길이 끊겼다. 마을 이장만 가끔 김치를 들고 온다. 휴대폰에 저장된 번호 900개 중 올해 전화가 온 건 11개다.',
@@ -1074,7 +1091,7 @@ const EV=[
  ch:[['"정치는 원래 그런 것" 웃어넘긴다',()=>{chg({mental:-4,support:2});S.fac=Math.max(0,S.fac-2);S.prot.shift();return '여유 있는 모습이 오히려 호평을 받았다.'}],
      ['계파 단속에 나선다',()=>{chg({party:4,support:-3,mental:-6});S.fac=Math.max(0,S.fac-1);S.prot.shift();return '이탈은 멈췄다. "공포 정치"라는 꼬리표가 붙었다.'}]]},
 {id:'g_kingmaker',w:3,tag:'킹메이커',px:'hall|aide,me,aide|banner',c:()=>member()&&((isPres()&&S.termEnd-S.year<=1)||(S.titles.leader&&elecKinds(S.year+1).includes('pres'))),t:'다음 대권, 누구의 손을 들어줄까',b:()=>`차기 대선 주자들이 줄줄이 면담을 청한다. 내 한마디가 경선 판도를 바꿀 수 있다.${(S.prot||[]).length?` 내가 키운 ${prot()}도 출마를 저울질한다.`:''}`,
- ch:()=>{const o=[];if((S.prot||[]).length)o.push([`내가 키운 ${prot()}을 민다`,()=>{chg({party:5,fame:4,support:-3});addFac(2);return '"상왕 정치" 비판 속에 계파가 결집했다.'}]);
+ ch:()=>{const o=[];if((S.prot||[]).length)o.push([`내가 키운 ${prot()}을 민다`,()=>{achMark('king');chg({party:5,fame:4,support:-3});addFac(2);return '"상왕 정치" 비판 속에 계파가 결집했다.'}]);
    o.push(['지지율 1위 주자와 손잡는다',()=>{chg({party:4,support:2});return '대세론에 힘을 보탰다. 다음 정권에서도 내 자리는 있을 것 같다.'}]);
    o.push(['"국민이 고를 일" 중립',()=>{chg({integrity:3,support:3,party:-3});return '"원로다운 처신"이라는 평. 계파 후배들은 갈 곳을 잃었다.'}]);return o}},
 {id:'g_mediate',w:2,tag:'원로',px:'office|riv,me,aide|',c:()=>big()&&member(),t:'당이 두 쪽 날 판, 중재를 맡아 달란다',b:'공천 갈등으로 당 지도부와 비주류가 연일 충돌한다. 양쪽 모두 "어른이 나서 달라"고 연락해 온다.',
@@ -2013,9 +2030,11 @@ function renderStart(){
       </div></div></div>
     <div class="field"><span class="label">출신 배경</span><div class="chooser" id="bgc">
       ${Object.entries(BG).map(([k,b])=>`<button data-k="${k}" aria-pressed="${c.bg===k}"><b>${b.n}</b><small>${b.d}</small></button>`).join('')}</div></div>
+    ${(()=>{const st=achStore(),av=PERKS.filter(p=>perkOK(p,st));c.perks=(c.perks||[]).filter(id=>av.some(p=>p[0]===id));
+      return `<div class="perks"><span class="label">시작 보너스 <span class="muted">(선택 · 최대 2개)</span></span>${av.length?`<div class="opts">${av.map(p=>`<button type="button" class="opt" data-perk="${p[0]}" aria-pressed="${c.perks.includes(p[0])}"><b>${esc(p[1])}</b> <span class="muted">${esc(p[2])}</span></button>`).join('')}</div>`:'<p class="muted" style="margin:4px 0 0;font-size:13px">업적을 달성하면 여기서 시작 보너스를 고를 수 있어요. 없어도 모든 출신·지역·정당을 그대로 고를 수 있어요.</p>'}</div>`})()}
     <div class="row"><button class="btn primary" id="go">출마 등록 · 2026년 시작</button><span class="muted" style="font-size:13px">35세, 2026 지방선거에서 당선된 직후부터 시작합니다. 65세부터는 선거에 나가지 않고 남은 임기와 재판을 정리합니다.</span></div>
   </section>
-  <section class="card"><h3 style="font-size:17px;margin-bottom:8px">명예의 전당</h3>
+  <section class="card"><div class="row" style="justify-content:space-between;margin-bottom:8px"><h3 style="font-size:17px;margin:0">명예의 전당</h3><button class="btn" id="dexb">🏅 도감 ${(()=>{const st=achStore();return Object.keys(st.ach).filter(k=>ACHM[k]).length+"/"+ACH.length})()}</button></div>
     ${hof.length?`<p class="muted" style="margin:0 0 8px;font-size:12px">이름을 누르면 그때의 결과 카드를 다시 볼 수 있어요.</p><div class="hof">${hof.slice(0,12).map((h,i)=>`<button type="button" data-hof="${i}"><span><b>${esc(h.name)}</b> <span class="muted">${PARTIES[h.party]?PARTIES[h.party].s:''}${h.y?' · '+h.y:''}</span></span><span>${esc(h.best)} · ${esc(h.end)}</span></button>`).join('')}</div>`:'<p class="muted" style="margin:0">아직 기록이 없습니다. 첫 번째 정치인이 되어 보세요.</p>'}
   </section>
   <div class="viewer hofv" id="hofv" hidden role="dialog" aria-label="지난 결과 카드"><img id="hofImg" alt="지난 정치 인생 결과 카드">
@@ -2027,6 +2046,8 @@ function renderStart(){
    document.getElementById('hofx').onclick=()=>{hv.hidden=true};hv.onclick=e=>{if(e.target===hv)hv.hidden=true};
    document.getElementById('hofShare').onclick=()=>{if(cur)openSheet(cardText(cur))}}
   const nm=document.getElementById('nm');nm.oninput=()=>c.name=nm.value;
+  {const db=document.getElementById('dexb');if(db)db.onclick=openDex}
+  $app.querySelectorAll('[data-perk]').forEach(b=>b.onclick=()=>{const id=b.dataset.perk;c.perks=c.perks||[];if(c.perks.includes(id))c.perks=c.perks.filter(x=>x!==id);else{c.perks.push(id);if(c.perks.length>2)c.perks.shift()}renderStart()});
   $app.querySelectorAll('.ballot button').forEach(b=>b.onclick=()=>{c.party=b.dataset.party;renderStart()});
   $app.querySelectorAll('#rg button').forEach(b=>b.onclick=()=>{c.region=b.dataset.k;c.dist=0;renderStart()});
   $app.querySelectorAll('#ds button').forEach(b=>b.onclick=()=>{c.dist=+b.dataset.i;renderStart()});
@@ -2158,7 +2179,7 @@ function renderImpeach(st){
   paint('court|judge,judge,me|gavel');
   st.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{D=[];const L=LAW[+b.dataset.l];chg({money:-L.cost,mental:-10});
     if(R()<impUphold(L)){S.imp=null;S.pendingEnd='impeach';S.q=[];addLog('헌법재판소, 대통령 파면 선고.');finish('<b>"피청구인 대통령을 파면한다"</b><br>재판관 전원 일치. 대통령직을 잃었다.')}
-    else{S.imp=null;S.impDone=S.termEnd;chg({support:8,party:4});addLog('헌법재판소, 탄핵 기각.');finish(`<b>탄핵 기각</b><br>${L.n} 대리인단의 변론이 통했다. 직무에 복귀했다.`)}});
+    else{S.imp=null;S.impDone=S.termEnd;chg({support:8,party:4});addLog('헌법재판소, 탄핵 기각.');achMark('impsurv');finish(`<b>탄핵 기각</b><br>${L.n} 대리인단의 변론이 통했다. 직무에 복귀했다.`)}});
 }
 function lawyerList(probFn,label){
   return `<div class="lawhead"><span>변호인</span><span>${label}</span><span>수임료</span></div><div class="choices">${LAW.map((l,i)=>`<button class="choice law" data-l="${i}" ${s().money<l.cost?'disabled':''}>
@@ -2222,7 +2243,7 @@ function renderTrial(st){
     if(t.stage<3){addLog(`${stg} ${acq?'무죄':'유죄'} 선고 (${L.n}).`);if(acq)chg({support:2});else chg({support:-3,integrity:-3});
       finish(`<b>${stg}: ${acq?'무죄':'유죄'}</b><br>${acq?'법정 밖에서 지지자들이 환호했다. 검찰은 즉시 항소했다.':'"즉시 항소하겠습니다." 판결은 아직 확정되지 않았다.'}`);return}
     S.trial=null;
-    if(acq){if(S.exPres)S.trialsAfter=true;chg({support:5,integrity:6,fame:3});addLog('대법원 무죄 확정.');finish('<b>대법원 무죄 확정!</b><br>긴 터널이 끝났다. "정치 탄압"이었다는 서사가 생겼다.');return}
+    if(acq){if(S.exPres)S.trialsAfter=true;chg({support:5,integrity:6,fame:3});addLog('대법원 무죄 확정.');achMark('acquit');finish('<b>대법원 무죄 확정!</b><br>긴 터널이 끝났다. "정치 탄압"이었다는 서사가 생겼다.');return}
     addLog('대법원 유죄 확정.');
     if(S.exPres||isPres()){S.pendingEnd='presjail';S.q=[];finish(`<b>대법원 유죄 확정 · 징역형</b><br>${S.exPres?'전직 대통령이':'현직 대통령이'} 법정 구속됐다. 구치소 앞에 지지자와 반대자가 함께 모였다.`);return}
     if(t.sev>=3){S.pendingEnd='jail';S.q=[];finish('<b>대법원 유죄 확정 · 징역형</b><br>법정 구속됐다. 정치 인생은 여기서 멈춘다.');return}
@@ -2353,7 +2374,7 @@ function renderElection(st){
   if(E.step==='result'){
     const opp=E.riv?E.rname:null,oppP=E.riv?E.rparty:null;
     if(E.exit==null){E.exit=+clamp(E.share+gauss()*2.6,1,99).toFixed(1);E.exitR=E.riv?+clamp(E.rshare-(E.exit-E.share)*.8+gauss()*1.2,1,99).toFixed(1):null;E.nz=[gauss()*3.2,gauss()*2.4,R()*6];save()}
-    const exitWin=E.riv?E.exit>E.exitR:E.win,flip=E.riv&&exitWin!==E.win;
+    const exitWin=E.riv?E.exit>E.exitR:E.win,flip=E.riv&&exitWin!==E.win;if(flip&&E.win)achMark('flip');
     st.innerHTML=`${pxTag('개표')}<div class="bcast"><span class="live"><i></i>LIVE</span><b>${E.prop?'비례대표 정당 득표 집계':'개표 방송'}</b><span class="num" id="cnt">투표 마감</span></div>
       <div class="news"><span class="tag ink">개표</span><h3>${E.name} 개표 결과</h3></div>
       <div class="exitpoll" id="exitp"><span class="label">방송3사 출구조사</span><div><b>${esc(S.name)}</b> <span class="num">${E.exit.toFixed(1)}%</span>${E.riv?` <span class="muted">vs</span> <b>${esc(opp)}</b> <span class="num">${E.exitR.toFixed(1)}%</span>`:''}</div><small>${E.prop?'예상 의석 '+Math.round(46*E.exit/100)+'석 안팎':E.riv?(Math.abs(E.exit-E.exitR)<3?'오차범위 내 초접전':exitWin?'우세 예측':'열세 예측'):(E.win?'당선권 예측':'경합 예측')}</small></div>
@@ -2422,7 +2443,8 @@ function tally(E){
     if(prev!==off){S.titles={}}
     S.office=off;S.termEnd=S.year+(off==='pres'?5:4);S.held[off]=(S.held[off]||0)+1;S.stats.wins++;
     if(o.tier>OFF[S.best].tier||(o.tier===OFF[S.best].tier&&off!==S.best&&off==='nat')){S.best=off;S.bestName=E.name}
-    if(off==='pres'){S.ruling=S.party;S.presFrom=S.year;if(S.trial){S.trialHold=S.trial;S.trial=null;S.haltShown=0;addLog(`대통령 당선으로 '${S.trialHold.name}' 재판이 중지됐다 (헌법 제84조).`)}}
+    if(off==='pres'){S.ruling=S.party;S.presFrom=S.year;if(S.trial){S.trialHold=S.trial;S.trial=null;S.haltShown=0;achMark('halt');addLog(`대통령 당선으로 '${S.trialHold.name}' 재판이 중지됐다 (헌법 제84조).`)}}
+    if(S.togulRet){achMark('togul');S.togulRet=0}if(off==='nat'&&!member())achMark('indnat');if(off==='nat'&&member()&&isHard())achMark('hardnat');if(S.joined&&member())achMark('joinwin');if(E.share>=65)achMark('land');if(E.riv&&E.share-E.rshare<=.5)achMark('squeak');
     chg({fame:8,mental:5});S.idle=0;S.togul=0;
     S.path=(S.path||[]);S.path.push([S.year,E.name]);addLog(`${E.name} 당선 (${E.share}%).`);
     E.html=`<b>당선!</b> ${E.name}${S.held[off]>1?' ('+S.held[off]+'선)':''}. 득표율 ${E.share}%.${E.riv?` 라이벌 ${E.rname}을 ${(E.share-E.rshare).toFixed(1)}%p 차로 눌렀다.`:''}${refund?' 기탁금·선거비용 '+won(refund)+' 보전.':''}`;
@@ -2442,7 +2464,7 @@ function yearEnd(){
   if(inOffice()&&isHard()&&!isPres()){chg({party:3});notes.push('험지 현역 프리미엄 (당내입지)')}
   const up=UPKEEP[S.office]||0;
   if(up){if(x.money>=up){chg({money:-up});notes.push(`${inOffice()?'사무실·보좌진 운영비':'생활비'} -${won(up)}`)}
-    else{const lack=up-x.money;chg({money:-x.money,org:-6,mental:-8,support:-3});notes.push(`<b style="color:var(--bad)">운영비 ${won(lack)} 부족 · ${inOffice()?'보좌진 월급이 밀려 두 명이 그만뒀다':'카드값이 밀렸다'}</b>`);addLog('운영비 부족으로 '+(inOffice()?'보좌진 이탈.':'생활고.'))}}
+    else{S.brokeN=(S.brokeN||0)+1;const lack=up-x.money;chg({money:-x.money,org:-6,mental:-8,support:-3});notes.push(`<b style="color:var(--bad)">운영비 ${won(lack)} 부족 · ${inOffice()?'보좌진 월급이 밀려 두 명이 그만뒀다':'카드값이 밀렸다'}</b>`);addLog('운영비 부족으로 '+(inOffice()?'보좌진 이탈.':'생활고.'))}}
   if(S.titles.chair){chg({fame:3,legis:3,money:1500});notes.push('상임위원장 활동')}
   if(S.titles.leader){chg({fame:4,party:4,mental:-5});notes.push('당대표 업무')}
   if(S.titles.speaker){chg({legis:2,fame:2,money:500})}
@@ -2462,6 +2484,7 @@ function yearEnd(){
   if(S.crisis&&S.crisis.left>0){const C=CRISES[S.crisis.k],i=C.dur-S.crisis.left,rp=rulingP(),adj=S.crisis.adj||0;
     const hit=Math.max(-6,C.hit[i]-adj);S.pop[rp]=clamp(S.pop[rp]-hit,15,60);S.pop[other(rp)]=clamp(S.pop[other(rp)]+Math.round(hit/2),15,60);
     S.presAp=clamp((S.presAp==null?50:S.presAp)+C.ap+adj*2,8,80);S.crisis.adj=Math.round(adj/2);
+    if(isPres()&&s().support>=60)achMark('crisis');
     notes.push(`${C.n}: 여당 ${PARTIES[rp].s} 지지율 ${hit>0?'-':'+'}${Math.abs(hit)}`);
     if(member()&&inOffice()&&!isPres()){if(S.party===rp)chg({support:-Math.max(0,Math.round(hit/2))});else chg({support:Math.max(0,Math.round(hit/3))})}
     S.crisis.left--;if(S.crisis.left<=0){notes.push(`${C.n} 국면이 지나갔다`);addLog(`${C.n} 국면이 끝났다.`);S.lastCrisis=S.year}}
@@ -2507,12 +2530,81 @@ const ENDS={
   forgotten:{t:'잊혀진 정치인',b:'10년의 야인 생활. 사람들은 이름을 기억하지 못한다.'},
   retire:{t:'정계 은퇴 선언',b:'스스로 내려놓았다. 기자회견장이 조용했다.'},
 };
+/* ============ 업적 도감 ============ */
+const ACH=[
+ ['rookie','첫 완주','정치 인생을 한 번 끝까지 가 본다',x=>true],
+ ['metro','광역 무대','광역의원에 당선',x=>x.held.metro],
+ ['nat','금배지','국회의원(지역구)에 당선',x=>x.held.nat],
+ ['natp','비례의 맛','비례대표 의원이 된다',x=>x.held.natp],
+ ['nat3','3선 중진','국회의원 3선',x=>(x.held.nat||0)+(x.held.natp||0)>=3],
+ ['mayor','구청장님','기초단체장에 당선',x=>x.held.mayor],
+ ['gov','도백','광역단체장에 당선',x=>x.held.gov],
+ ['pres','청와대 입성','대통령에 당선',x=>x.held.pres],
+ ['grand','그랜드슬램','국회의원과 광역단체장을 모두 지낸다',x=>(x.held.nat||x.held.natp)&&x.held.gov],
+ ['chair','위원장님','상임위원장이 된다',x=>x.everChair],
+ ['leader','당의 얼굴','당대표에 선출된다',x=>x.everLeader],
+ ['clean','청백리','뇌물 0회, 청렴도 85 이상으로 국회의원·단체장급 은퇴',x=>x.stats.bribes===0&&x.s.integrity>=85&&OFF[x.best].tier>=3],
+ ['dirty','검은돈 열 번','검은돈 유혹에 10번 넘어간다',x=>x.stats.bribes>=10],
+ ['acquit','대법원 무죄','대법원에서 무죄를 확정받는다',x=>x.ach&&x.ach.acquit],
+ ['jail','쇼핑백의 대가','법정 구속 엔딩',x=>x.end==='jail'],
+ ['presjail','전직 대통령 수감','감옥에 간 대통령 엔딩',x=>x.end==='presjail'],
+ ['impsurv','기각입니다','탄핵 심판에서 살아남는다',x=>x.ach&&x.ach.impsurv],
+ ['rival5','숙적 제압','라이벌에게 5번 이긴다',x=>x.rival&&x.rival.l>=5],
+ ['rivalL','영원한 2인자','라이벌에게 3번 진다',x=>x.rival&&x.rival.w>=3],
+ ['flip','출구조사 역전','출구조사 열세를 뒤집고 당선',x=>x.ach&&x.ach.flip],
+ ['land','압승','득표율 65% 이상으로 당선',x=>x.ach&&x.ach.land],
+ ['squeak','0.5%p의 기적','라이벌을 0.5%p 이내 차로 꺾는다',x=>x.ach&&x.ach.squeak],
+ ['togul','하산 후 당선','흙집 칩거에서 복귀해 당선',x=>x.ach&&x.ach.togul],
+ ['indnat','무소속 금배지','무소속으로 국회의원 당선',x=>x.ach&&x.ach.indnat],
+ ['hardnat','험지 개척자','험지에서 국회의원 당선',x=>x.ach&&x.ach.hardnat],
+ ['halt','추후 지정','대통령 당선으로 재판이 중지된다',x=>x.ach&&x.ach.halt],
+ ['facesue','피고인 대통령','임기 중에도 재판을 받겠다고 선언',x=>x.ach&&x.ach.facesue],
+ ['crisis','위기의 리더','국가 위기 중 대통령 지지율 60% 이상',x=>x.ach&&x.ach.crisis],
+ ['fac','친○계 수장','계파 30명 이상',x=>(x.fac||0)>=10],
+ ['king','상왕','내가 키운 후배를 대권 주자로 민다',x=>x.ach&&x.ach.king],
+ ['broke','카드값 인생','운영비 부족을 5번 겪는다',x=>(x.brokeN||0)>=5],
+ ['rich','10억 정치인','정치자금 10억 원을 모은다',x=>x.s.money>=100000],
+ ['long','40년 정치 인생','정치 인생 40년',x=>x.year-x.startYear>=40],
+ ['retire','박수칠 때','스스로 정계 은퇴를 선언',x=>x.end==='retire'],
+ ['forgot','잊혀진 이름','잊혀진 정치인 엔딩',x=>x.end==='forgotten'],
+ ['burn','번아웃','번아웃 은퇴 엔딩',x=>x.end==='burnout'],
+ ['jeju','제주도지사','제주에서 도지사가 된다',x=>x.region==='jeju'&&x.held.gov],
+ ['joined','영입 인재','무소속으로 시작해 입당 후 당선',x=>x.joined&&x.ach&&x.ach.joinwin],
+ ['presok','그리운 대통령','퇴임 지지율 60% 이상 대통령',x=>x.end==='pres'&&(x.leaveSup||0)>=60],
+ ['allbg','팔방미인','모든 출신으로 한 번씩 완주',null],
+];
+const ACHM=Object.fromEntries(ACH.map(a=>[a[0],a]));
+const PERKS=[
+ ['seed','종잣돈','시작 자금 +3,000만원','rich',{money:3000}],
+ ['press','언론 친화','시작 인지도 +8','flip',{fame:8}],
+ ['network','당내 인맥','시작 당내입지 +8','leader',{party:8}],
+ ['org','조직 관리 노하우','시작 조직력 +8','nat3',{org:8}],
+ ['clean','깨끗한 이름','시작 청렴도 +10','clean',{integrity:10}],
+ ['policy','정책통','시작 정책 +10','grand',{policy:10}],
+ ['mental','강철 멘탈','시작 멘탈 +15','togul',{mental:15}],
+ ['debate','토론의 달인','시작 언변 +8','rival5',{speech:8}],
+];
+function achStore(){return store.get('pol-ach')||{ach:{},ends:{},runs:0,bgs:{}}}
+function achMark(id){if(!S)return;S.ach=S.ach||{};if(S.ach[id])return;S.ach[id]=1;
+  const st=achStore();if(!st.ach[id]){/* 즉시 기록되는 업적만 바로 알림 */const a=ACHM[id];if(a&&a[3]&&a[3](S)){st.ach[id]=Date.now();store.set('pol-ach',st);achToast(a)}}}
+function achToast(a){try{const d=document.createElement('div');d.className='achtoast';d.setAttribute('role','status');d.innerHTML=`<span>🏅</span><div><b>업적 달성</b><br>${esc(a[1])}</div>`;document.body.appendChild(d);setTimeout(()=>d.classList.add('out'),2600);setTimeout(()=>d.remove(),3200)}catch(e){}}
+function achFinal(){const st=achStore();st.bgs=st.bgs||{};st.ends[S.end]=(st.ends[S.end]||0)+1;st.runs=(st.runs||0)+1;st.bgs[S.bg]=1;const neu=[];
+  for(const a of ACH){if(st.ach[a[0]])continue;const ok=a[0]==='allbg'?Object.keys(BG).every(k=>st.bgs[k]):a[3](S);if(ok){st.ach[a[0]]=Date.now();neu.push(a[0])}}
+  store.set('pol-ach',st);S.newAch=neu}
+function perkOK(p,st){return !!(st||achStore()).ach[p[3]]}
+function achHTML(){const st=achStore(),got=ACH.filter(a=>st.ach[a[0]]).length,ek=Object.keys(ENDS);
+  return `<div class="dexhead"><b>도감</b><span class="muted">엔딩 ${ek.filter(k=>st.ends[k]).length}/${ek.length} · 업적 ${got}/${ACH.length} · ${st.runs||0}판</span><button class="linkbtn" id="dexx">닫기</button></div>
+  <h4>엔딩</h4><div class="dexgrid">${ek.map(k=>`<div class="dex ${st.ends[k]?'on':''}"><b>${st.ends[k]?esc(ENDS[k].t):'???'}</b><small>${st.ends[k]?st.ends[k]+'회':'아직 못 본 엔딩'}</small></div>`).join('')}</div>
+  <h4>업적</h4><div class="dexgrid">${ACH.map(a=>`<div class="dex ${st.ach[a[0]]?'on':''}"><b>${st.ach[a[0]]?'🏅 ':''}${esc(a[1])}</b><small>${esc(a[2])}</small></div>`).join('')}</div>
+  <h4>시작 보너스</h4><p class="muted" style="font-size:13px;margin:0 0 8px">업적을 달성하면 새 판 시작 화면에서 고를 수 있어요. 최대 2개.</p><div class="dexgrid">${PERKS.map(p=>`<div class="dex ${perkOK(p,st)?'on':''}"><b>${esc(p[1])}</b><small>${esc(p[2])} · 조건: ${esc(ACHM[p[3]][1])}</small></div>`).join('')}</div>`}
+function openDex(){let ov=document.getElementById('dexov');if(!ov){ov=document.createElement('div');ov.id='dexov';ov.className='dexov';ov.setAttribute('role','dialog');ov.setAttribute('aria-label','도감');document.body.appendChild(ov)}
+  ov.innerHTML=`<div class="dexbox">${achHTML()}</div>`;ov.hidden=false;const x=document.getElementById('dexx');x.focus();x.onclick=()=>{ov.hidden=true};ov.onclick=e=>{if(e.target===ov)ov.hidden=true}}
 function endGame(kind){
   S.phase='ending';S.end=kind;S.pendingEnd=null;
   let grade='';if(kind==='pres'){const sp=S.leaveSup==null?s().support:S.leaveSup;grade=sp>=60?'국민이 그리워하는 대통령':sp>=40?'무난했던 대통령':'퇴임 지지율 바닥의 대통령';if(S.trialsAfter)grade+=' (퇴임 후 무죄)'}
   if(kind==='presjail')grade=`${S.exPres?'퇴임 후 감옥 간 대통령':'임기 중 구속된 대통령'} ${S.name}`;
   if(kind==='age'&&S.taint)grade='유죄 판결로 얼룩진 은퇴';
-  S.grade=grade;
+  S.grade=grade;S.leaveSup=S.leaveSup==null?s().support:S.leaveSup;try{achFinal()}catch(e){S.newAch=[]}
   const hof=store.get('pol-hof')||[];hof.unshift({name:S.name,party:S.party,best:S.bestName||OFF[S.best].n,end:grade||ENDS[kind].t,y:S.year,card:cardData()});store.set('pol-hof',hof.slice(0,30));
   store.del('pol-save');render();window.scrollTo(0,0);
 }
@@ -2598,6 +2690,7 @@ function renderEnding(){
     ${pxTag(ENDS[S.end].t)}
     <div class="label">${S.startYear}–${S.year} · ${S.year-S.startYear+1}년의 정치 인생</div>
     <h2 style="margin-top:6px">${esc(S.grade||e.t)}</h2>
+    ${(S.newAch&&S.newAch.length)?`<div class="newach"><b>🏅 새 업적 ${S.newAch.length}개</b>${S.newAch.map(id=>`<span>${esc(ACHM[id][1])}</span>`).join("")}<button class="linkbtn" id="dexe">도감 보기</button></div>`:""}
     <p class="sub">${e.b}</p>
     <dl style="margin-top:16px">
       <dt>이름</dt><dd>${esc(S.name)} (${S.age}세)</dd><dt>지역</dt><dd>${esc(distName())}</dd>
@@ -2617,7 +2710,8 @@ function renderEnding(){
     <textarea id="cpyTxt" readonly hidden></textarea>
   </section>${logHTML()}
   ${sheetHTML()}`;
-  document.getElementById('again').onclick=()=>{S=null;UI.cfg=null;render()};
+  document.getElementById('again').onclick=()=>{const pk=UI.cfg&&UI.cfg.perks;S=null;UI.cfg=null;render()};
+  {const de=document.getElementById('dexe');if(de)de.onclick=openDex}
   paint(ENDPX[S.end]||'street|me|');
   const txt=shareText();const cb=document.getElementById('cpy'),msg=document.getElementById('cpyMsg'),ta=document.getElementById('cpyTxt');ta.value=txt;
   cb.onclick=()=>openSheet(txt);
