@@ -167,6 +167,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .pfbar{display:flex;height:18px;border-radius:5px;overflow:hidden;margin:4px 0 2px;font-size:11px;line-height:18px;color:#fff;font-weight:700}
 .pfbar i{font-style:normal;padding-left:6px;white-space:nowrap;overflow:hidden}.pfbar .m{background:var(--p)}.pfbar .n{background:var(--muted)}.pfbar .o{background:var(--warn)}
 .pfmap small{font-size:12px}
+.sndb{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:40;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.15);cursor:pointer}
 .count{margin:14px 0}
 .count .track{height:26px;border-radius:6px;background:var(--card2);border:1px solid var(--line);position:relative;overflow:hidden}
 .count .fill{position:absolute;inset:0 auto 0 0;width:0;background:var(--p);transition:width 1.6s cubic-bezier(.2,.7,.2,1)}
@@ -2072,7 +2073,8 @@ const $app=document.getElementById('app');
 function drawAvatar(){const cv=document.getElementById('avc'),cx=cv&&cv.getContext&&cv.getContext('2d');if(!cx)return;
   const r=(x,y,w,h,col)=>{cx.fillStyle=col;cx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
   cx.clearRect(0,0,36,36);const pf=PF;PF=0;const px=PXC;PXC=null;try{personHD(r,0,4,whoCol('me'),false)}finally{PF=pf;PXC=px}}
-function render(){
+function render(){try{SND.btn();SND.bgm(pickBgm())}catch(e){}renderMain()}
+function renderMain(){
   document.body.dataset.party=S?S.party:'ind';
   if(!S||S.phase==='start'){renderStart();return}
   if(S.phase==='ending'){renderEnding();return}
@@ -2236,7 +2238,7 @@ function renderQueueItem(st){
   else if(it.type==='pagenda')renderAgenda(st);
   else if(it.type==='pbudget')renderBudget(st);
 }
-function finish(html){S.res={html,d:deltaHTML()};save();render()}
+function finish(html){try{SND.fx(/당선!|무죄|기각|통과|완수|창당/.test(html)?'good':/낙선|유죄|구속|탈락|파면|부결/.test(html)?'bad':'coin')}catch(e){}S.res={html,d:deltaHTML()};save();render()}
 function renderEvent(st,e){
   const V=x=>typeof x==='function'?x():x;const T=V(e.t),B=V(e.b),CH=V(e.ch);
   st.innerHTML=`${pxTag(T)}<div class="news"><span class="tag ${e.tag==='화제'||e.tag==='정책'||e.core||e.tag==='다수당'||e.tag==='여대야소'?'blue':e.tag==='소수당'||e.tag==='여소야대'?'gray':''}">${e.tag}</span><h3>${T}</h3><p class="body">${B}</p></div>
@@ -2370,7 +2372,7 @@ function gavelSuspense(st,done){
   const cv=box.querySelector('canvas'),c=cv.getContext&&cv.getContext('2d');
   const K='#2a1a10',W1='#8a5a32',W2='#b37a46',W3='#d9a066',G='#e2b04a';
   const r=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h)};
-  const draw=(f)=>{if(!c)return;c.clearRect(0,0,64,48);
+  const draw=(f)=>{if(f===2&&lastF!==2)SND.fx('gavel');lastF=f;if(!c)return;c.clearRect(0,0,64,48);
     // 받침(사운드 블록)
     r(14,39,28,7,K);r(15,39,26,5,W2);r(15,43,26,2,W1);r(16,39,24,1,W3);
     // 법봉: f=0 들어 올림, 1 중간, 2 내려침 (손잡이 끝을 축으로 회전)
@@ -2379,7 +2381,7 @@ function gavelSuspense(st,done){
     r(-38,-6,12,16,K);r(-37,-5,10,14,W2);r(-37,-5,3,14,W3);r(-30,-5,3,14,W1);r(-37,-2,10,2,G);r(-37,5,10,2,G); // 머리 + 금띠
     c.restore();
     if(f===2){r(6,38,5,1,G);r(4,34,4,1,G);r(45,38,5,1,G);r(47,34,4,1,G);r(27,25,1,4,G);r(20,27,1,3,G);r(35,27,1,3,G)}};
-  const seq=[0,1,2,2,0,1,2,2];let i=0;const reduce=matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let lastF=-1;const seq=[0,1,2,2,0,1,2,2];let i=0;const reduce=matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
   draw(reduce?2:0);
   const iv=reduce?null:setInterval(()=>{draw(seq[i++%seq.length])},170);
   setTimeout(()=>{if(iv)clearInterval(iv);box.remove();done()},reduce?900:1700);
@@ -2555,7 +2557,7 @@ function renderElection(st){
       if(E.riv&&Math.abs(lead)<1.2&&!sure)return '<span class="hot">초접전 · 엎치락뒤치락</span>';
       return (lead>0)?(sure?'<b class="ok">당선 확실</b>':'당선 유력'):(sure?'<b class="bad">낙선 확실</b>':'낙선 우려')};
     const finish=()=>{if(done)return;done=true;fill.style.width=E.share+'%';pct.textContent=E.share.toFixed(1)+'%';if(fill2){fill2.style.width=E.rshare+'%';pct2.textContent=E.rshare.toFixed(1)+'%'}
-      cnt.textContent='개표 완료 100%';call.innerHTML=E.prop?'':E.win?'<b class="ok">당선 확정</b>':'<b class="bad">낙선</b>';skip.remove();const v=document.getElementById('verdict');if(v)v.hidden=false};
+      cnt.textContent='개표 완료 100%';SND.fx(E.win?'win':'lose');call.innerHTML=E.prop?'':E.win?'<b class="ok">당선 확정</b>':'<b class="bad">낙선</b>';skip.remove();const v=document.getElementById('verdict');if(v)v.hidden=false};
     skip.onclick=finish;
     const tick=n=>{if(!pct.isConnected||done)return;const el=n-t0;
       if(el<T0){cnt.textContent='출구조사 발표';requestAnimationFrame(tick);return}
@@ -2563,7 +2565,7 @@ function renderElection(st){
       const p=Math.min(1,(el-T0)/Math.max(1,T1-T0)),cp=1-Math.pow(1-p,2);
       const me=clamp(E.share+dev(cp),0,100),op=E.riv?clamp(E.rshare-dev(cp)*.85,0,100):0;
       fill.style.width=me+'%';pct.textContent=me.toFixed(1)+'%';if(fill2){fill2.style.width=op+'%';pct2.textContent=op.toFixed(1)+'%'}
-      cnt.textContent=`개표율 ${(cp*100).toFixed(1)}%`;call.innerHTML=lab(cp,me,op);
+      cnt.textContent=`개표율 ${(cp*100).toFixed(1)}%`;{const tk=Math.floor(cp*20);if(tk!==E._tk){E._tk=tk;SND.fx('tick')}}call.innerHTML=lab(cp,me,op);
       if(p<1)requestAnimationFrame(tick);else finish()};
     if(reduce)finish();else requestAnimationFrame(tick);
     document.getElementById('nx').onclick=()=>{S.cur=null;S.elec=null;save();render();scrollStage()};
@@ -2694,6 +2696,42 @@ const ENDS={
   forgotten:{t:'잊혀진 정치인',b:'10년의 야인 생활. 사람들은 이름을 기억하지 못한다.'},
   retire:{t:'정계 은퇴 선언',b:'스스로 내려놓았다. 기자회견장이 조용했다.'},
 };
+/* ============ 사운드 (WebAudio 합성, 기본 꺼짐) ============ */
+const SND=(()=>{let ac=null,master=null,on=false,cur=null,timer=null,step=0,nextT=0;
+  try{on=localStorage.getItem('pol-snd')==='1'}catch(e){}
+  const hz=m=>440*Math.pow(2,(m-69)/12);
+  function ctx(){if(!ac){const A=window.AudioContext||window.webkitAudioContext;if(!A)return null;ac=new A();master=ac.createGain();master.gain.value=.5;master.connect(ac.destination)}if(ac.state==='suspended')ac.resume();return ac}
+  function tone(f,t,d,type='square',v=.12,slide=0){const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f*slide),t+d);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.05)}
+  function noise(t,d,v=.2,lp=900){const n=ac.createBufferSource(),b=ac.createBuffer(1,Math.ceil(ac.sampleRate*d),ac.sampleRate),a=b.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=(Math.random()*2-1)*(1-i/a.length);
+    n.buffer=b;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=lp;const g=ac.createGain();g.gain.value=v;n.connect(f);f.connect(g);g.connect(master);n.start(t)}
+  const FX={
+    click:t=>tone(1200,t,.04,'square',.05),
+    good:t=>{[72,76,79].forEach((m,i)=>tone(hz(m),t+i*.07,.14,'square',.08))},
+    bad:t=>{[67,63].forEach((m,i)=>tone(hz(m),t+i*.12,.2,'triangle',.14))},
+    win:t=>{[60,64,67,72,76,79,84].forEach((m,i)=>tone(hz(m),t+i*.09,.22,'square',.09));tone(hz(48),t,.7,'triangle',.18)},
+    lose:t=>{[67,66,65,64].forEach((m,i)=>tone(hz(m),t+i*.22,.3,'triangle',.14,.97))},
+    gavel:t=>{noise(t,.12,.5,500);tone(140,t,.15,'sine',.4,.5)},
+    stamp:t=>{noise(t,.08,.35,1400);tone(220,t,.12,'square',.08,.6)},
+    tick:t=>tone(1800,t,.02,'square',.03),
+    ach:t=>{[84,88,91,96].forEach((m,i)=>tone(hz(m),t+i*.06,.18,'triangle',.1))},
+    coin:t=>{tone(hz(83),t,.06,'square',.08);tone(hz(88),t+.06,.18,'square',.08)}};
+  // 배경음악: [템포, 멜로디(16분음 단위 MIDI, 0=쉼), 베이스]
+  const SONGS={
+    title:[112,[72,0,76,0,79,0,76,0,74,0,72,0,71,0,72,0, 69,0,72,0,76,0,74,0,72,0,71,0,69,0,67,0],[48,48,55,55,53,53,55,55]],
+    play:[100,[67,0,0,69,71,0,74,0,72,0,71,0,69,0,0,0, 67,0,0,64,67,0,69,0,71,0,69,0,67,0,0,0],[43,43,47,47,45,45,47,43]],
+    tense:[126,[64,0,64,0,65,0,64,0,0,0,63,0,64,0,0,0, 64,0,64,0,67,0,66,0,0,0,65,0,64,0,0,0],[40,40,40,40,41,41,40,40]],
+    pres:[92,[72,0,0,71,72,0,74,0,76,0,0,0,74,0,72,0, 71,0,0,69,71,0,72,0,74,0,0,0,79,0,0,0],[48,48,53,53,55,55,48,48]]};
+  function sched(){if(!ac||!cur)return;const [bpm,mel,bass]=SONGS[cur],sx=60/bpm/4;while(nextT<ac.currentTime+.25){const i=step%mel.length;
+      if(mel[i])tone(hz(mel[i]),nextT,sx*1.8,'square',.035);if(i%4===0){const b=bass[(i/4)%bass.length|0];tone(hz(b),nextT,sx*3.5,'triangle',.07)}
+      if(i%8===4)noise(nextT,.03,.05,4000);nextT+=sx;step++}}
+  function bgm(name){if(!on){cur=null;return}if(cur===name)return;if(!ctx())return;cur=name;step=0;nextT=ac.currentTime+.05;if(!timer)timer=setInterval(sched,90)}
+  function fx(n){if(!on||!FX[n])return;if(!ctx())return;try{FX[n](ac.currentTime+.01)}catch(e){}}
+  function set(v){on=v;try{localStorage.setItem('pol-snd',v?'1':'0')}catch(e){}if(!v){cur=null;if(timer){clearInterval(timer);timer=null}}else{ctx();const c=cur;cur=null;bgm(c||pickBgm())}btn()}
+  function btn(){let b=document.getElementById('sndb');if(!b){b=document.createElement('button');b.id='sndb';b.className='sndb';b.onclick=()=>set(!on);document.body.appendChild(b)}b.textContent=on?'🔊':'🔇';b.setAttribute('aria-label',on?'소리 끄기':'소리 켜기');b.setAttribute('aria-pressed',on)}
+  return{fx,bgm,set,btn,get on(){return on}}})();
+function pickBgm(){if(!S||S.phase==='start')return 'title';if(S.phase==='ending')return 'title';if(isPres())return 'pres';if((S.cur&&['trial','elec','impeach','detect'].includes(S.cur.type))||S.trial)return 'tense';return 'play'}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.choice,.btn,.opt,.linkbtn');if(b&&!b.disabled&&b.id!=='sndb')SND.fx('click')},true);
 /* ============ 정당 내부 정치 ============ */
 const NP_NAMES=['다음세대당','상식연합','제3지대당','내일로당'];
 const twoParty=()=>S.party==='jj'||S.party==='sm';
@@ -2850,7 +2888,7 @@ const PERKS=[
 function achStore(){return store.get('pol-ach')||{ach:{},ends:{},runs:0,bgs:{}}}
 function achMark(id){if(!S)return;S.ach=S.ach||{};if(S.ach[id])return;S.ach[id]=1;
   const st=achStore();if(!st.ach[id]){/* 즉시 기록되는 업적만 바로 알림 */const a=ACHM[id];if(a&&a[3]&&a[3](S)){st.ach[id]=Date.now();store.set('pol-ach',st);achToast(a)}}}
-function achToast(a){try{const d=document.createElement('div');d.className='achtoast';d.setAttribute('role','status');d.innerHTML=`<span>🏅</span><div><b>업적 달성</b><br>${esc(a[1])}</div>`;document.body.appendChild(d);setTimeout(()=>d.classList.add('out'),2600);setTimeout(()=>d.remove(),3200)}catch(e){}}
+function achToast(a){SND.fx('ach');try{const d=document.createElement('div');d.className='achtoast';d.setAttribute('role','status');d.innerHTML=`<span>🏅</span><div><b>업적 달성</b><br>${esc(a[1])}</div>`;document.body.appendChild(d);setTimeout(()=>d.classList.add('out'),2600);setTimeout(()=>d.remove(),3200)}catch(e){}}
 function achFinal(){const st=achStore();st.bgs=st.bgs||{};st.ends[S.end]=(st.ends[S.end]||0)+1;st.runs=(st.runs||0)+1;st.bgs[S.bg]=1;const neu=[];
   for(const a of ACH){if(st.ach[a[0]])continue;const ok=a[0]==='allbg'?Object.keys(BG).every(k=>st.bgs[k]):a[3](S);if(ok){st.ach[a[0]]=Date.now();neu.push(a[0])}}
   store.set('pol-ach',st);S.newAch=neu}
