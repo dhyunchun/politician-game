@@ -2366,7 +2366,7 @@ function renderElection(st){
       <button class="linkbtn" id="skipc" style="margin-top:6px">건너뛰기</button>`;
     paint(E.win?'ballot|cit,me,old|ballot,heart':'ballot|cit,old|ballot');
     const fill=document.getElementById('fill'),pct=document.getElementById('pct'),fill2=document.getElementById('fill2'),pct2=document.getElementById('pct2'),cnt=document.getElementById('cnt'),call=document.getElementById('call'),skip=document.getElementById('skipc');
-    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches||window.__NOSUSP,T0=reduce?0:1300,T1=reduce?0:3600;let t0=performance.now(),done=false;
+    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches||window.__NOSUSP,T0=reduce?0:1900,T1=reduce?0:6200;let t0=performance.now(),done=false;
     const [n0,n1,ph]=E.nz;const dev=p=>(n0*(1-p)+n1*Math.sin(p*7+ph)*(1-p)*(1-p));
     const lab=(p,me,op)=>{if(p<.35)return '';const lead=E.riv?me-op:(E.win?1:-1);const sure=p>.82;
       if(E.prop)return p>.7?`정당 득표율 ${me.toFixed(1)}% · 비례 ${Math.round(46*me/100)}석 안팎`:'';
