@@ -1,0 +1,17 @@
+{
+  "name": "정치인키우기",
+  "short_name": "정치인키우기",
+  "description": "시군구의원에서 대통령까지, 이벤트로 키우는 정치 풍자 게임",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#EEF0EF",
+  "theme_color": "#1D2A44",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1D2A44">
+<meta name="description" content="시군구의원에서 대통령까지, 이벤트로 키우는 정치 풍자 게임">
+<meta property="og:title" content="정치인키우기">
+<meta property="og:description" content="시군구의원에서 대통령까지, 이벤트로 키우는 정치 풍자 게임">
+<meta property="og:image" content="icons/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>정치인키우기</title>
+<style>
+.acct{max-width:720px;margin:0 auto 10px;display:flex;justify-content:flex-end;align-items:center;gap:8px;font:13px/1.4 "IBM Plex Sans KR",system-ui,sans-serif;color:var(--muted,#5D646C)}
+.acct button{font:inherit;font-weight:600;border:1px solid var(--line,#D6DADB);background:var(--card,#fff);color:var(--ink,#15191E);border-radius:999px;padding:5px 12px;cursor:pointer}
+.acct .dot{width:8px;height:8px;border-radius:50%;background:#9aa3ad;display:inline-block}
+.acct .dot.on{background:var(--good,#1E8A4C)}
+dialog.login{border:none;border-radius:14px;padding:22px 20px;width:min(360px,calc(100vw - 32px));background:var(--card,#fff);color:var(--ink,#15191E);box-shadow:0 18px 50px rgba(0,0,0,.25);font:15px/1.5 "IBM Plex Sans KR",system-ui,sans-serif}
+dialog.login::backdrop{background:rgba(10,14,20,.45)}
+dialog.login h2{font:400 22px/1.2 "Black Han Sans",sans-serif;margin:0 0 4px}
+dialog.login p{margin:0 0 14px;color:var(--muted,#5D646C);font-size:13px}
+dialog.login label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
+dialog.login input{width:100%;font:inherit;padding:9px 10px;border:1px solid var(--line,#D6DADB);border-radius:8px;background:var(--card2,#F6F7F6);color:inherit}
+dialog.login .row{display:flex;gap:8px;margin-top:14px}
+dialog.login .row button,dialog.login .g{flex:1;font:inherit;font-weight:700;padding:10px;border-radius:8px;border:1px solid var(--line,#D6DADB);background:var(--card,#fff);color:inherit;cursor:pointer}
+dialog.login .g{width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+dialog.login .pri{background:#1D2A44!important;color:#fff!important;border-color:#1D2A44!important}
+dialog.login .or{display:flex;align-items:center;gap:8px;margin:14px 0 2px;color:var(--muted,#5D646C);font-size:12px}
+dialog.login .or::before,dialog.login .or::after{content:"";flex:1;height:1px;background:var(--line,#D6DADB)}
+dialog.login .msg{min-height:1.4em;margin-top:10px;font-size:13px;color:var(--bad,#C2321F)}
+dialog.login .msg.ok{color:var(--good,#1E8A4C)}
+dialog.login .link{background:none;border:none;padding:0;margin-top:10px;color:var(--muted,#5D646C);text-decoration:underline;font:inherit;font-size:12px;cursor:pointer}
+dialog.login .close{position:absolute;right:10px;top:8px;background:none;border:none;font-size:22px;color:var(--muted,#5D646C);cursor:pointer}
+</style>
+<script>window.__cloudPut=function(k){if(k!=='pol-save'&&k!=='pol-hof')return;try{localStorage.setItem('pol-ts',String(Date.now()))}catch(e){}if(window.__cloudHook)window.__cloudHook(k)};window.__WEB=1;window.__GAME_URL=location.origin+location.pathname.replace(/index\.html$/,'');</script>
+</head>
+<body>
+<div class="acct" id="acct" hidden></div>
+__GAME__
+<dialog class="login" id="loginDlg" aria-labelledby="lgT">
+  <button class="close" type="button" aria-label="닫기" data-close>×</button>
+  <div id="lgBody"></div>
+</dialog>
+<script type="module" src="firebase.js"></script>
+<script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
+</body>
+</html>
