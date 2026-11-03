@@ -191,6 +191,7 @@ details.log>summary .muted{font-size:12px}
 .rvchron .rvc{border-top:1px dashed var(--line);padding:10px 0}.rvchron .rvc:first-of-type{border-top:none}
 .rvchron p{margin:4px 0;font-size:14px}.rvp{list-style:none;padding:0;margin:4px 0 0;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px}.rvp .num{margin-right:4px;font-weight:600}
 .chip.more{cursor:pointer;background:var(--card);font-weight:700}.chips.more{margin-top:4px}
+.famrow{font-size:13px;margin:10px 0 4px}
 .stepper{list-style:none;display:flex;gap:6px;padding:0;margin:0}.stepper li{flex:1}
 .stepper button{width:100%;border:1px solid var(--line);background:var(--card2);border-radius:8px;padding:6px 4px;font-size:13px;display:flex;gap:6px;align-items:center;justify-content:center}
 .stepper .num{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--line);font-size:12px}
@@ -474,7 +475,7 @@ function newGame(cfg){
   D=[];chg(BG[cfg.bg].fx);D=[];
   {const st=achStore();S.perks=(cfg.perks||[]).filter(id=>{const p=PERKS.find(q=>q[0]===id);return p&&perkOK(p,st)}).slice(0,2);S.perks.forEach(id=>{D=[];chg(PERKS.find(q=>q[0]===id)[4]);D=[]})}
   if(cfg.party==='ind'){S.s.party=0}
-  pfInit();
+  pfInit();famInit(cfg);
   if(isHard()){chg({party:15,fame:5});D=[];S.hardStart=true}
   addLog(`35세, ${distName()} 선거구 ${offName(curR().jeju?'metro':'basic')}으로 정치 인생 시작. ${PARTIES[cfg.party].n} 소속.`);
   if(S.hardStart)addLog('험지 자원 출마로 당의 주목을 받았다. 당내입지 +15, 인지도 +5.');
@@ -1105,6 +1106,40 @@ const EV=[
  ch:[['가족끼리 조용히',()=>{chg({integrity:4,support:3});return '"정치인 자녀 결혼식 같지 않았다"는 미담.'}],['지역 인사 다 초대',()=>{chg({money:Math.round(800*TM()),integrity:-6,org:3});if(R()<.25)addCase('청탁금지법 위반(축의금)',1);return '축의금 장부가 두 권이었다.'}]]},
 {id:'x_mentor',tag:'인연',px:'office|old,me|book',t:'초선 시절 은사의 부고',b:'정치를 처음 가르쳐 준 원로가 세상을 떠났다. 그는 늘 "표보다 사람"이라고 했다.',
  ch:[['사흘 내내 빈소를 지킨다',()=>{chg({mental:-4,integrity:3,party:2});return '빈소에서 옛 동료들을 만났다. 모두가 조금 겸손해졌다.'}],['추모 법안을 낸다',()=>{chg({legis:3,fame:2});return '그의 이름이 붙은 법안이 상임위에 올라갔다.'}]]},
+// ---- 가족 ----
+{id:'f_anniv',w:3,tag:'가족',px:'night|me|flower',c:()=>!!F().sp,t:'결혼기념일 저녁, 지역 행사와 겹쳤다',b:()=>`오늘은 ${esc(F().sp.name)}와의 결혼기념일. 그런데 지역 체육회 송년회에서 "꼭 와 달라"는 연락이 세 번째 왔다.`,
+ ch:[['기념일 저녁을 지킨다',()=>{famBond(10);chg({mental:4,org:-2});return '휴대폰을 껐다. 다음 날 체육회장이 서운하다는 문자를 보냈다.'}],
+     ['송년회에 들렀다 늦게 간다',()=>{famBond(-4);chg({org:3});return '케이크는 식탁에서 혼자 녹고 있었다.'}],
+     ['배우자와 함께 송년회에 간다',()=>{const ok=R()<.5;famBond(ok?4:-6);chg({support:2,org:2});return ok?'"배우자분 덕에 분위기 최고" 소리를 들었다.':'돌아오는 차 안이 조용했다.'}]]},
+{id:'f_camp',w:4,tag:'가족',px:'street|me,cit,old|banner',c:()=>!!F().sp&&(elecKinds(S.year).length>0||elecKinds(S.year+1).length>0),t:'배우자도 유세에 나서 달라는 선대본',b:()=>`선대본부가 "배우자 동행 유세가 표를 끈다"며 ${esc(F().sp.name)}의 일정을 짜 왔다. 배우자는 ${SPJOB[F().sp.job]} 일이 바쁘다.`,
+ ch:[['함께 유세를 다닌다',()=>{famBond(F().bond>=50?2:-6);chg({support:4,fame:2});return '시장 골목에서 손을 맞잡은 사진이 퍼졌다.'}],
+     ['사생활은 지켜 달라고 한다',()=>{famBond(6);chg({support:-1});return '"가족을 지키는 정치인" 이미지는 남았다.'}]]},
+{id:'f_spjob',w:2,tag:'가족',px:'office|biz,me|env',c:()=>!!F().sp&&['biz','lawyer','doctor'].includes(F().sp.job)&&OFF[S.office].tier>=2,t:'배우자 일과 내 직무가 얽혔다',b:()=>`${SPJOB[F().sp.job]}인 배우자에게 내 소관 기관 관련 일이 들어왔다. "합법이지만 기사 나기 딱 좋다"고 보좌관이 말한다.`,
+ ch:[['배우자가 일을 맡지 않는다',()=>{famBond(-3);chg({integrity:3});return '배우자는 "당신 때문에 일도 못 한다"며 한숨을 쉬었다.'}],
+     ['합법이니 그냥 둔다',()=>{chg({money:Math.round(300*TM()),integrity:-4});if(R()<.35){chg({support:-5});return '"배우자 이해충돌" 단독 기사가 났다.'}return '아무도 문제 삼지 않았다. 아직은.'}]]},
+{id:'f_exam',w:4,tag:'가족',tempt:true,px:'school|cit,me|book',c:()=>!!kidAt(16,18)&&OFF[S.office].tier>=2,t:'자녀 입시, "아는 교수님"의 제안',b:()=>`고3 ${esc(kidAt(16,18).name)}의 입시가 코앞이다. 지인 교수가 연구 인턴 경력을 만들어 주겠다고 한다. "요즘 다들 이 정도는 해요."`,
+ ch:[['못 이기는 척 받는다',()=>{chg({integrity:-8});famBond(3);S.flags=S.flags||{};S.flags.spec=S.year;if(R()<.4)addCase('입시 서류 허위 작성 공모',1);return '원하는 학교에 붙었다. 서류는 남는다.'}],
+     ['스스로 하게 둔다',()=>{chg({integrity:3});famBond(R()<.5?4:-4);return '자녀는 재수를 결심했다. 같이 독서실 앞에서 컵라면을 먹었다.'}]]},
+{id:'f_army',w:4,tag:'가족',px:'street|me,cit|',c:()=>!!kidAt(19,22)&&s().fame>=30,t:'자녀 입대, 보직 "배려" 연락',b:()=>`${esc(kidAt(19,22).name)}가 입대했다. 부대 쪽에서 "편한 보직으로 배려하겠다"는 연락이 비공식적으로 왔다.`,
+ ch:[['"일반 병사와 똑같이"',()=>{chg({integrity:4,support:3});famBond(-2);return '최전방 GOP 배치. 첫 휴가 때 아이가 부쩍 컸다.'}],
+     ['모른 척 둔다',()=>{chg({integrity:-5});famBond(2);if(R()<.4){chg({support:-7});return '"정치인 자녀 꿀보직" 제보가 방송에 나왔다.'}return '아이는 행정병이 됐다.'}]]},
+{id:'f_kidsns',w:3,tag:'가족',px:'phone|me|exclaim',c:()=>!!kidAt(15,30)&&s().fame>=25,t:'자녀가 SNS에 내 정책을 비판했다',b:()=>`${esc(kidAt(15,30).name)}의 SNS에 "우리 ${pw()} 정책, 솔직히 청년한텐 별로"라는 글이 올라왔다. 캡처가 커뮤니티에 퍼졌다.`,
+ ch:[['"우리 집도 토론 중" 웃으며 인정',()=>{chg({fame:5,support:4});famBond(4);return '"쿨한 부모" 밈이 됐다. 청년층 호감도가 올랐다.'}],
+     ['글을 내리게 한다',()=>{chg({support:-3});famBond(-10);return '글은 내려갔다. 아이는 일주일간 방에서 나오지 않았다.'}]]},
+{id:'f_parent',w:2,tag:'가족',px:'hospital|doc,me,old|',c:()=>S.age>=45,t:'고향 부모님 요양 문제',b:'고향에 계신 부모님 건강이 나빠졌다. 형제들은 "네가 제일 바쁘니 돈이라도 내라"고 한다. 요양원 상담 날이 국정감사 날과 겹친다.',
+ ch:[['상담에 직접 간다',()=>{famBond(5);chg({mental:-3,legis:-1});return '요양원 복도에서 부모님 손을 오래 잡았다.'}],
+     ['비용을 대고 일정을 지킨다',()=>{chg({money:-Math.round(300*TM()),legis:1});famBond(-2);return '형제 단톡방에 "고생한다"는 말 대신 영수증 사진이 올라왔다.'}]]},
+{id:'f_heir',w:3,tag:'가족',px:'stage|me,cit|banner',c:()=>!!kidAt(28,45)&&S.age>=60,t:'자녀가 정치를 하겠다고 한다',b:()=>`${esc(kidAt(28,45).name)}가 내 지역구 다음 출마를 원한다. 측근들은 반기지만 "세습 정치" 비판이 뻔하다.`,
+ ch:[['지역구를 물려줄 준비를 한다',()=>{S.heir=1;achMark('heir');chg({party:3,support:-5,integrity:-3});famBond(6);return '"○○ 2세" 기사가 났다. 후원회장이 벌써 명함을 돌린다.'}],
+     ['"다른 곳에서 스스로 시작해라"',()=>{chg({integrity:3,support:2});famBond(-3);return '아이는 서운해했지만 다른 도시에서 구의원 선거를 준비하기 시작했다.'}],
+     ['정치는 반대한다',()=>{famBond(-8);return `"${pw()}처럼 살기 싫다"는 말을 처음 들었다.`}]]},
+{id:'f_crisis',w:6,tag:'가족',px:'night|me|',c:()=>!!F().sp&&F().bond<25,t:'"우리 이야기 좀 해"',b:()=>`늦은 밤, ${esc(F().sp.name)}가 식탁에 앉아 기다리고 있었다. "당신에게 가족은 선거 포스터 속 사진이야?"`,
+ ch:[['한 달간 일정을 대폭 줄인다',()=>{famBond(25);chg({fame:-5,org:-3,mental:6});return '처음으로 아이 학교 행사에 갔다. 사진 기자는 없었다.'}],
+     ['가족 상담을 받는다',()=>{famBond(15);chg({money:-Math.round(50*TM()),mental:3});return '상담실에서 둘 다 오래 울었다.'}],
+     ['"선거만 끝나면" 미룬다',()=>{famBond(-10);if(F().bond<10){S.fam.sp=null;S.fam.bond=40;chg({mental:-15,support:-3});addLog('배우자와 별거를 시작했다.');achMark('alone');return '배우자가 짐을 쌌다. 다음 주 기사에 "별거설"이 실렸다.'}return '대화는 거기서 끝났다.'}]]},
+{id:'f_trip',w:2,tag:'가족',px:'sea|me,cit|sun',c:()=>F().kids.length>0&&F().kids.some(k=>k.age<16),t:'아이들이 여름휴가를 기다린다',b:'아이들이 "올해는 바다 가는 거지?"라고 묻는다. 그 주에 당 연찬회가 잡혔다.',
+ ch:[['휴가를 간다',()=>{famBond(8);chg({mental:6,party:-2});return '바닷가에서 찍은 가족 사진이 휴대폰 배경화면이 됐다.'}],
+     ['연찬회에 간다',()=>{famBond(-6);chg({party:3});return '아이들은 할머니 댁에 갔다.'}]]},
 // ---- 정당 내부 정치 ----
 {id:'pp_side',w:3,tag:'계파',px:'office|aide,me,riv|',c:()=>twoParty()&&!big()&&inOffice(),t:()=>S.align==='main'?'비주류 모임에서 "같이 하자"는 연락':'당권파 핵심이 밥을 사겠다고 한다',b:()=>S.align==='main'?'비주류 중진들이 당 지도부를 견제할 모임을 만든다며 이름을 올려 달라고 한다. 지도부는 명단을 지켜보고 있다.':'당 지도부 핵심 인사가 저녁을 사며 "이제 우리 쪽으로 오라"고 한다. 공천이 다가온다.',
  ch:()=>S.align==='main'?[['비주류 모임에 합류',()=>{S.align='non';chg({party:-6,fame:4,integrity:2});return '"소신파" 기사가 났다. 지도부 단톡방에서 조용히 빠졌다.'}],['지도부 곁에 남는다',()=>{chg({party:4});return '"충성파" 꼬리표가 조금 더 짙어졌다.'}]]
@@ -2198,6 +2233,7 @@ function hdrHTML(){
     <div class="muted" style="font-size:12px;margin-top:4px">정당 지지율 · 여당: ${S.ruling==='ind'?'무소속 대통령':PARTIES[S.ruling].n} · 대통령 지지율 <b class="num" style="color:${presAp()<30?'var(--bad)':'inherit'}">${presAp()}%</b></div>
     ${pfBar()}
     <details class="reqs"><summary>출마 조건 보기</summary><ul>${['basic','metro','mayor','nat','natp','gov','pres'].map(o=>`<li><span class="${reqMet(o)?'ok':'no'}">${reqMet(o)?'충족':'미충족'}</span><b>${OFF[o].full}</b> <span class="muted">${{local:'지방선거',general:'총선',pres:'대선'}[ELEC_OF[o]]} ${nextElecYear(ELEC_OF[o],S.year-1)}</span><br><small class="muted">${reqTxt(o)}</small></li>`).join('')}</ul></details>
+    <div class="famrow"><span class="label">가족</span> ${famLine()} ${S.fam&&(S.fam.sp||S.fam.kids.length)?`· 관계 <b class="num" style="color:${F().bond<30?'var(--bad)':F().bond>=70?'var(--good)':'inherit'}">${F().bond}</b>`:''}</div>
     <div class="region"><div><span class="label">${esc(RR.n)}</span> ${RR.t}</div>
       <div><span class="label">${esc(curD()[0])}</span> ${dt.n} · ${dt.t}${member()?` · 우리 당 기준 <b>${leanTxt(leanFor(S.party))}</b>`:''}</div><div><span class="label">살림</span> ${distTxt()}</div></div>
   </details>`;
@@ -2272,12 +2308,13 @@ function renderStart(){
            ['t','넥타이',[['#f2c14e','노랑'],['#c94040','빨강'],['#7fb3d5','하늘'],['','없음']]],
            ['gl','안경',[[0,'없음'],[1,'있음']]],['sk','하의',[[0,'바지'],[1,'치마']]]].map(([k,lab,opts])=>`<div class="lrow"><span class="label">${lab}</span><div class="lbtns">${opts.map(([v,n])=>`<button data-lk="${k}" data-lv="${v}" aria-pressed="${String(lk[k])===String(v)}">${k==='h'||k==='s'||(k==='t'&&v)?`<i style="background:${v}"></i>`:''}${n}</button>`).join('')}</div></div>`).join('')}
       </div></div></div>
+    <div class="field"><span class="label">가족</span><div class="lrow"><span class="label">배우자</span><div class="lbtns">${[[1,'있음'],[0,'없음']].map(([v,n])=>`<button data-fam="sp" data-fv="${v}" aria-pressed="${(c.fam||{sp:1}).sp===v}">${n}</button>`).join('')}</div></div><div class="lrow"><span class="label">자녀</span><div class="lbtns">${[0,1,2,3].map(v=>`<button data-fam="kids" data-fv="${v}" aria-pressed="${(c.fam||{kids:2}).kids===v}">${v}명</button>`).join('')}</div></div><p class="muted" style="font-size:12px;margin:2px 0 0">가족과의 관계가 좋으면 멘탈이 회복되고 선거에 힘이 된다. 대신 가족 이벤트가 생긴다.</p></div>
     <div class="field"><span class="label">출신 배경</span><div class="chooser" id="bgc">
       ${Object.entries(BG).map(([k,b])=>`<button data-k="${k}" aria-pressed="${c.bg===k}"><b>${b.n}</b><small>${b.d}</small></button>`).join('')}</div></div>
     <div class="row stepnav"><button class="btn" type="button" data-step="1">← 이전</button><button class="btn primary" type="button" data-step="3">다음: 확인 →</button></div>
     </div>
     <div class="stepgrp" ${hid(3)}>
-    <dl class="confirm"><dt>이름</dt><dd>${esc(c.name)||'<span class="muted">비워 두면 무작위 이름</span>'}</dd><dt>정당</dt><dd style="color:var(--${c.party})">${PARTIES[c.party].n}</dd><dt>출마 지역</dt><dd>${esc(RR.n)} ${esc(RR.d[c.dist][0])}</dd><dt>출신</dt><dd>${BG[c.bg].n}</dd></dl>
+    <dl class="confirm"><dt>이름</dt><dd>${esc(c.name)||'<span class="muted">비워 두면 무작위 이름</span>'}</dd><dt>정당</dt><dd style="color:var(--${c.party})">${PARTIES[c.party].n}</dd><dt>출마 지역</dt><dd>${esc(RR.n)} ${esc(RR.d[c.dist][0])}</dd><dt>출신</dt><dd>${BG[c.bg].n}</dd><dt>가족</dt><dd>${(c.fam||{sp:1}).sp?'배우자 · ':''}자녀 ${(c.fam||{kids:2}).kids}명</dd></dl>
     ${(()=>{const st=achStore(),av=PERKS.filter(p=>perkOK(p,st));c.perks=(c.perks||[]).filter(id=>av.some(p=>p[0]===id));
       return `<div class="perks"><span class="label">시작 보너스 <span class="muted">(선택 · 최대 2개)</span></span>${av.length?`<div class="opts">${av.map(p=>`<button type="button" class="opt" data-perk="${p[0]}" aria-pressed="${c.perks.includes(p[0])}"><b>${esc(p[1])}</b> <span class="muted">${esc(p[2])}</span></button>`).join('')}</div>`:'<p class="muted" style="margin:4px 0 0;font-size:13px">업적을 달성하면 여기서 시작 보너스를 고를 수 있어요. 없어도 모든 출신·지역·정당을 그대로 고를 수 있어요.</p>'}</div>`})()}
     <div class="row"><button class="btn primary" id="go">출마 등록 · 2026년 시작</button><span class="muted" style="font-size:13px">35세, 2026 지방선거에서 당선된 직후부터 시작합니다. 65세부터는 선거에 나가지 않고 남은 임기와 재판을 정리합니다.</span></div>
@@ -2303,6 +2340,7 @@ function renderStart(){
   $app.querySelectorAll('#rg button').forEach(b=>b.onclick=()=>{c.region=b.dataset.k;c.dist=0;renderStart()});
   $app.querySelectorAll('#ds button').forEach(b=>b.onclick=()=>{c.dist=+b.dataset.i;renderStart()});
   $app.querySelectorAll('#bgc button').forEach(b=>b.onclick=()=>{c.bg=b.dataset.k;renderStart()});
+  $app.querySelectorAll('[data-fam]').forEach(b=>b.onclick=()=>{c.fam=c.fam||{sp:1,kids:2};c.fam[b.dataset.fam]=+b.dataset.fv;renderStart()});
   $app.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{const k=b.dataset.lk,v=b.dataset.lv;lk[k]=(k==='gl'||k==='sk')?+v:v;renderStart()});
   {const cv=document.getElementById('lookc'),cx=cv&&cv.getContext&&cv.getContext('2d');if(cx){const r=(x,y,w,h,col)=>{cx.fillStyle=col;cx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
     cx.clearRect(0,0,80,90);r(0,81,80,9,'#d6cfc0');r(0,81,80,1,'#bdb5a4');const S0=S;S={party:c.party,look:lk};PF=0;try{personHD(r,22,10,whoCol('me'),false)}finally{S=S0}}}
@@ -2700,7 +2738,7 @@ function tally(E){
   else if(!RR.fx.indOk)p-=off==='basic'?3:8;
   if(off!=='pres'){p+=s().org*((RR.fx.orgW||0)+(dt.orgW||0));if(dt.clean&&s().integrity<45)p-=5}
   if(E.far)p-=4;
-  if(S.trial)p-=5;if(s().integrity<30)p-=4;
+  if(S.trial)p-=5;if(s().integrity<30)p-=4;p+=famElec();
   let opp=o.base+(off!=='pres'?(RR.fx.opp||0):0)+(RR.jeju?(off==='metro'?-4:off==='gov'?3:0):0)+gauss()*7;p+=gauss()*5;
   E.riv=rivalIn(off);if(E.riv){opp+=(S.rival.power-50)*.18;S.rivalRaced=S.year;E.rname=S.rival.name;E.rparty=S.rival.party}
   const share=clamp(50+(p-opp)*.9,3,88);const win=share>50;
@@ -2754,7 +2792,7 @@ function yearEnd(){
    if(ek.length&&myMaj()!==null)notes.push(majLabel())}
   for(const p of ['jj','sm'])S.pop[p]=clamp(Math.round(S.pop[p]+(35-S.pop[p])*.25+ri(-3,3)),15,60);
   if(S.pop.np!=null)S.pop.np=clamp(Math.round(S.pop.np+(11-S.pop.np)*.15+ri(-2,2)),3,40);
-  pfInit();pfYear(notes);
+  pfInit();pfYear(notes);try{famYear(notes)}catch(e){}
   if(S.crisis&&S.crisis.left>0){const C=CRISES[S.crisis.k],i=C.dur-S.crisis.left,rp=rulingP(),adj=S.crisis.adj||0;
     const hit=Math.max(-6,C.hit[i]-adj);S.pop[rp]=clamp(S.pop[rp]-hit,15,60);S.pop[other(rp)]=clamp(S.pop[other(rp)]+Math.round(hit/2),15,60);
     S.presAp=clamp((S.presAp==null?50:S.presAp)+C.ap+adj*2,8,80);S.crisis.adj=Math.round(adj/2);
@@ -2815,6 +2853,20 @@ const ENDS={
   forgotten:{t:'잊혀진 정치인',b:'10년의 야인 생활. 사람들은 이름을 기억하지 못한다.'},
   retire:{t:'정계 은퇴 선언',b:'스스로 내려놓았다. 기자회견장이 조용했다.'},
 };
+/* ============ 가족 ============ */
+const SPJOB={teacher:'교사',biz:'자영업',doctor:'의사',home:'전업주부',lawyer:'변호사',office:'회사원'};
+function famInit(cfg){const f=cfg.fam||{sp:1,kids:2};S.fam={sp:f.sp?{name:kname(),job:pick(Object.keys(SPJOB))}:null,kids:[],bond:62};
+  for(let i=0;i<(f.kids||0);i++){let nm=kname();S.fam.kids.push({name:nm.slice(0,1)===S.name.slice(0,1)?nm:S.name.slice(0,1)+nm.slice(1),age:ri(2,9)})}}
+const F=()=>S.fam||{sp:null,kids:[],bond:60};
+function stage(a){return a<8?'미취학':a<14?'초등학생':a<17?'중학생':a<20?'고등학생':a<24?'대학생':'사회인'}
+function famLine(){const f=F();if(!f.sp&&!f.kids.length)return '1인 가구';return [f.sp?`배우자 ${esc(f.sp.name)}(${SPJOB[f.sp.job]})`:'',f.kids.length?`자녀 ${f.kids.map(k=>stage(k.age)).join('·')}`:''].filter(Boolean).join(' · ')}
+function famBond(d){if(S.fam)S.fam.bond=clamp(S.fam.bond+d,0,100)}
+function famYear(notes){if(!S.fam)return;const f=S.fam;f.kids.forEach(k=>k.age++);
+  famBond(Math.round((s().mental-55)/12)-(isPres()||S.titles.leader?2:0)-(inOffice()?1:0)+(inOffice()?0:2));
+  if(f.sp||f.kids.length){const m=Math.round((f.bond-50)/12);if(m)chg({mental:m});if(f.bond<25)notes.push('가족과의 관계가 위태롭다')}}
+function famElec(){const f=F();if(!f.sp)return 0;return f.bond>=70?2.5:f.bond>=45?1:f.bond<25?-2:0}
+function pw(){const l=S.look||{};return ['long','bob','bun'].includes(l.st)||l.sk?'엄마':'아빠'}
+function kidAt(lo,hi){return F().kids.find(k=>k.age>=lo&&k.age<=hi)}
 /* ============ 사운드 (WebAudio 합성, 기본 꺼짐) ============ */
 const SND=(()=>{let ac=null,master=null,on=false,cur=null,timer=null,step=0,nextT=0;
   try{on=localStorage.getItem('pol-snd')==='1'}catch(e){}
@@ -3007,6 +3059,9 @@ const ACH=[
  ['rvgrace','정적에게 탄원서','기소된 라이벌에게 선처 탄원서를 낸다',x=>x.ach&&x.ach.rvgrace],
  ['rvpres','만년 2인자','라이벌이 대통령이 된다',x=>x.ach&&x.ach.rvpres],
  ['rvjail','사필귀정','라이벌이 유죄 확정으로 감옥에 간다',x=>(x.rivals||[]).some(v=>v.fate==='jail')||(x.rival&&x.rival.fate==='jail')],
+ ['family','화목한 가정','가족 관계 80 이상으로 은퇴',x=>x.fam&&(x.fam.sp||x.fam.kids.length)&&x.fam.bond>=80],
+ ['heir','정치 명문가','자녀에게 지역구를 물려줄 준비를 한다',x=>x.ach&&x.ach.heir],
+ ['alone','국민과 결혼했다','정치 때문에 배우자와 별거한다',x=>x.ach&&x.ach.alone],
  ['allbg','팔방미인','모든 출신으로 한 번씩 완주',null],
 ];
 const ACHM=Object.fromEntries(ACH.map(a=>[a[0],a]));
