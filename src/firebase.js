@@ -73,12 +73,17 @@ async function pull() {
     const ach = mergeAch(cloud && cloud.ach, ls.get("pol-ach"));
     if (cloud && cloud.updated > localTs()) {
       const busy = window.__polBusy && window.__polBusy();
+      // 이 기기에서 하던 다른 판이 있으면 덮어쓰기 전에 백업해 둔다.
+      const mine = ls.get("pol-save");
+      if (mine && mine.phase !== "ending" && JSON.stringify(mine) !== JSON.stringify(cloud.save || null)) {
+        ls.set("pol-save-bak", { save: mine, at: Date.now() });
+      }
       ls.set("pol-save", cloud.save || null);
       ls.set("pol-hof", hof);
       ls.set("pol-ach", ach);
       try { localStorage.setItem("pol-ts", String(cloud.updated)); } catch {}
       if (window.__polRefresh) window.__polRefresh(busy);
-      if (cloud.save) toast("다른 기기에서 하던 판을 불러왔어요. ‘이어하기’로 계속하세요.");
+      if (cloud.save) toast(ls.get("pol-save-bak") ? "다른 기기의 최신 판을 불러왔어요. 이 기기에서 하던 판은 백업해 뒀어요 (내 계정 메뉴)." : "다른 기기에서 하던 판을 불러왔어요. ‘이어하기’로 계속하세요.");
       setState("ok");
     } else {
       ls.set("pol-hof", hof);
@@ -111,8 +116,11 @@ function openDlg(m) { mode = m; msg = ""; ok = false; renderDlg(); if (!dlg.open
 function renderDlg() {
   if (mode === "me") {
     body.innerHTML = `<h2 id="lgT">내 계정</h2><p>${esc(user && (user.email || user.displayName))}<br>진행 중인 판과 명예의 전당이 이 계정에 저장돼요.</p>
-      <div class="row"><button type="button" id="lgSync">지금 동기화</button><button type="button" id="lgOut">로그아웃</button></div>`;
+      <div class="row"><button type="button" id="lgSync">지금 동기화</button><button type="button" id="lgOut">로그아웃</button></div>
+      ${(() => { const bk = ls.get("pol-save-bak"); return bk && bk.save ? `<p style="margin-top:14px">이 기기 백업: <b>${esc(bk.save.name)}</b> (${bk.save.year}년)</p><div class="row"><button type="button" id="lgRestore">백업한 판으로 되돌리기</button></div>` : ""; })()}`;
     body.querySelector("#lgSync").onclick = async () => { await pull(); dlg.close(); };
+    const rs = body.querySelector("#lgRestore");
+    if (rs) rs.onclick = () => { const bk = ls.get("pol-save-bak"); if (!bk) return; const cur = ls.get("pol-save"); ls.set("pol-save", bk.save); ls.set("pol-save-bak", cur && cur.phase !== "ending" ? { save: cur, at: Date.now() } : null); window.__cloudPut && window.__cloudPut("pol-save"); if (window.__polRefresh) window.__polRefresh(true); dlg.close(); toast("백업한 판으로 되돌렸어요."); };
     body.querySelector("#lgOut").onclick = async () => { if (pushTimer) await push(); await signOut(auth); dlg.close(); };
     return;
   }

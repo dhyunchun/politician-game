@@ -2121,7 +2121,12 @@ const $app=document.getElementById('app');
 function drawAvatar(){const cv=document.getElementById('avc'),cx=cv&&cv.getContext&&cv.getContext('2d');if(!cx)return;
   const r=(x,y,w,h,col)=>{cx.fillStyle=col;cx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
   cx.clearRect(0,0,36,36);const pf=PF;PF=0;const px=PXC;PXC=null;try{personHD(r,0,4,whoCol('me'),false)}finally{PF=pf;PXC=px}}
-function render(){try{SND.btn();SND.bgm(pickBgm())}catch(e){}renderMain()}
+function render(){try{SND.btn();SND.bgm(pickBgm())}catch(e){}
+  try{renderMain()}catch(err){console.error(err);try{store.set('pol-save-broken',S)}catch(e){}
+    $app.innerHTML=`<section class="card"><h3>화면을 그리다 문제가 생겼어요</h3><p class="muted" style="font-size:14px">저장된 판은 따로 보관해 뒀어요. 다시 시도해도 같으면 새 판을 시작해 주세요. (${esc(String(err&&err.message||err)).slice(0,80)})</p>
+      <div class="row"><button class="btn primary" id="errRetry">다시 시도</button><button class="btn" id="errNew">새 판 시작</button></div></section>`;
+    document.getElementById('errRetry').onclick=()=>{if(S){S.cur=null;S.res=null;if(S.phase==='queue'&&(!S.q||!S.q.length))S.q=[{type:'ev',id:'c_work'}]}render()};
+    document.getElementById('errNew').onclick=()=>{store.del('pol-save');S=null;render()}}}
 function renderMain(){
   document.body.dataset.party=S?S.party:'ind';
   if(!S||S.phase==='start'){renderStart();return}
