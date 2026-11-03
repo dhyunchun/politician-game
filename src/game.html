@@ -317,7 +317,7 @@ const OFF={
   nat:{n:'국회의원',full:'국회의원',tier:3,sal:4000,route:'council',spend:8000,base:53,th:53},
   natp:{n:'비례대표 의원',full:'비례대표 국회의원',tier:3,sal:4000,route:'council',spend:0,base:0,th:48},
   gov:{n:'광역단체장',full:'도지사·광역시장',tier:4,sal:4000,route:'admin',spend:15000,base:56,th:57},
-  pres:{n:'대통령',full:'대한민국 대통령',tier:6,sal:6000,route:'both',spend:25000,base:57,th:61},
+  pres:{n:'대통령',full:'대한민국 대통령',tier:6,sal:6000,route:'both',spend:25000,base:58,th:61},
 };
 const LBL={fame:'인지도',support:'지지율',money:'자금',party:'당내입지',integrity:'청렴도',mental:'멘탈',policy:'정책',
   legis:'입법력',speech:'언변',admin:'행정력',org:'조직력'};
@@ -2864,7 +2864,7 @@ function famBond(d){if(S.fam)S.fam.bond=clamp(S.fam.bond+d,0,100)}
 function famYear(notes){if(!S.fam)return;const f=S.fam;f.kids.forEach(k=>k.age++);
   famBond(Math.round((s().mental-55)/12)-(isPres()||S.titles.leader?2:0)-(inOffice()?1:0)+(inOffice()?0:2));
   if(f.sp||f.kids.length){const m=Math.round((f.bond-50)/12);if(m)chg({mental:m});if(f.bond<25)notes.push('가족과의 관계가 위태롭다')}}
-function famElec(){const f=F();if(!f.sp)return 0;return f.bond>=70?2.5:f.bond>=45?1:f.bond<25?-2:0}
+function famElec(){const f=F();if(!f.sp)return 0;return f.bond>=70?1.5:f.bond>=45?.5:f.bond<25?-2:0}
 function pw(){const l=S.look||{};return ['long','bob','bun'].includes(l.st)||l.sk?'엄마':'아빠'}
 function kidAt(lo,hi){return F().kids.find(k=>k.age>=lo&&k.age<=hi)}
 /* ============ 사운드 (WebAudio 합성, 기본 꺼짐) ============ */
