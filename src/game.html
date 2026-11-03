@@ -190,6 +190,21 @@ details.log>summary .muted{font-size:12px}
 }
 .rvchron .rvc{border-top:1px dashed var(--line);padding:10px 0}.rvchron .rvc:first-of-type{border-top:none}
 .rvchron p{margin:4px 0;font-size:14px}.rvp{list-style:none;padding:0;margin:4px 0 0;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px}.rvp .num{margin-right:4px;font-weight:600}
+.stepper{list-style:none;display:flex;gap:6px;padding:0;margin:0}.stepper li{flex:1}
+.stepper button{width:100%;border:1px solid var(--line);background:var(--card2);border-radius:8px;padding:6px 4px;font-size:13px;display:flex;gap:6px;align-items:center;justify-content:center}
+.stepper .num{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--line);font-size:12px}
+.stepper button[aria-current="step"]{border-color:var(--p);color:var(--ink);font-weight:700}.stepper button[aria-current="step"] .num{background:var(--p);color:#fff}
+.stepper button.done .num{background:var(--good);color:#fff}
+.stepgrp{display:flex;flex-direction:column;gap:16px}.stepgrp[hidden]{display:none}
+.stepnav{justify-content:space-between}.stepnav .btn.primary{margin-left:auto}
+.confirm{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:15px}.confirm dt{color:var(--muted)}.confirm dd{margin:0;font-weight:600}
+.poster.compact .sub,.poster.compact .stamp{display:none}
+@media (max-width:640px){
+  .ballot{grid-template-columns:repeat(3,1fr)!important}.ballot button{padding:8px 6px}.ballot button>span:last-child{display:none}.ballot button b{font-size:14px}
+  #rg{grid-template-columns:repeat(4,1fr)}#rg button{padding:8px 4px;text-align:center;align-items:center}#rg button small{font-size:10px}
+  #ds{grid-template-columns:repeat(2,1fr)}#ds button{padding:8px 6px}
+  #bgc{grid-template-columns:repeat(2,1fr)}
+}.poster.compact h1{font-size:34px}
 .count{margin:14px 0}
 .count .track{height:26px;border-radius:6px;background:var(--card2);border:1px solid var(--line);position:relative;overflow:hidden}
 .count .fill{position:absolute;inset:0 auto 0 0;width:0;background:var(--p);transition:width 1.6s cubic-bezier(.2,.7,.2,1)}
@@ -2213,8 +2228,8 @@ function renderStart(){
   if(!REGIONS[c.region]){c.region='busan';c.dist=0}
   const RR=REGIONS[c.region];
   document.body.dataset.party=c.party;
-  const ln=r=>c.party==='ind'?'':leanTxt(c.party==='jj'?r:-r);
-  $app.innerHTML=`<section class="poster">
+  const ln=r=>c.party==='ind'?'':leanTxt(c.party==='jj'?r:-r);c.step=c.step||1;const hid=n=>c.step===n?'':'hidden';
+  $app.innerHTML=`<section class="poster ${c.step>1?'compact':''}">
     <svg class="stamp" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44"/><text x="50" y="70" text-anchor="middle">卜</text></svg>
     <div class="label">시군구의원부터 대통령까지</div>
     <h1>정치인<br>키우기</h1>
@@ -2223,6 +2238,8 @@ function renderStart(){
   </section>
   <section class="card" style="display:flex;flex-direction:column;gap:16px">
     <h3 style="font-size:20px">후보 등록</h3>
+    <ol class="stepper">${['정당·지역','출신·외형','확인'].map((s,i)=>`<li><button type="button" data-step="${i+1}" aria-current="${c.step===i+1?'step':'false'}" class="${c.step>i+1?'done':''}"><span class="num">${i+1}</span>${s}</button></li>`).join('')}</ol>
+    <div class="stepgrp" ${hid(1)}>
     <div class="field"><label class="label" for="nm">이름</label><input id="nm" maxlength="8" placeholder="예: 김민수" value="${esc(c.name)}"></div>
     <div class="field"><span class="label">소속 정당</span><div class="ballot">
       ${['jj','sm','ind'].map(p=>`<button data-party="${p}" style="--c:var(--${p})" aria-pressed="${c.party===p}"><span class="no">기호 ${PARTIES[p].no}</span><b style="color:var(--${p})">${PARTIES[p].n}</b><span>${p==='ind'?'공천 없음, 조직 불리. 나중에 입당 가능':'공천 경선을 거쳐 출마'}</span></button>`).join('')}</div></div>
@@ -2234,6 +2251,9 @@ function renderStart(){
       <p class="muted" style="font-size:13px;margin:4px 0 0">${DTYPE[RR.d[c.dist][3]].n}: ${DTYPE[RR.d[c.dist][3]].t}. 첫 직함은 ${RR.jeju?'제주도의원':RR.d[c.dist][1]+'의원'}입니다.</p>
       ${(()=>{if(c.party==='ind')return '<p class="muted" style="font-size:13px;margin:4px 0 0">살림: 무소속은 후원금 보통, 인지도 쌓기 쉬움</p>';const L=(c.party==='jj'?1:-1)*(RR.lean+RR.d[c.dist][4]);const f=L<=-8?.55:L<=-3?.7:L<3?.85:L<8?1.15:1.3;return `<p class="muted" style="font-size:13px;margin:4px 0 0">살림: ${f<.8?`험지라 후원금이 적다 (×${f})`:f<1?`격전지라 후원금은 보통(×${f}), 인지도는 잘 쌓인다(+35%)`:`우세 지역이라 후원금이 많다 (×${f})`}</p>`})()}
       ${c.party!=='ind'&&(c.party==='jj'?1:-1)*(RR.lean+RR.d[c.dist][4])<=-3?'<p style="font-size:13px;margin:4px 0 0;color:var(--good)"><b>험지 보너스</b> · 시작 당내입지 +15, 인지도 +5 · 이 선거구에서 공천 가산점 · 현역일 때 매년 당내입지 +3</p>':''}</div>
+    <div class="row stepnav"><button class="btn primary" type="button" data-step="2">다음: 출신·외형 →</button></div>
+    </div>
+    <div class="stepgrp" ${hid(2)}>
     <div class="field"><span class="label">내 정치인 꾸미기</span>
       <div class="looks"><canvas id="lookc" width="80" height="90" role="img" aria-label="캐릭터 미리보기"></canvas>
       <div class="lookopts">
@@ -2245,9 +2265,15 @@ function renderStart(){
       </div></div></div>
     <div class="field"><span class="label">출신 배경</span><div class="chooser" id="bgc">
       ${Object.entries(BG).map(([k,b])=>`<button data-k="${k}" aria-pressed="${c.bg===k}"><b>${b.n}</b><small>${b.d}</small></button>`).join('')}</div></div>
+    <div class="row stepnav"><button class="btn" type="button" data-step="1">← 이전</button><button class="btn primary" type="button" data-step="3">다음: 확인 →</button></div>
+    </div>
+    <div class="stepgrp" ${hid(3)}>
+    <dl class="confirm"><dt>이름</dt><dd>${esc(c.name)||'<span class="muted">비워 두면 무작위 이름</span>'}</dd><dt>정당</dt><dd style="color:var(--${c.party})">${PARTIES[c.party].n}</dd><dt>출마 지역</dt><dd>${esc(RR.n)} ${esc(RR.d[c.dist][0])}</dd><dt>출신</dt><dd>${BG[c.bg].n}</dd></dl>
     ${(()=>{const st=achStore(),av=PERKS.filter(p=>perkOK(p,st));c.perks=(c.perks||[]).filter(id=>av.some(p=>p[0]===id));
       return `<div class="perks"><span class="label">시작 보너스 <span class="muted">(선택 · 최대 2개)</span></span>${av.length?`<div class="opts">${av.map(p=>`<button type="button" class="opt" data-perk="${p[0]}" aria-pressed="${c.perks.includes(p[0])}"><b>${esc(p[1])}</b> <span class="muted">${esc(p[2])}</span></button>`).join('')}</div>`:'<p class="muted" style="margin:4px 0 0;font-size:13px">업적을 달성하면 여기서 시작 보너스를 고를 수 있어요. 없어도 모든 출신·지역·정당을 그대로 고를 수 있어요.</p>'}</div>`})()}
     <div class="row"><button class="btn primary" id="go">출마 등록 · 2026년 시작</button><span class="muted" style="font-size:13px">35세, 2026 지방선거에서 당선된 직후부터 시작합니다. 65세부터는 선거에 나가지 않고 남은 임기와 재판을 정리합니다.</span></div>
+    <div class="row stepnav"><button class="btn" type="button" data-step="2">← 이전</button></div>
+    </div>
   </section>
   <section class="card"><div class="row" style="justify-content:space-between;margin-bottom:8px"><h3 style="font-size:17px;margin:0">명예의 전당</h3><button class="btn" id="dexb">🏅 도감 ${(()=>{const st=achStore();return Object.keys(st.ach).filter(k=>ACHM[k]).length+"/"+ACH.length})()}</button></div>
     ${hof.length?`<p class="muted" style="margin:0 0 8px;font-size:12px">이름을 누르면 그때의 결과 카드를 다시 볼 수 있어요.</p><div class="hof">${hof.slice(0,12).map((h,i)=>`<button type="button" data-hof="${i}"><span><b>${esc(h.name)}</b> <span class="muted">${PARTIES[h.party]?PARTIES[h.party].s:''}${h.y?' · '+h.y:''}</span></span><span>${esc(h.best)} · ${esc(h.end)}</span></button>`).join('')}</div>`:'<p class="muted" style="margin:0">아직 기록이 없습니다. 첫 번째 정치인이 되어 보세요.</p>'}
@@ -2261,6 +2287,7 @@ function renderStart(){
    document.getElementById('hofx').onclick=()=>{hv.hidden=true};hv.onclick=e=>{if(e.target===hv)hv.hidden=true};
    document.getElementById('hofShare').onclick=()=>{if(cur)openSheet(cardText(cur))}}
   const nm=document.getElementById('nm');nm.oninput=()=>c.name=nm.value;
+  $app.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{c.name=nm.value;c.step=+b.dataset.step;renderStart();const f=document.querySelector('.stepper');if(f)f.scrollIntoView({block:'start',behavior:'smooth'})});
   {const db=document.getElementById('dexb');if(db)db.onclick=openDex}
   $app.querySelectorAll('[data-perk]').forEach(b=>b.onclick=()=>{const id=b.dataset.perk;c.perks=c.perks||[];if(c.perks.includes(id))c.perks=c.perks.filter(x=>x!==id);else{c.perks.push(id);if(c.perks.length>2)c.perks.shift()}renderStart()});
   $app.querySelectorAll('.ballot button').forEach(b=>b.onclick=()=>{c.party=b.dataset.party;renderStart()});
@@ -2270,7 +2297,7 @@ function renderStart(){
   $app.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{const k=b.dataset.lk,v=b.dataset.lv;lk[k]=(k==='gl'||k==='sk')?+v:v;renderStart()});
   {const cv=document.getElementById('lookc'),cx=cv&&cv.getContext&&cv.getContext('2d');if(cx){const r=(x,y,w,h,col)=>{cx.fillStyle=col;cx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
     cx.clearRect(0,0,80,90);r(0,81,80,9,'#d6cfc0');r(0,81,80,1,'#bdb5a4');const S0=S;S={party:c.party,look:lk};PF=0;try{personHD(r,22,10,whoCol('me'),false)}finally{S=S0}}}
-  document.getElementById('go').onclick=()=>{c.name=(nm.value.trim()||kname()).slice(0,8);newGame(c);save();render();window.scrollTo(0,0)};
+  document.getElementById('go').onclick=()=>{c.name=(nm.value.trim()||c.name.trim()||kname()).slice(0,8);c.step=1;newGame(c);save();render();window.scrollTo(0,0)};
   const ct=document.getElementById('cont');if(ct)ct.onclick=()=>{S=sv;fixup();render()};
 }
 function scrollStage(){const el=document.getElementById('stage');if(el)el.scrollIntoView({block:'start',behavior:'smooth'})}
