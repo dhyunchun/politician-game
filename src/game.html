@@ -76,7 +76,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .yr{text-align:right}
 .yr .num{font-size:22px;font-weight:600}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.chip{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);background:var(--card2);white-space:nowrap}
+.chip{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);background:var(--card2);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .chip.p{border-color:var(--p);color:var(--p);font-weight:700}
 .chip.red{border-color:var(--bad);color:var(--bad);font-weight:700}
 
@@ -168,7 +168,26 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .pfbar{display:flex;height:18px;border-radius:5px;overflow:hidden;margin:4px 0 2px;font-size:11px;line-height:18px;color:#fff;font-weight:700}
 .pfbar i{font-style:normal;padding-left:6px;white-space:nowrap;overflow:hidden}.pfbar .m{background:var(--p)}.pfbar .n{background:var(--muted)}.pfbar .o{background:var(--warn)}
 .pfmap small{font-size:12px}
-.sndb{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:40;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:20px;box-shadow:0 4px 14px rgba(0,0,0,.15);cursor:pointer}
+.sndb{position:fixed;right:max(10px,env(safe-area-inset-right,0px));top:max(10px,env(safe-area-inset-top,0px));opacity:.85;z-index:40;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:17px;box-shadow:0 4px 14px rgba(0,0,0,.15);cursor:pointer}
+.statpanel>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.statpanel>summary::-webkit-details-marker{display:none}
+.sumstrip{display:flex;gap:10px;flex-wrap:wrap}.sumstrip span{display:flex;flex-direction:column;align-items:center;min-width:34px}.sumstrip small{font-size:10px;color:var(--muted)}.sumstrip b{font-size:14px}
+.sumhint{font-size:12px;color:var(--muted);white-space:nowrap}.sumhint::after{content:' ▾'}.statpanel[open] .sumhint::after{content:' ▴'}
+.statpanel[open]>summary{margin-bottom:10px;padding-bottom:10px;border-bottom:1px dashed var(--line)}
+details.log>summary{list-style:none;cursor:pointer;display:flex;flex-direction:column;gap:2px}details.log>summary::-webkit-details-marker{display:none}
+details.log>summary h3::after{content:' ▾';font-size:13px;color:var(--muted)}details.log[open]>summary h3::after{content:' ▴'}
+details.log>summary .muted{font-size:12px}
+.yearcard{text-align:center;padding:6px 0 10px}.bigyear{font-size:56px;font-weight:600;line-height:1.05;letter-spacing:-.02em}
+.notes{list-style:none;padding:0;margin:8px 0;display:flex;flex-direction:column;gap:6px}.notes li{background:var(--card2);border-radius:8px;padding:8px 10px;font-size:14px}
+.dgroup{margin:8px 0}.dgroup .label{font-size:12px;color:var(--muted);font-weight:700}
+#stage{animation:cardin .28s ease-out}
+@keyframes cardin{from{opacity:.0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){#stage{animation:none}}
+@media (max-width:640px){
+  .choice{min-height:54px}
+  #nx,#ny,#bok,#agok,#lok,#npok{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));width:100%;z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.2);min-height:50px;font-size:16px}
+  .sumstrip{gap:6px}
+}
 .count{margin:14px 0}
 .count .track{height:26px;border-radius:6px;background:var(--card2);border:1px solid var(--line);position:relative;overflow:hidden}
 .count .fill{position:absolute;inset:0 auto 0 0;width:0;background:var(--p);transition:width 1.6s cubic-bezier(.2,.7,.2,1)}
@@ -2079,7 +2098,8 @@ function renderMain(){
   document.body.dataset.party=S?S.party:'ind';
   if(!S||S.phase==='start'){renderStart();return}
   if(S.phase==='ending'){renderEnding();return}
-  $app.innerHTML=hdrHTML()+trialHTML()+progHTML()+`<section class="card stage" id="stage"></section>`+logHTML()+footHTML();
+  {const h=hdrHTML(),i=h.indexOf('<details class="card statpanel"');$app.innerHTML=h.slice(0,i)+trialHTML()+progHTML()+`<section class="card stage" id="stage"></section>`+h.slice(i)+logHTML()+footHTML();
+  const sp=document.getElementById('statp');if(sp)sp.addEventListener('toggle',()=>{try{localStorage.setItem('pol-statopen',sp.open?'1':'0')}catch(e){}})}
   drawAvatar();
   const st=document.getElementById('stage');
   if(S.phase==='queue')renderQueueItem(st);
@@ -2104,7 +2124,7 @@ function hdrHTML(){
       ${inOffice()?`<span class="chip">임기 ~${S.termEnd}</span>`:''}${S.ticket?'<span class="chip">공천 가산점</span>':''}${(pp.council||pp.admin)&&!isPres()?'<span class="chip p">대권 주자</span>':''}${isHard()?'<span class="chip">험지 개척</span>':''}${rvOk()?`<span class="chip riv" style="border-color:var(--${S.rival.party});color:var(--${S.rival.party})">${rvLabel()}</span>`:''}${myMaj()!==null?`<span class="chip ${myMaj()?'':'red'}">${majLabel()}</span>`:''}</div></div>
     <div class="yr"><div class="num">${S.year}년</div><div class="meta">${S.age}세${S.age>=65||S.exPres?' · 불출마':` · 다음 ${en[nextE.k]} ${nextE.y}`}</div>${isPres()?apSpark():''}</div>
   </header>
-  <section class="card">
+  <details class="card statpanel" id="statp" ${statOpen()?'open':''}><summary><span class="sumstrip">${[['인지','fame'],['지지','support'],['당','party'],['청렴','integrity'],['멘탈','mental']].map(([l,k])=>`<span><small>${l}</small><b class="num">${x[k]}</b></span>`).join('')}<span><small>자금</small><b class="num" style="${broke()?'color:var(--bad)':''}">${won(x.money).replace('원','')}</b></span></span><span class="sumhint">능력치·정당·지역</span></summary>
     <div class="stats">${['fame','support','party','integrity','mental','policy'].map(k=>statRow(k,k==='support'||k==='fame')).join('')}
       <div class="money"><span>정치자금</span><b class="num" style="${broke()?'color:var(--bad)':''}">${won(x.money)}</b></div>
       <div class="money" style="border-top:none;padding-top:0;margin-top:-4px"><span class="muted">다음 도전(${OFF[nextTarget()].n}) 정석 선거 예상 비용</span><span class="num muted">${won(needMoney())}</span></div>
@@ -2123,8 +2143,9 @@ function hdrHTML(){
     <details class="reqs"><summary>출마 조건 보기</summary><ul>${['basic','metro','mayor','nat','natp','gov','pres'].map(o=>`<li><span class="${reqMet(o)?'ok':'no'}">${reqMet(o)?'충족':'미충족'}</span><b>${OFF[o].full}</b> <span class="muted">${{local:'지방선거',general:'총선',pres:'대선'}[ELEC_OF[o]]} ${nextElecYear(ELEC_OF[o],S.year-1)}</span><br><small class="muted">${reqTxt(o)}</small></li>`).join('')}</ul></details>
     <div class="region"><div><span class="label">${esc(RR.n)}</span> ${RR.t}</div>
       <div><span class="label">${esc(curD()[0])}</span> ${dt.n} · ${dt.t}${member()?` · 우리 당 기준 <b>${leanTxt(leanFor(S.party))}</b>`:''}</div><div><span class="label">살림</span> ${distTxt()}</div></div>
-  </section>`;
+  </details>`;
 }
+function statOpen(){try{const v=localStorage.getItem('pol-statopen');if(v!=null)return v==='1'}catch(e){}return matchMedia('(min-width: 760px)').matches}
 function progHTML(){
   if(S.phase!=='queue'&&S.phase!=='summary')return '';const tot=S.qTotal||1,done=S.phase==='summary'?tot:tot-S.q.length-(S.cur&&!S.res?1:0);
   return `<div class="prog"><b class="num">${S.year}년</b><span class="dots">${Array.from({length:tot},(_,i)=>`<i class="${i<done?'on':i===done&&S.phase==='queue'?'cur':''}"></i>`).join('')}</span><span class="muted">${S.phase==='summary'?'연말 결산':`일정 ${Math.min(done+1,tot)} / ${tot}`}</span></div>`;
@@ -2137,7 +2158,7 @@ function trialHTML(){
     <span class="muted" style="font-size:13px">${STAGES[Math.min(t.stage,3)]} 진행 · 확정 전까지 직무 유지${t.lawyer!=null?' · 변호인 '+LAW[t.lawyer].n:''}</span></div>`;
 }
 function logHTML(){
-  return `<section class="card log"><h3>정치 일지</h3><ol>${S.log.slice(0,40).map(([y,t])=>`<li><span class="num">${y}</span><span>${esc(t)}</span></li>`).join('')}</ol></section>`;
+  const L=S.log.slice(0,40),f=L[0];return `<details class="card log"><summary><h3>정치 일지</h3>${f?`<span class="muted">${f[0]} · ${esc(f[1]).slice(0,40)}${f[1].length>40?'…':''}</span>`:''}</summary><ol>${L.map(([y,t])=>`<li><span class="num">${y}</span><span>${esc(t)}</span></li>`).join('')}</ol></details>`;
 }
 function footHTML(){return `<div class="foot"><button class="linkbtn" id="retire">정계 은퇴하기</button><button class="linkbtn" id="newg">처음부터 다시</button></div><div id="confirm"></div>`}
 function bindFoot(){
@@ -2666,12 +2687,18 @@ function yearEnd(){
       if(ek.includes('pres')&&v.office==='pres'){v.office='none';v.tier=4}
       if(ek.length&&S.rivalRaced!==S.year&&v.office!=='pres'){if(R()<v.power/140&&v.tier<4){v.tier=v.tier===3?4:v.tier+1;v.office=TIER_OFF[v.tier]}else if(R()<.3)v.office='none'}
       if(ek.includes('pres')&&!isPres()&&v.tier>=3&&S.ruling===v.party&&R()<.3){v.office='pres';v.tier=6;S.presAp=58;notes.push(`라이벌 ${v.name} 대통령 당선`);addLog(`라이벌 ${v.name}이 대통령에 당선됐다.`)}}}
-  S.summary={d:deltaHTML(),notes};
+  S.summary={d:deltaHTML(),notes,D:D.slice()};
   S.phase='summary';S.cur=null;save();render();scrollStage();
 }
 function renderSummary(st){
-  st.innerHTML=`<h3>${S.year}년 결산</h3>
-    <div class="result" style="margin-top:12px">${wrapMode()?(S.trial?'재판이 끝날 때까지 정계를 완전히 떠날 수 없다. ':'남은 일을 정리하고 있다. '):''}${S.summary.notes.length?S.summary.notes.join(' · ')+'. ':''}해가 바뀌면 인지도는 조금 식고 지지율은 평균으로 돌아갑니다. ${inOffice()?`현직 경험으로 ${OFF[S.office].route==='admin'?'행정 역량':OFF[S.office].route==='council'?'의회 역량':'모든 역량'}이 쌓였습니다.`:'야인 생활로 멘탈은 회복되지만 존재감이 희미해집니다.'}${S.summary.d}</div>
+  const DD=S.summary.D||[],up=DD.filter(([k,v])=>v>0),dn=DD.filter(([k,v])=>v<0),chip=([k,v])=>`<span class="d ${v>0?'up':'dn'}">${LBL[k]} ${v>0?'+':''}${k==='money'?won(v):v}</span>`;
+  const nextE=['local','general','pres'].map(k=>({k,y:nextElecYear(k,S.year)})).sort((a,b)=>a.y-b.y)[0],en={local:'지방선거',general:'총선',pres:'대선'};
+  st.innerHTML=`<div class="yearcard"><span class="label">연말 결산</span><div class="bigyear num">${S.year}</div><span class="muted">${S.age}세 · ${inOffice()?esc(offName(S.office)):'야인'}</span></div>
+    ${(S.summary.notes.length||wrapMode())?`<ul class="notes">${wrapMode()?`<li>${S.trial?'재판이 끝날 때까지 정계를 완전히 떠날 수 없다.':'남은 일을 정리하고 있다.'}</li>`:''}${S.summary.notes.map(n=>`<li>${n}</li>`).join('')}</ul>`:''}
+    ${up.length?`<div class="dgroup"><span class="label">늘어난 것</span><div class="deltas">${up.map(chip).join('')}</div></div>`:''}
+    ${dn.length?`<div class="dgroup"><span class="label">줄어든 것</span><div class="deltas">${dn.map(chip).join('')}</div></div>`:''}
+    <p class="muted" style="font-size:13px;margin:10px 0">다음 선거: ${en[nextE.k]} ${nextE.y}년${nextE.y===S.year+1?' <b style="color:var(--warn)">(내년!)</b>':''}</p>
+    <div class="result" style="margin-top:12px;display:none">${wrapMode()?(S.trial?'재판이 끝날 때까지 정계를 완전히 떠날 수 없다. ':'남은 일을 정리하고 있다. '):''}${S.summary.notes.length?S.summary.notes.join(' · ')+'. ':''}해가 바뀌면 인지도는 조금 식고 지지율은 평균으로 돌아갑니다. ${inOffice()?`현직 경험으로 ${OFF[S.office].route==='admin'?'행정 역량':OFF[S.office].route==='council'?'의회 역량':'모든 역량'}이 쌓였습니다.`:'야인 생활로 멘탈은 회복되지만 존재감이 희미해집니다.'}${S.summary.d}</div>
     <button class="btn primary" id="ny">${S.year+1}년으로 →</button>`;
   document.getElementById('ny').onclick=nextYear;
 }
