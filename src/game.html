@@ -190,6 +190,7 @@ details.log>summary .muted{font-size:12px}
 }
 .rvchron .rvc{border-top:1px dashed var(--line);padding:10px 0}.rvchron .rvc:first-of-type{border-top:none}
 .rvchron p{margin:4px 0;font-size:14px}.rvp{list-style:none;padding:0;margin:4px 0 0;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px}.rvp .num{margin-right:4px;font-weight:600}
+.chip.more{cursor:pointer;background:var(--card);font-weight:700}.chips.more{margin-top:4px}
 .stepper{list-style:none;display:flex;gap:6px;padding:0;margin:0}.stepper li{flex:1}
 .stepper button{width:100%;border:1px solid var(--line);background:var(--card2);border-radius:8px;padding:6px 4px;font-size:13px;display:flex;gap:6px;align-items:center;justify-content:center}
 .stepper .num{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--line);font-size:12px}
@@ -2147,6 +2148,7 @@ function renderMain(){
   if(!S||S.phase==='start'){renderStart();return}
   if(S.phase==='ending'){renderEnding();return}
   {const h=hdrHTML(),i=h.indexOf('<details class="card statpanel"');$app.innerHTML=h.slice(0,i)+trialHTML()+progHTML()+`<section class="card stage" id="stage"></section>`+h.slice(i)+logHTML()+footHTML();
+  {const hm=document.getElementById('hdrMore');if(hm)hm.onclick=()=>{UI.hdrMore=!UI.hdrMore;render()}}
   const sp=document.getElementById('statp');if(sp)sp.addEventListener('toggle',()=>{try{localStorage.setItem('pol-statopen',sp.open?'1':'0')}catch(e){}})}
   drawAvatar();
   const st=document.getElementById('stage');
@@ -2167,9 +2169,16 @@ function hdrHTML(){
     <div class="giho" role="img" aria-label="${esc(S.name)} · ${PARTIES[S.party].n}"><canvas id="avc" width="36" height="36"></canvas></div>
     <div style="min-width:0"><h2>${esc(S.name)}</h2>
       <div class="meta">${inOffice()?offName(S.office):'야인 · '+distName()}</div>
-      <div class="chips"><span class="chip p">${PARTIES[S.party].n}</span>${titles.map(t=>`<span class="chip p">${t}</span>`).join('')}
-      ${S.banUntil>S.year?`<span class="chip red">피선거권 제한 ~${S.banUntil}</span>`:''}${S.imp&&S.imp.step==='court'?'<span class="chip red">직무 정지</span>':''}${S.exPres?'<span class="chip">전직 대통령 · 남은 재판 정리</span>':S.age>=65?`<span class="chip">${inOffice()?'마지막 임기':'은퇴 · 남은 재판 정리'}</span>`:''}
-      ${inOffice()?`<span class="chip">임기 ~${S.termEnd}</span>`:''}${S.ticket?'<span class="chip">공천 가산점</span>':''}${(pp.council||pp.admin)&&!isPres()?'<span class="chip p">대권 주자</span>':''}${isHard()?'<span class="chip">험지 개척</span>':''}${rvOk()?`<span class="chip riv" style="border-color:var(--${S.rival.party});color:var(--${S.rival.party})">${rvLabel()}</span>`:''}${myMaj()!==null?`<span class="chip ${myMaj()?'':'red'}">${majLabel()}</span>`:''}</div></div>
+      ${(()=>{const A=[],B=[];const ch=(c,s)=>`<span class="chip ${c}">${s}</span>`;
+        if(S.banUntil>S.year)A.push(ch('red',`피선거권 제한 ~${S.banUntil}`));if(S.imp&&S.imp.step==='court')A.push(ch('red','직무 정지'));
+        titles.forEach(x=>A.push(ch('p',x)));
+        if(inOffice())B.push(ch('',`임기 ~${S.termEnd}`));
+        if(S.exPres)B.push(ch('','전직 대통령 · 남은 재판 정리'));else if(S.age>=65)B.push(ch('',inOffice()?'마지막 임기':'은퇴 · 남은 재판 정리'));
+        if(S.ticket)B.push(ch('','공천 가산점'));if((pp.council||pp.admin)&&!isPres())B.push(ch('p','대권 주자'));if(isHard())B.push(ch('','험지 개척'));
+        if(rvOk())B.push(`<span class="chip riv" style="border-color:var(--${S.rival.party});color:var(--${S.rival.party})">${rvLabel()}</span>`);
+        if(myMaj()!==null)B.push(ch(myMaj()?'':'red',majLabel()));
+        const show=[ch('p',PARTIES[S.party].n),...A.slice(0,3)],more=[...A.slice(3),...B];const open=!!UI.hdrMore;
+        return `<div class="chips">${show.join('')}${more.length?`<button type="button" class="chip more" id="hdrMore" aria-expanded="${open}">${open?'접기':'+'+more.length}</button>`:''}</div>${more.length&&open?`<div class="chips more">${more.join('')}</div>`:''}`})()}</div>
     <div class="yr"><div class="num">${S.year}년</div><div class="meta">${S.age}세${S.age>=65||S.exPres?' · 불출마':` · 다음 ${en[nextE.k]} ${nextE.y}`}</div>${isPres()?apSpark():''}</div>
   </header>
   <details class="card statpanel" id="statp" ${statOpen()?'open':''}><summary><span class="sumstrip">${[['인지','fame'],['지지','support'],['당','party'],['청렴','integrity'],['멘탈','mental']].map(([l,k])=>`<span><small>${l}</small><b class="num">${x[k]}</b></span>`).join('')}<span><small>자금</small><b class="num" style="${broke()?'color:var(--bad)':''}">${won(x.money).replace('원','')}</b></span></span><span class="sumhint">능력치·정당·지역</span></summary>
