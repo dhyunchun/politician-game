@@ -378,12 +378,14 @@ const isHard=()=>member()&&leanFor(S.party)<=-3;
 const TIER_OFF={1:'basic',2:'metro',3:'nat',4:'gov',6:'pres'};
 function mkRival(){const p=member()?other(S.party):pick(['jj','sm']);let nm=kname();while(nm===S.name)nm=kname();
   return{name:nm,party:p,power:44+ri(0,8),office:'basic',tier:1,w:0,l:0,dirty:R(),path:[[S?S.year:2026,'시군구의원 출마']],look:{st:pick(['short','slick','bob','long','bun']),h:pick(['#2b2421','#151515','#6b4426','#9a9a9a']),gl:R()<.4?1:0,sk:R()<.3?1:0}}}
-const RV=()=>S.rival;const rvOk=()=>!!(S.rival&&!S.rival.out);const rvSame=()=>rvOk()&&S.rival.party===S.party;
+const RV=()=>S.rival;const rvOk=()=>!!(S.rival&&!S.rival.out)
+const rvLoc=()=>rvOk()&&S.rival.office!=='pres';const rvSame=()=>rvOk()&&S.rival.party===S.party;
 function rvPow(d){if(rvOk())S.rival.power=clamp(S.rival.power+d,20,92)}
 function rivalIn(off){const v=S.rival;if(!v||v.out||off==='natp'||v.party===S.party||v.office==='pres')return false;if(off==='pres')return v.tier>=4;return Math.abs(v.tier-OFF[off].tier)<=1}
 function rvFate(v,cur){const P=PARTIES[v.party]?PARTIES[v.party].s:'';
   if(v.fate==='jail')return `${v.crime||'비리'} 혐의로 유죄가 확정돼 감옥에 갔다.`;
   if(v.fate==='exposed')return '비리 폭로로 몰락해 정계를 떠났다.';
+  if(v.fate==='expres')return `대통령 임기를 마치고 정계를 떠났다. ${v.made?'말년엔 나와 웃으며 대담을 나눈 사이가 됐다.':'끝내 나보다 높이 올라간 사람으로 기억된다.'}`;
   if(v.everPres)return `대통령까지 지냈다. ${v.made?'말년엔 나와 웃으며 대담을 나눈 사이가 됐다.':'끝내 나보다 높이 올라갔다.'}`;
   if(v.leader)return `${P} 당대표를 지낸 중진으로 남았다.`;
   if(v.tier>=4)return `${OFF[v.office]&&v.office!=='none'?OFF[v.office].n:'광역단체장'}까지 올랐다.`;
@@ -753,31 +755,31 @@ const EV=[
  ch:[['솔직하게 서로를 인정한다',()=>{RV().oldDone=1;RV().made=1;chg({support:5,fame:4,integrity:2});return '방송 말미에 둘이 같이 웃었다. "이런 정치가 보고 싶었다"는 댓글이 달렸다.'}],
      ['끝까지 날을 세운다',()=>{RV().oldDone=1;chg({fame:6,party:3,support:-2});return '시청률은 최고였다. 대기실에서는 서로 눈도 안 마주쳤다.'}]]},
 // ---- 라이벌 ----
-{id:'rv_attack',w:3,tag:'라이벌',px:'press|riv|podium,cam',c:()=>rvOk()&&!rvSame(),t:()=>`라이벌 ${RV().name}의 폭로 기자회견`,b:()=>`${PARTIES[RV().party].s} ${RV().name}이 내 의정활동비 사용 내역을 들고 기자회견을 열었다. 절반은 과장이다.`,
+{id:'rv_attack',w:3,tag:'라이벌',px:'press|riv|podium,cam',c:()=>rvLoc()&&!rvSame(),t:()=>`라이벌 ${RV().name}의 폭로 기자회견`,b:()=>`${PARTIES[RV().party].s} ${RV().name}이 내 의정활동비 사용 내역을 들고 기자회견을 열었다. 절반은 과장이다.`,
  ch:[['조목조목 반박 자료를 낸다',()=>{chg({support:2,speech:2,mental:-4});rvPow(-3);return '반박 자료가 더 많이 인용됐다.'}],
      ['맞불 폭로로 응수',()=>{const ok=R()<.5;chg({fame:5,support:ok?2:-3,integrity:-2});rvPow(ok?-5:2);return ok?'라이벌의 해외 출장 내역이 역풍을 맞았다.':'"진흙탕 싸움"이라는 비판이 둘 다를 덮었다.'}],
      ['대응하지 않는다',()=>{chg({support:-3,integrity:1});rvPow(3);return '라이벌의 기사만 남았다.'}]]},
-{id:'rv_tip',w:2,tag:'제보',px:'night|aide,me|env',c:()=>rvOk()&&!rvSame(),t:()=>`${RV().name}의 비리 제보가 들어왔다`,b:()=>`익명의 제보자가 라이벌 ${RV().name}이 업체에서 돈을 받았다는 녹취를 보내왔다. 진위는 모른다.`,
+{id:'rv_tip',w:2,tag:'제보',px:'night|aide,me|env',c:()=>rvLoc()&&!rvSame(),t:()=>`${RV().name}의 비리 제보가 들어왔다`,b:()=>`익명의 제보자가 라이벌 ${RV().name}이 업체에서 돈을 받았다는 녹취를 보내왔다. 진위는 모른다.`,
  ch:[['바로 공개한다',()=>{if(R()<.45){RV().out=true;RV().fate='exposed';chg({fame:8,support:4});addLog(`라이벌 ${RV().name} 비리 폭로, 구속.`);return '녹취는 진짜였다. 라이벌이 구속됐다.'}chg({support:-7,integrity:-5});if(R()<.3)addCase('허위사실 공표(명예훼손)',1);return '녹취는 조작이었다. 역풍이 거세다.'}],
      ['검증부터 한다',()=>{if(R()<.35){RV().out=true;RV().fate='exposed';chg({fame:5,support:3,integrity:2});addLog(`라이벌 ${RV().name} 비리 확인, 수사 의뢰.`);return '검증 끝에 사실로 확인돼 수사를 의뢰했다. 라이벌이 몰락했다.'}chg({integrity:2,mental:-3});return '확인할 수 없었다. 파일을 서랍에 넣었다.'}],
      ['묻어 둔다',()=>{chg({integrity:1});rvPow(1);return '정치는 정책으로 하자고 마음먹었다.'}]]},
-{id:'rv_debate',w:4,tag:'TV 토론',px:'tv|me,riv|cam',c:()=>rvOk()&&!rvSame()&&elecKinds(S.year).length>0&&S.age<65,t:()=>`선거 토론회, ${RV().name}과 맞대결`,b:()=>`지역 방송 토론회. 맞은편에 ${RV().name}이 앉았다. 첫 질문은 지역 경제다.`,
+{id:'rv_debate',w:4,tag:'TV 토론',px:'tv|me,riv|cam',c:()=>rvLoc()&&!rvSame()&&elecKinds(S.year).length>0&&S.age<65,t:()=>`선거 토론회, ${RV().name}과 맞대결`,b:()=>`지역 방송 토론회. 맞은편에 ${RV().name}이 앉았다. 첫 질문은 지역 경제다.`,
  ch:[['정책 숫자로 승부',()=>{const ok=R()*70+s().policy>R()*70+RV().power*.6;chg({policy:2,support:ok?4:-2});rvPow(ok?-4:3);return ok?'준비한 숫자가 상대를 몰아붙였다.':'숫자가 틀렸다는 팩트체크가 나왔다.'}],
      ['상대 약점을 파고든다',()=>{const ok=R()*70+s().speech>R()*70+RV().power*.6;chg({fame:4,support:ok?5:-4});rvPow(ok?-6:4);return ok?'"한 방" 장면이 쇼츠로 돌았다.':'"네거티브만 한다"는 평이 나왔다.'}],
      ['유머로 분위기를 잡는다',()=>{const ok=R()<.5+s().speech/300;chg({fame:ok?6:2,support:ok?3:-1});rvPow(ok?-2:1);return ok?'방청석이 웃음바다가 됐다.':'썰렁했다.'}]]},
-{id:'rv_coop',w:2,tag:'협치',px:'office|me,riv|',c:()=>rvOk()&&inOffice(),t:()=>`${RV().name}이 공동 법안을 제안했다`,b:()=>`라이벌 ${RV().name}이 지역 숙원 사업 법안을 함께 내자고 한다. 공은 반반이다.`,
+{id:'rv_coop',w:2,tag:'협치',px:'office|me,riv|',c:()=>rvLoc()&&inOffice(),t:()=>`${RV().name}이 공동 법안을 제안했다`,b:()=>`라이벌 ${RV().name}이 지역 숙원 사업 법안을 함께 내자고 한다. 공은 반반이다.`,
  ch:[['손을 잡는다',()=>{chg({legis:4,support:4,party:-3});rvPow(2);return '"정적과 손잡은 협치" 기사가 났다.'}],
      ['혼자 따로 낸다',()=>{chg({legis:2,party:2});return '법안 두 개가 경쟁하다 둘 다 계류됐다.'}]]},
-{id:'rv_rise',w:2,tag:'라이벌',px:'stage|riv^,crowd|banner',c:()=>rvOk()&&RV().power>60,t:()=>`잘나가는 라이벌 ${RV().name}`,b:()=>`${RV().name}의 쇼츠가 화제다. 차기 주자 여론조사에도 이름이 올랐다.`,
+{id:'rv_rise',w:2,tag:'라이벌',px:'stage|riv^,crowd|banner',c:()=>rvLoc()&&RV().power>60,t:()=>`잘나가는 라이벌 ${RV().name}`,b:()=>`${RV().name}의 쇼츠가 화제다. 차기 주자 여론조사에도 이름이 올랐다.`,
  ch:[['축하 메시지를 보낸다',()=>{chg({integrity:2,support:2});return '"품격 있는 라이벌" 댓글이 달렸다.'}],
      ['나도 더 세게 나간다',()=>{chg({fame:4,mental:-6});return '일정을 두 배로 늘렸다.'}]]},
-{id:'rv_poach',w:2,tag:'라이벌',px:'office|aide,riv|',c:()=>rvOk()&&inOffice(),t:()=>`${RV().name}이 내 보좌관을 빼 가려 한다`,b:'5년 함께한 정책 보좌관이 라이벌 캠프에서 두 배 연봉 제안을 받았다.',
+{id:'rv_poach',w:2,tag:'라이벌',px:'office|aide,riv|',c:()=>rvLoc()&&inOffice(),t:()=>`${RV().name}이 내 보좌관을 빼 가려 한다`,b:'5년 함께한 정책 보좌관이 라이벌 캠프에서 두 배 연봉 제안을 받았다.',
  ch:[['연봉을 맞춰 준다',()=>{chg({money:-Math.round(800*TM()),org:2});return '보좌관이 남았다. 통장은 가벼워졌다.'}],
      ['보내 준다',()=>{chg({org:-5,policy:-3});rvPow(4);return '내 정책 자료가 라이벌 공약집에 실렸다.'}]]},
-{id:'rv_funeral',w:1,tag:'라이벌',px:'night|riv,me|flower',c:rvOk,t:()=>`장례식장에서 마주친 ${RV().name}`,b:'공통 지인의 빈소. 육개장 앞에 라이벌과 나란히 앉았다.',
+{id:'rv_funeral',w:1,tag:'라이벌',px:'night|riv,me|flower',c:rvLoc,t:()=>`장례식장에서 마주친 ${RV().name}`,b:'공통 지인의 빈소. 육개장 앞에 라이벌과 나란히 앉았다.',
  ch:[['소주 한잔 기울인다',()=>{chg({mental:6,integrity:1});rvPow(-1);return '"우리 둘 다 고생이 많다." 처음으로 사람 대 사람으로 이야기했다.'}],
      ['눈인사만 하고 자리를 뜬다',()=>{chg({mental:-1});return '기자가 둘 사이를 찍으려 기웃거렸다.'}]]},
-{id:'rv_party',w:2,tag:'당내 경쟁',px:'office|riv,me|',c:()=>rvOk()&&rvSame(),t:()=>`같은 당 ${RV().name}과 공천 경쟁`,b:()=>`입당하고 보니 라이벌 ${RV().name}도 같은 당이다. 다음 공천을 두고 신경전이 시작됐다.`,
+{id:'rv_party',w:2,tag:'당내 경쟁',px:'office|riv,me|',c:()=>rvLoc()&&rvSame(),t:()=>`같은 당 ${RV().name}과 공천 경쟁`,b:()=>`입당하고 보니 라이벌 ${RV().name}도 같은 당이다. 다음 공천을 두고 신경전이 시작됐다.`,
  ch:[['계파를 등에 업는다',()=>{chg({party:6,integrity:-2});rvPow(-3);return '줄을 섰다. 줄은 언젠가 끊긴다.'}],
      ['정정당당 경선을 요구',()=>{chg({support:3,party:-2});return '"공정 경선" 성명을 냈다.'}]]},
 // ---- 일상·지역 ----
@@ -2575,14 +2577,29 @@ function renderElection(st){
   if(E.step==='camp'){
     const dep=DEPOSIT[E.off],base=OFF[E.off].spend*(E.off==='pres'?1:(curR().fx.cost||1)),lv=[{n:'맨몸 선거',m:0,d:'자원봉사자와 발로 뛰기'},{n:'조용한 선거',m:.3,d:'명함·SNS 위주'},{n:'정석 선거',m:1,d:'유세차·현수막·문자'},{n:'총력전',m:2,d:'TV 광고, 대규모 유세'}];
     st.innerHTML=`${pxTag('유세 현장')}<div class="news"><span class="tag ink">본선</span><h3>${offName(E.off)} 선거운동</h3>
-      <p class="body">${E.nomOk?'공천 확정! ':''}기탁금 ${won(dep)}은 따로 낸다. 선거비용은 득표율 15% 이상이면 보전 대상 항목(약 60%)만, 10% 이상이면 그 절반만 돌려받는다. 돈을 많이 쓸수록 득표에 크게 반영된다.${curR().fx.cost>1&&E.off!=='pres'?` ${curR().n}은 선거비용이 ${curR().fx.cost}배 든다.`:''}</p></div>
+      <p class="body">${E.nomOk?'공천 확정! ':''}${E.off==='pres'?'대선은 법정 선거비용 한도가 있어 돈으로 밀어붙이는 효과가 작다. 총력전은 한도 초과 지출로 당선무효 소송을 부를 수 있다. 본선에선 검증 공세와 TV 토론이 기다린다. ':''}기탁금 ${won(dep)}은 따로 낸다. 선거비용은 득표율 15% 이상이면 보전 대상 항목(약 60%)만, 10% 이상이면 그 절반만 돌려받는다. 돈을 많이 쓸수록 득표에 크게 반영된다.${curR().fx.cost>1&&E.off!=='pres'?` ${curR().n}은 선거비용이 ${curR().fx.cost}배 든다.`:''}</p></div>
       <div class="choices">${lv.map((l,i)=>`<button class="choice" data-v="${i}" ${s().money<base*l.m+dep?'disabled':''}><span><b>${l.n}</b> <span class="muted">${l.d}</span></span><small class="num">${won(base*l.m+dep)}</small></button>`).join('')}</div>
       ${s().money<dep?`<p style="color:var(--bad);font-size:13px;margin-top:10px">기탁금 ${won(dep)}조차 없다. 출마를 포기해야 한다.</p><button class="choice" id="giveup"><span>출마 포기</span></button>`:''}`;
     paint('street|me,crowd|truck');
     const gu=document.getElementById('giveup');if(gu)gu.onclick=()=>{D=E.d0||[];if(S.termEnd===S.year&&inOffice()){S.office='none';S.titles={}}addLog('기탁금이 없어 출마 포기.');finish('<b>출마 포기</b><br>돈이 없어서 선거를 접었다. 사무실 앞 현수막을 내렸다.')};
-    st.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{E.lv=+b.dataset.v;E.cost=Math.round(base*lv[E.lv].m);E.dep=dep;tally(E);save();render()});
+    st.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{E.lv=+b.dataset.v;E.cost=Math.round(base*lv[E.lv].m);E.dep=dep;if(E.off==='pres'){E.step='pverify';save();render();return}tally(E);save();render()});
     return;
   }
+  if(E.step==='pverify'){
+    const dirt=(S.cases||[]).reduce((a,c)=>a+c.sev,0)+(S.trial?3:0)+(S.stats.bribes>0?1:0)+(s().integrity<40?1:0);E.pv=E.pv||{};
+    st.innerHTML=`${pxTag('검증 공세')}<div class="news"><span class="tag">검증</span><h3>상대 캠프의 검증 공세</h3><p class="body">상대 후보 캠프가 내 과거를 샅샅이 뒤진다. 재산, 가족, 옛 발언, 후원금 장부까지. ${dirt>=4?'털면 나올 게 많다.':dirt>=1?'몇 가지는 걸릴 수 있다.':'털어도 크게 나올 건 없어 보인다.'}</p></div>
+      <div class="choices"><button class="choice" data-pv="open"><span>재산·가족·장부를 먼저 공개</span><small>투명성 · 털 게 있으면 역효과</small></button><button class="choice" data-pv="hit"><span>상대 후보 의혹으로 맞불</span><small>진흙탕 · 양쪽 다 깎임</small></button><button class="choice" data-pv="ign"><span>"네거티브엔 대응 안 한다"</span><small>무대응</small></button></div>`;
+    paint('press|rep,me,rep|cam,exclaim');
+    st.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>{const k=b.dataset.pv;let m=0;
+      if(k==='open')m=dirt>=3?-5:dirt>=1?0:4;else if(k==='hit')m=-1+(R()<.5?2:-2);else m=dirt>=3?-7:dirt>=1?-3:1;
+      if(dirt>=3&&R()<.35)addCase('대선 검증 중 드러난 의혹',2);E.pv.m=m;E.step='pdebate';save();render()});return}
+  if(E.step==='pdebate'){
+    st.innerHTML=`${pxTag('대선 TV 토론')}<div class="news"><span class="tag ink">TV 토론</span><h3>대선 후보 TV 토론</h3><p class="body">시청률 35%. 부동산, 안보, 경제에서 상대 후보와 맞붙는다. 언변이 높을수록 한 방이 잘 먹힌다.</p></div>
+      <div class="choices"><button class="choice" data-pd="pol"><span>정책 숫자로 압도한다</span><small>정책 역량</small></button><button class="choice" data-pd="atk"><span>상대 약점을 집요하게 파고든다</span><small>언변 · 역풍 위험</small></button><button class="choice" data-pd="calm"><span>실수 없이 안정적으로</span><small>무난</small></button></div>`;
+    paint('tv|me,riv|cam');
+    st.querySelectorAll('[data-pd]').forEach(b=>b.onclick=()=>{const k=b.dataset.pd,sp=s().speech,po=s().policy;let m=0;
+      if(k==='pol')m=R()<.3+po/180?4:-1;else if(k==='atk')m=R()<.25+sp/160?5:-4;else m=R()<.8?1:-2;
+      E.pd=m;D=E.d0||[];chg({mental:-6});E.d0=D.slice();tally(E);save();render()});return}
   if(E.step==='result'){
     const opp=E.riv?E.rname:null,oppP=E.riv?E.rparty:null;
     if(E.exit==null){E.exit=+clamp(E.share+gauss()*2.6,1,99).toFixed(1);E.exitR=E.riv?+clamp(E.rshare-(E.exit-E.share)*.8+gauss()*1.2,1,99).toFixed(1):null;E.nz=[gauss()*3.2,gauss()*2.4,R()*6];save()}
@@ -2634,7 +2651,8 @@ function tallyP(E){
 function tally(E){
   D=E.d0||[];const off=E.off,o=OFF[off],RR=curR(),dt=DTYPE[curD()[3]];chg({money:-E.cost-(E.dep||0)});
   E.name=offName(off);E.party=S.party;
-  let p=s().support*.45+s().fame*.22+route(off)*.3+[-8,0,5,11][E.lv]+(S.office===off?5:0);
+  let p=s().support*.45+s().fame*.22+route(off)*.3+(off==='pres'?[-10,-3,2,5]:[-8,0,5,11])[E.lv]+(S.office===off?5:0);
+  if(off==='pres'){p+=(E.pv?E.pv.m:0)+(E.pd||0);if(E.lv===3&&R()<.3)addCase('대선 선거비용 한도 초과',2);if(S.ruling===S.party&&presAp()<40)p-=(40-presAp())*.35;if(s().integrity<40)p-=4;p-=ri(0,5)}
   if(member()){p+=(S.party==='np'?(S.pop.np-22):(S.pop[S.party]-S.pop[other(S.party)]))*.35*(RR.fx.popMul||1);
     if(off==='gov')p+=leanFor(S.party,false);else if(off!=='pres')p+=leanFor(S.party);
     if(off!=='pres'){const j=(presAp()-45)*.25;p+=S.ruling===S.party?j:-j*.6}else if(S.ruling===S.party&&!isPres())p+=(presAp()-45)*.3;else p-=(presAp()-45)*.2}
@@ -2710,7 +2728,7 @@ function yearEnd(){
   if(S.rival){const v=S.rival;
     if(v.out){S.rivals=(S.rivals||[]).concat([Object.assign({},v,{fate:v.fate||'exposed',look:undefined,trial:null})]);S.rival=mkRival();S.rival.tier=Math.max(1,OFF[S.office]?Math.min(4,OFF[S.office].tier):1);S.rival.office=TIER_OFF[S.rival.tier]||'basic';notes.push(`새 라이벌 ${S.rival.name} 등장`);addLog(`새 라이벌 등장: ${PARTIES[S.rival.party].s} ${S.rival.name}.`)}
     else{v.power=clamp(Math.round(v.power+gauss()*3+(v.office!=='none'?0:-1.5)+(50-v.power)*.08),20,92);const ek=elecKinds(S.year);
-      if(ek.includes('pres')&&v.office==='pres'){v.office='none';v.tier=4}
+      if(ek.includes('pres')&&v.office==='pres'){v.out=true;v.fate='expres';v.path=v.path||[];v.path.push([S.year,'대통령 퇴임']);notes.push(`라이벌 ${v.name} 대통령 퇴임`);addLog(`라이벌 ${v.name}이 대통령 임기를 마치고 정계를 떠났다.`)}
       v.path=v.path||[];
       if(ek.length&&S.rivalRaced!==S.year&&v.office!=='pres'){if(R()<v.power/140&&v.tier<4){v.tier=v.tier===3?4:v.tier+1;v.office=TIER_OFF[v.tier];v.path.push([S.year,OFF[v.office].n+' 당선'])}else if(R()<.3){v.office='none';v.path.push([S.year,'낙선'])}}
       if(v.tier>=3&&v.office!=='none'&&!v.leader&&(S.year-2027)%2===0&&R()<v.power/220){v.leader=S.year;v.path.push([S.year,PARTIES[v.party]?PARTIES[v.party].s+' 당대표':'당대표']);notes.push(`라이벌 ${v.name} 당대표 선출`);addLog(`라이벌 ${v.name}이 당대표가 됐다.`)}
