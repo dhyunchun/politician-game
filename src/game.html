@@ -252,13 +252,15 @@ details.log>summary .muted{font-size:12px}
 .ending .px{margin-top:8px;max-width:420px}
 .looks{display:grid;grid-template-columns:120px minmax(0,1fr);gap:14px;align-items:start}
 #lookc{width:120px;height:135px;image-rendering:pixelated;image-rendering:crisp-edges;border:2px solid var(--ink);border-radius:8px;background:#eef3f6}
-.lookopts{display:flex;flex-direction:column;gap:8px}
-.lrow{display:flex;flex-direction:column;gap:4px}
+.lookopts{display:flex;flex-direction:column;gap:6px}
+.lrow{display:flex;flex-direction:row;align-items:flex-start;gap:6px}.lrow>.label{flex:none;width:40px;padding-top:4px;font-size:12px}
+.looks #lookc{position:sticky;top:60px}
 .lbtns{display:flex;flex-wrap:wrap;gap:5px}
-.lbtns button{border:1.5px solid var(--line);background:var(--card2);border-radius:999px;padding:3px 10px;font-size:12px;display:inline-flex;align-items:center;gap:5px}
+.lbtns button{border:1.5px solid var(--line);background:var(--card2);border-radius:999px;padding:3px 9px;font-size:12px;display:inline-flex;align-items:center;gap:5px}
 .lbtns button[aria-pressed="true"]{border-color:var(--p);box-shadow:inset 0 0 0 1.5px var(--p);font-weight:700}
 .lbtns i{display:inline-block;width:11px;height:11px;border-radius:50%;border:1px solid var(--line)}
 @media (max-width:420px){.looks{grid-template-columns:96px minmax(0,1fr)}#lookc{width:96px;height:108px}}
+.looks .lbtns{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);padding-right:14px}.looks .lbtns::-webkit-scrollbar{display:none}.looks .lbtns button{flex:none}
 .sheetbg{position:fixed;inset:0;background:rgba(10,12,16,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--card);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));box-shadow:0 -6px 24px rgba(0,0,0,.2)}
 .grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 8px}
@@ -1873,11 +1875,13 @@ function personHD(r,X,Y,c,wave,flip){
   const h=c.h,H=shade(h,1.45),hd=shade(h,.7),blush='#ef9e8c',lip='#a8524a';
   const FEM=c.st==='long'||c.st==='bob'||c.st==='bun';
   // --- 뒷머리 (여성: 어깨 뒤로) ---
-  if(c.st==='long'||c.st==='bob'){const e=c.st==='long'?40:20;
-    for(let y=1;y<=e;y++){let hw=y<4?9+y:y<e-4?12.5:12.5-(y-(e-4))*1.2;if(c.st==='bob'&&y>e-3)hw=12.5-(y-(e-3));hw=Math.max(4,Math.round(hw));
-      p(18-hw,y,2*hw,1,hd);p(18-hw-1,y,1,1,K);p(18+hw,y,1,1,K);p(18-hw,y,3,1,h);p(18+hw-3,y,2,1,shade(h,.6))}
-    {const lw=c.st==='long'?Math.round(12.5-4*1.2)+1:9;p(18-lw,e+1,2*lw,1,K)}
-    for(let y=4;y<e-2;y+=3){p(8,y,1,2,H);p(28,y+1,1,2,shade(h,.85))}}
+  if(c.st==='long'||c.st==='bob'){const L=c.st==='long',e=L?38:18;
+    // 머리 둘레에 붙는 뒷머리: 귀 높이에서 얼굴보다 한두 칸만 넓고, 목 아래로는 어깨 뒤로 좁게 떨어진다
+    const W=y=>{if(y<4)return 7+y*.8;if(y<=15)return 10.5;if(!L)return y>e-2?10.5-(y-(e-2))*1.5:10.5;if(y<=19)return 10.5-(y-15)*.35;if(y<e-3)return 9;return 9-(y-(e-3))*1.4};
+    let lw=0;for(let y=1;y<=e;y++){const hw=Math.max(3,Math.round(W(y)));lw=hw;
+      p(18-hw,y,2*hw,1,hd);p(18-hw-1,y,1,1,K);p(18+hw,y,1,1,K);p(18-hw,y,2,1,h);p(18+hw-2,y,2,1,shade(h,.6))}
+    p(18-lw,e+1,2*lw,1,K);
+    for(let y=4;y<e-2;y+=3){const hw=Math.round(W(y));p(18-hw,y,1,2,H);p(18+hw-1,y+1,1,2,shade(h,.85))}}
   // --- 다리 / 하의 ---
   if(c.robe){p(4,29,28,40,K);p(5,30,26,38,P);p(5,30,2,38,'#3a3a44');p(25,30,5,38,'#26262e');for(let i=0;i<4;i++)p(10+i*5,46,1,22,'#2e2e36');p(8,68,8,3,K);p(20,68,8,3,K)}
   else if(c.sk){p(7,48,22,12,K);p(8,48,20,11,L);p(8,48,20,1,lh);for(let i=0;i<4;i++)p(11+i*4,50,1,9,l);p(24,48,4,11,l);
@@ -1957,8 +1961,8 @@ function personHD(r,X,Y,c,wave,flip){
       for(let y=5;y<=e;y++){const wl=y<8?3:y<e-3?2:1;p(10,y,wl,1,h);p(26-wl,y,wl,1,hd);if(y>6&&y<e-1){p(10,y,1,1,H)}}
       p(9,5,1,e-4,hd);p(26,5,1,e-4,shade(h,.6));
       if(st==='bob'){p(10,e,3,1,h);p(23,e,3,1,hd)}
-      if(st==='long'){for(let y=15;y<=37;y++){const w=y<19?2:y<33?3:y<36?2:1;p(9,y,w,1,h);p(8,y,1,1,shade(h,.55));if(y%4===1)p(10,y,1,2,H);
-          p(27-w,y,w,1,hd);p(27,y,1,1,shade(h,.45))}p(9,38,1,1,shade(h,.55));p(26,38,1,1,shade(h,.45))}}}
+      if(st==='long'){for(let y=15;y<=35;y++){const w=y<33?2:1;p(9,y,w,1,h);p(8,y,1,1,shade(h,.55));if(y%4===1)p(10,y,1,2,H);
+          p(27-w,y,w,1,hd);p(27,y,1,1,shade(h,.45))}p(9,36,1,1,shade(h,.55));p(26,36,1,1,shade(h,.45))}}}
   else if(st==='bald'){p(8,6,3,8,h);p(25,6,3,8,h);p(7,7,1,6,K);p(28,7,1,6,K);p(14,2,6,1,shade(s,1.25));p(13,3,2,1,shade(s,1.15));p(12,8,1,1,hd)}
 }
 
@@ -2344,6 +2348,7 @@ function renderStart(){
   $app.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{const k=b.dataset.lk,v=b.dataset.lv;lk[k]=(k==='gl'||k==='sk')?+v:v;renderStart()});
   {const cv=document.getElementById('lookc'),cx=cv&&cv.getContext&&cv.getContext('2d');if(cx){const r=(x,y,w,h,col)=>{cx.fillStyle=col;cx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
     cx.clearRect(0,0,80,90);r(0,81,80,9,'#d6cfc0');r(0,81,80,1,'#bdb5a4');const S0=S;S={party:c.party,look:lk};PF=0;try{personHD(r,22,10,whoCol('me'),false)}finally{S=S0}}}
+  document.querySelectorAll('.looks .lbtns').forEach(l=>{const sb=l.querySelector('[aria-pressed="true"]');if(sb&&sb.offsetLeft+sb.offsetWidth>l.clientWidth-10)l.scrollLeft=sb.offsetLeft-l.offsetLeft-24});
   document.getElementById('go').onclick=()=>{c.name=(nm.value.trim()||c.name.trim()||kname()).slice(0,8);c.step=1;newGame(c);save();render();window.scrollTo(0,0)};
   const ct=document.getElementById('cont');if(ct)ct.onclick=()=>{S=sv;fixup();render()};
 }
