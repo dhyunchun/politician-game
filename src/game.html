@@ -2899,20 +2899,77 @@ const SND=(()=>{let ac=null,master=null,on=false,cur=null,timer=null,step=0,next
     tick:t=>tone(1800,t,.02,'square',.03),
     ach:t=>{[84,88,91,96].forEach((m,i)=>tone(hz(m),t+i*.06,.18,'triangle',.1))},
     coin:t=>{tone(hz(83),t,.06,'square',.08);tone(hz(88),t+.06,.18,'square',.08)}};
-  // 배경음악: [템포, 멜로디(16분음 단위 MIDI, 0=쉼), 베이스]
+  // ── 배경음악: 4성부 8비트 트래커 (리드 펄스·아르페지오·베이스·드럼) ──
+  // 마디당 16칸. 음이름(C5, F#5, Bb4) · '-' 늘임 · '.' 쉼
   const SONGS={
-    title:[112,[72,0,76,0,79,0,76,0,74,0,72,0,71,0,72,0, 69,0,72,0,76,0,74,0,72,0,71,0,69,0,67,0],[48,48,55,55,53,53,55,55]],
-    play:[100,[67,0,0,69,71,0,74,0,72,0,71,0,69,0,0,0, 67,0,0,64,67,0,69,0,71,0,69,0,67,0,0,0],[43,43,47,47,45,45,47,43]],
-    tense:[126,[64,0,64,0,65,0,64,0,0,0,63,0,64,0,0,0, 64,0,64,0,67,0,66,0,0,0,65,0,64,0,0,0],[40,40,40,40,41,41,40,40]],
-    pres:[92,[72,0,0,71,72,0,74,0,76,0,0,0,74,0,72,0, 71,0,0,69,71,0,72,0,74,0,0,0,79,0,0,0],[48,48,53,53,55,55,48,48]]};
-  function sched(){if(!ac||!cur)return;const [bpm,mel,bass]=SONGS[cur],sx=60/bpm/4;while(nextT<ac.currentTime+.25){const i=step%mel.length;
-      if(mel[i])tone(hz(mel[i]),nextT,sx*1.8,'square',.035);if(i%4===0){const b=bass[(i/4)%bass.length|0];tone(hz(b),nextT,sx*3.5,'triangle',.07)}
-      if(i%8===4)noise(nextT,.03,.05,4000);nextT+=sx;step++}}
+    title:{bpm:120,arp:1,ch:'C Am F G C Am F G',bass:'R.R.F.R.R.R.F.R.',dr:'k---h-k-s---h---',mel:[
+      'E5 - G5 - C6 - - - G5 - E5 - G5 - - -','A5 - - - E5 - C5 - E5 - A5 - G5 - - -',
+      'F5 - A5 - C6 - A5 - F5 - - - E5 - F5 -','G5 - - - D5 - G5 - B5 - - - . . . .',
+      'E5 - G5 - C6 - - - D6 - C6 - B5 - C6 -','A5 - - - C6 - A5 - E5 - - - G5 - A5 -',
+      'F5 - A5 - C6 - F5 - G5 - - - D5 - G5 -','G5 - - - - - - - . . . . G4 . B4 .']},
+    play:{bpm:100,arp:2,ch:'G Em C D G Em Am D',bass:'R...F...R...F.R.',dr:'k---h---s---h-h-',mel:[
+      'D5 - - B4 D5 - G5 - - - F#5 - G5 - - -','E5 - - - B4 - - - E5 - G5 - F#5 - E5 -',
+      'E5 - - C5 E5 - G5 - C6 - - - B5 - A5 -','A5 - - - F#5 - - - D5 - - - . . . .',
+      'B4 - D5 - G5 - - - A5 - B5 - A5 - G5 -','G5 - - - E5 - - - B4 - - - E5 - F#5 -',
+      'G5 - - - E5 - C5 - A4 - C5 - E5 - G5 -','F#5 - - - A5 - - - D5 - - - . . . .']},
+    tense:{bpm:132,arp:1,ch:'Am Am F E Am Am Dm E',bass:'R.R.R.R.R.R.R.F.',dr:'k-h-k-h-s-h-k-hh',mel:[
+      'A4 . A4 . C5 . A4 . E5 - - - D5 . C5 .','B4 . C5 . B4 . A4 . G#4 - - - A4 - - -',
+      'F5 . F5 . E5 . D5 . C5 - - - A4 . C5 .','B4 - - - G#4 - - - E4 - - - . . G#4 B4',
+      'A4 . A4 . C5 . E5 . A5 - - - G5 . E5 .','F5 . E5 . D5 . C5 . B4 - C5 - D5 - - -',
+      'D5 . F5 . A5 - - - F5 . D5 . F5 . A5 .','G#5 - - - B5 - - - E5 - - - . . . .']},
+    pres:{bpm:88,arp:2,ch:'F C Dm Bb F C Bb C',bass:'R-------F---O---',dr:'k---h---s---h---',mel:[
+      'C5 - - - F5 - - - A5 - - G5 F5 - - -','E5 - - - G5 - - - C6 - - - - - - -',
+      'A5 - - - D5 - - - F5 - - E5 D5 - - -','D5 - - - F5 - - - Bb5 - - - A5 - G5 -',
+      'A5 - - - C6 - - - F5 - - - A5 - - -','G5 - - - E5 - - - C5 - - - E5 - G5 -',
+      'F5 - - - D5 - - - Bb4 - - - D5 - F5 -','E5 - - - G5 - - - C6 - - - . . . .']}};
+  const PC={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+  const nm=s=>{const r=/^([A-G])([#b]?)(\d)$/.exec(s);return r?12*(+r[3]+1)+PC[r[1]]+(r[2]==='#'?1:r[2]==='b'?-1:0):0};
+  function lenAt(tk,i){let n=1;while(i+n<tk.length&&tk[i+n]==='-')n++;return n}
+  function prep(S){if(S._p)return S._p;const mel=[],bass=[],arp=[],dr=[],chs=S.ch.split(' ');
+    S.mel.forEach((bar,bi)=>{const tk=bar.trim().split(/\s+/),c=/^([A-G][#b]?)(m?)$/.exec(chs[bi]),root=nm(c[1]+'2'),tones=[0,c[2]?3:4,7,12];
+      const bt=S.bass.split('');
+      for(let s=0;s<16;s++){mel.push(tk[s]&&tk[s]!=='-'&&tk[s]!=='.'?[nm(tk[s]),lenAt(tk,s)]:null);
+        const b=bt[s];bass.push(b==='R'||b==='F'||b==='O'?[root+(b==='F'?7:b==='O'?12:0),lenAt(bt,s)]:null);
+        arp.push((S.arp===1||(S.arp===2&&s%2===0))?root+24+tones[(S.arp===1?s:s/2)%4]:null);dr.push(S.dr[s])}});
+    return S._p={mel,bass,arp,dr,n:mel.length}}
+  let mbus=null,lbus=null,dly=null,waves={},nbuf=null;
+  function music(){if(mbus&&mbus.context===ac)return;waves={};
+    const pw=d=>{const N=24,re=new Float32Array(N),im=new Float32Array(N);for(let n=1;n<N;n++)re[n]=2/(n*Math.PI)*Math.sin(n*Math.PI*d);return ac.createPeriodicWave(re,im)};
+    waves.p25=pw(.25);waves.p12=pw(.125);
+    nbuf=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);const a=nbuf.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1;
+    const comp=ac.createDynamicsCompressor();comp.threshold.value=-18;comp.ratio.value=4;comp.attack.value=.004;comp.release.value=.15;
+    mbus=ac.createGain();mbus.gain.value=1.3;mbus.connect(comp);comp.connect(master);
+    lbus=ac.createGain();lbus.connect(mbus);dly=ac.createDelay(1);const fb=ac.createGain(),wet=ac.createGain();fb.gain.value=.28;wet.gain.value=.2;
+    lbus.connect(dly);dly.connect(fb);fb.connect(dly);dly.connect(wet);wet.connect(mbus)}
+  function env(g,t,d,v,a=.005,sus=.7){g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+a);g.gain.setTargetAtTime(v*sus,t+a,.06);
+    const r=Math.max(t+a+.01,t+d-.03);g.gain.setValueAtTime(v*sus,r);g.gain.linearRampToValueAtTime(0,r+.04)}
+  function osc(wave,f,t,d,v,out,a,sus){const o=ac.createOscillator(),g=ac.createGain();if(waves[wave])o.setPeriodicWave(waves[wave]);else o.type=wave;
+    o.frequency.setValueAtTime(f,t);env(g,t,d,v,a,sus);o.connect(g);g.connect(out);o.start(t);o.stop(t+d+.08);return o}
+  function vLead(m,t,d){const f=hz(m),o=osc('p25',f,t,d,.075,lbus,.006,.75);
+    if(d>.28){const l=ac.createOscillator(),lg=ac.createGain();l.frequency.value=5.6;lg.gain.setValueAtTime(0,t);lg.gain.setValueAtTime(0,t+.16);lg.gain.linearRampToValueAtTime(f*.007,t+.34);
+      l.connect(lg);lg.connect(o.frequency);l.start(t);l.stop(t+d+.08)}}
+  function vArp(m,t,d){osc('p12',hz(m),t,Math.min(d,.09),.022,mbus,.002,.4)}
+  function vBass(m,t,d){osc('triangle',hz(m),t,d*.92,.2,mbus,.004,.85)}
+  function nz(t,d,v,type,fq,q=.7){const n=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();n.buffer=nbuf;f.type=type;f.frequency.value=fq;f.Q.value=q;
+    g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0005,t+d);n.connect(f);f.connect(g);g.connect(mbus);n.start(t,Math.random()*.8,d+.02)}
+  function vDrum(k,t){if(k==='k'){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(42,t+.12);
+      g.gain.setValueAtTime(.55,t);g.gain.exponentialRampToValueAtTime(.001,t+.18);o.connect(g);g.connect(mbus);o.start(t);o.stop(t+.2)}
+    else if(k==='s'){nz(t,.13,.22,'bandpass',1900,.8);osc('triangle',190,t,.07,.09,mbus,.001,.3)}
+    else if(k==='h')nz(t,.035,.06,'highpass',7500)}
+  function schedTo(tEnd){const S=SONGS[cur],P=prep(S),sx=60/S.bpm/4;dly.delayTime.setValueAtTime(sx*3,ac.currentTime);
+    while(nextT<tEnd){const i=step%P.n,t=nextT;
+      const m=P.mel[i];if(m)vLead(m[0],t,m[1]*sx);const b=P.bass[i];if(b)vBass(b[0],t,b[1]*sx);
+      if(P.arp[i])vArp(P.arp[i],t,sx);if(P.dr[i]&&P.dr[i]!=='-')vDrum(P.dr[i],t);nextT+=sx;step++}}
+  function sched(){if(!ac||!cur)return;music();schedTo(ac.currentTime+.3)}
+  // 미리듣기 렌더(테스트용): OfflineAudioContext로 곡을 WAV 버퍼로
+  async function _render(name,secs){const O=window.OfflineAudioContext||window.webkitOfflineAudioContext,sv=[ac,master,cur,step,nextT,mbus];
+    ac=new O(2,44100*secs,44100);master=ac.createGain();master.gain.value=.5;master.connect(ac.destination);mbus=null;music();cur=name;step=0;nextT=.05;schedTo(secs-.1);
+    const buf=await ac.startRendering();[ac,master,cur,step,nextT,mbus]=sv;if(ac)music();return buf}
   function bgm(name){if(!on){cur=null;return}if(cur===name)return;if(!ctx())return;cur=name;step=0;nextT=ac.currentTime+.05;if(!timer)timer=setInterval(sched,90)}
   function fx(n){if(!on||!FX[n])return;if(!ctx())return;try{FX[n](ac.currentTime+.01)}catch(e){}}
   function set(v){on=v;try{localStorage.setItem('pol-snd',v?'1':'0')}catch(e){}if(!v){cur=null;if(timer){clearInterval(timer);timer=null}}else{ctx();const c=cur;cur=null;bgm(c||pickBgm())}btn()}
   function btn(){let b=document.getElementById('sndb');if(!b){b=document.createElement('button');b.id='sndb';b.className='sndb';b.onclick=()=>set(!on);document.body.appendChild(b)}b.textContent=on?'🔊':'🔇';b.setAttribute('aria-label',on?'소리 끄기':'소리 켜기');b.setAttribute('aria-pressed',on)}
-  return{fx,bgm,set,btn,get on(){return on}}})();
+  return{fx,bgm,set,btn,_render,get on(){return on}}})();
 function pickBgm(){if(!S||S.phase==='start')return 'title';if(S.phase==='ending')return 'title';if(isPres())return 'pres';if((S.cur&&['trial','elec','impeach','detect'].includes(S.cur.type))||S.trial)return 'tense';return 'play'}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.choice,.btn,.opt,.linkbtn');if(b&&!b.disabled&&b.id!=='sndb')SND.fx('click')},true);
 /* ============ 정당 내부 정치 ============ */
