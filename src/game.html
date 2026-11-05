@@ -1332,6 +1332,40 @@ const EV=[
  ch:[['바로 판다',()=>{chg({integrity:4,support:3,money:Math.round(300*TM())});return '"솔선수범" 기사가 났다. 팔고 나서 집값이 또 올랐다.'}],
      ['"서울 집을 팔겠다"더니 지방 집을 판다',()=>{chg({support:-6,fame:4,money:Math.round(200*TM())});return '"똘똘한 한 채"라는 말이 나를 따라다녔다.'}],
      ['"투기 목적 아니다" 버틴다',()=>{chg({support:-4,integrity:-3});return '재산 공개 시즌마다 같은 기사가 반복됐다.'}]]},
+// ---- 흙집 칩거 전용 (칩거 중엔 정치 일정 대신 이것만) ----
+{id:'tg_day',core:true,tag:'흙집',px:()=>['field|me|house','field|me,old|house','field|me|book,house'][S.year%3],t:'흙집의 한 해',b:()=>`칩거 ${Math.max(1,S.year-S.togul+1)}년째. 휴대폰은 서랍 속에 있고, 하루는 해가 뜨고 지는 것으로 나뉜다. 올해는 무엇으로 채울까.`,
+ ch:()=>[['밭을 일군다',()=>{chg({mental:8,money:Math.round(60*TM())});return pick(['감자 농사가 잘됐다. 장터에서 직접 팔았는데 알아보는 사람은 없었다.','고추가 탄저병에 걸렸다. 정치보다 어렵다.','옥수수를 이웃과 나눴다. 손바닥에 굳은살이 생겼다.'])},{hint:'멘탈·약간의 돈'}],
+   ['아궁이 앞에서 책을 읽는다',()=>{chg({policy:3,speech:1,mental:4});return pick(['역사책 열두 권을 읽었다. 밑줄 친 문장이 연설문이 될지도 모른다.','경제학 원서를 붙들고 겨울을 났다.','젊은 시절 읽던 시집을 다시 펼쳤다.'])},{hint:'정책력·언변'}],
+   ['마을 일을 돕는다',()=>{chg({support:2,org:1,integrity:1,mental:-1});return pick(['경로잔치 사회를 봤다. 할머니들이 "테레비에 나오던 양반"이라며 떡을 챙겨 줬다.','마을 회관 지붕을 같이 고쳤다.','이장님 대신 군청에 민원 서류를 들고 갔다.'])},{hint:'지지율·청렴도'}],
+   ['산에 오르고 마음을 비운다',()=>{chg({mental:12,fame:-1});return '정상에서 내려다보니 여의도는 보이지 않았다.'},{hint:'멘탈 크게'}],
+   ['밤마다 몰래 정치권과 통화한다',()=>{chg({party:4,fame:1,mental:-3});if(R()<.3){chg({integrity:-3,support:-3});return '통화 내역이 기사로 났다. "칩거 쇼"라는 제목이 달렸다.'}return '흙집 마루에서 새벽까지 전화를 붙들었다. 칩거는 낮에만 한다.'},{hint:'당내입지 · 들키면 "칩거 쇼"'}]]},
+{id:'tg_reporter',tg:true,w:3,tag:'흙집',px:'field|rep,me?|house,cam',c:()=>S.togul&&!inOffice(),t:'기자가 몰래 마을에 들어왔다',b:'이른 아침 밭에 나갔더니 담 너머로 망원렌즈가 보인다. "근황 단독" 기자다. 장화에 밀짚모자 차림이다.',
+ ch:[['차 한잔 하며 짧게 인터뷰한다',()=>{chg({fame:5,integrity:-1});return '"흙 묻은 손으로 차를 따르며" 기사가 포털 메인에 걸렸다.'}],
+     ['정중하게 돌려보낸다',()=>{chg({mental:2,fame:1});return '"말 없는 칩거" 한 줄 기사가 났다.'}],
+     ['감자 한 봉지를 쥐여 보낸다',()=>{chg({support:3,fame:3});return '기사에는 감자 사진이 대문짝만하게 실렸다.'}]]},
+{id:'tg_youtube',tg:true,w:2,tag:'흙집',px:'field|cit2,me|phone,house',c:()=>S.togul&&!inOffice()&&s().fame>=20,t:'"칩거 브이로그 찍으실래요?"',b:'구독자 80만 시골살이 유튜버가 찾아왔다. "전직 정치인의 흙집 일상" 콘텐츠를 같이 만들자며 수익을 반씩 나누자고 한다.',
+ ch:[['출연한다',()=>{chg({fame:6,money:Math.round(300*TM()),integrity:-2,mental:-2});return '아궁이에 불 때는 영상이 조회수 200만을 넘었다. "칩거를 팔아먹는다"는 댓글도 달렸다.'}],
+     ['거절한다',()=>{chg({mental:3,integrity:1});return '유튜버는 마을 풍경만 찍고 돌아갔다.'}]]},
+{id:'tg_ijang',tg:true,w:3,tag:'흙집',px:'field|old,me,cit|house',c:()=>S.togul&&!inOffice()&&S.year-S.togul>=1,t:'"이장 좀 맡아 주시오"',b:'마을 이장님이 허리를 다쳐 물러난다. 주민들이 회관에 모여 "정치하던 양반이 해 보라"고 한다. 임기 2년, 보수는 없다.',
+ ch:[['이장을 맡는다',()=>{chg({support:3,org:3,admin:2,mental:-3});return '첫 안건은 마을 앞 가로등 두 개였다. 국회보다 회의가 길었다.'}],
+     ['"저는 쉬러 왔습니다"며 사양한다',()=>{chg({mental:2});return '대신 막걸리 한 상자를 회관에 넣었다.'}]]},
+{id:'tg_flood',tg:true,w:3,tag:'흙집',px:'field|cit,me,old|exclaim',c:()=>S.togul&&!inOffice(),t:'태풍에 마을 논이 잠겼다',b:'밤새 비가 쏟아져 마을 논 절반이 물에 잠겼다. 군청 복구반은 사흘 뒤에나 온다고 한다.',
+ ch:[['삽을 들고 복구에 나선다',()=>{chg({support:4,fame:3,mental:-4});return '진흙투성이 사진이 지역 방송에 나갔다. 일부러 찍힌 건 아니다.'}],
+     ['옛 인맥에 전화해 복구 예산을 당긴다',()=>{chg({support:3,org:2,integrity:-2,party:2});return '복구반이 하루 만에 왔다. "칩거 맞냐"는 수군거림도 따라왔다.'}],
+     ['이름 없이 성금만 보낸다',()=>{chg({integrity:3,money:-Math.round(100*TM())});return '마을 회관 게시판에 "익명 1명"이라고 적혔다.'}]]},
+{id:'tg_letters',tg:true,w:2,tag:'흙집',px:'field|me|book,house',c:()=>S.togul&&!inOffice()&&s().support>=20,t:'손편지 한 상자',b:'우체부가 사과 상자 하나를 놓고 갔다. 전국 지지자들이 보낸 손편지 수백 통이다. "기다리겠습니다"가 제일 많다.',
+ ch:[['한 통 한 통 답장을 쓴다',()=>{chg({support:3,org:2,mental:2});return '겨울 내내 붓펜 세 자루를 다 썼다.'}],
+     ['읽기만 하고 상자에 넣어 둔다',()=>{chg({mental:5});return '힘들 때마다 한 통씩 꺼내 읽었다.'}]]},
+{id:'tg_temple',tg:true,w:2,tag:'흙집',px:'field|old,me|',c:()=>S.togul&&!inOffice(),t:'산사의 노스님과 차담',b:'뒷산 암자의 노스님이 차를 내주며 묻는다. "내려놓으러 오셨소, 다시 쥐려고 오셨소?"',
+ ch:[['"내려놓으러 왔습니다"',()=>{chg({mental:10,integrity:2});return '스님이 웃으며 "그 말부터 내려놓으시오"라고 했다.'}],
+     ['"다시 쥐려고 왔습니다"',()=>{chg({mental:4,party:2});return '"솔직해서 좋소." 스님은 찻잔을 한 번 더 채워 줬다.'}]]},
+{id:'tg_kimjang',tg:true,w:2,tag:'흙집',px:'field|old,me+,old|house',c:()=>S.togul&&!inOffice(),t:'김장 품앗이에 불려 갔다',b:'옆집 할머니가 "일손 하나라도 아쉽다"며 고무장갑을 내민다. 배추 300포기다.',
+ ch:[['소매를 걷고 끝까지 한다',()=>{chg({support:2,mental:5,org:1});return '허리는 끊어질 것 같았지만 김치 한 통을 얻었다. 올겨울 반찬 걱정은 없다.'}],
+     ['고무장갑만 끼고 사진을 찍는다',()=>{chg({fame:2,support:-2});return '할머니가 "사진은 됐고 배추나 날라"라고 했다.'}]]},
+{id:'tg_oldcase',tg:true,w:2,tag:'흙집',px:'field|me?|phone,exclaim',c:()=>S.togul&&!inOffice()&&S.cases.length>0,t:'옛 측근이 검찰 조사를 받는다',b:'라디오 뉴스에서 옛 측근이 검찰에 소환됐다는 소식이 나온다. 조서에 내 이름이 몇 번 나왔다는 보도도 따라 나왔다.',
+ ch:[['침묵한다',()=>{chg({mental:-5});return '마을 사람들은 아무것도 묻지 않았다. 그게 더 무거웠다.'}],
+     ['짧은 입장문을 낸다',()=>{chg({fame:2,support:-1});return '"칩거 중에도 해명은 빠르다"는 기사가 났다.'}],
+     ['변호사부터 선임한다',()=>{chg({money:-Math.round(200*TM()),mental:1});return '흙집 마루에서 처음으로 넥타이를 맸다.'}]]},
 // ---- 야인 (토굴 칩거 모티프) ----
 {id:'y_togul',w:4,tag:'야인',px:'field|me,aide|house',c:()=>!inOffice()&&!wrapMode()&&!S.togul&&S.idle>=1,t:'산골 흙집으로 들어갈까',b:'낙선 뒤 전화가 뚝 끊겼다. 오랜 측근이 남도 산자락의 낡은 흙집을 구해 왔다. "잠시 정치를 내려놓고 칩거하시죠. 사람들은 돌아올 때를 기억합니다."',
  ch:[['흙집에 칩거한다',()=>{S.togul=S.year;chg({mental:15,fame:-4,party:-3});addLog('정계를 떠나 산골 흙집에서 칩거를 시작했다.');return '휴대폰을 껐다. 첫날 밤은 개구리 소리 때문에 잠을 못 잤다.'}],
@@ -1346,10 +1380,10 @@ const EV=[
      ['『저녁이 있는 나라』 (비전 선언)',()=>{S.togulBook=1;chg({fame:5,policy:6,party:2});return '책 제목이 다음 선거 구호 후보로 거론된다.'}],
      ['책은 내지 않는다',()=>{chg({mental:3});return '원고는 아궁이 옆 상자에 넣어 뒀다.'}]]},
 {id:'y_return',w:6,tag:'하산',px:'field|aide,me^,aide|banner',c:()=>!inOffice()&&!wrapMode()&&S.togul&&S.year-S.togul>=2&&(elecKinds(S.year+1).length>0||elecKinds(S.year).length>0),t:'하산(下山)할 때인가',b:()=>`칩거 ${S.year-S.togul}년. 선거를 앞두고 지지자들이 흙집 앞에 "돌아오라" 현수막을 걸었다. 측근은 "지금이 아니면 영영 늦습니다"라고 말한다.`,
- ch:[['정계 복귀를 선언한다',()=>{const y=S.year-S.togul;S.togul=0;S.togulRet=1;S.idle=Math.max(0,S.idle-4);chg({fame:10+y,support:6,party:4,mental:-4});addLog(`칩거 ${y}년 만에 정계 복귀를 선언했다.`);return '흙집 마당에서 복귀 기자회견을 열었다. 장화는 벗지 않았다. "국민이 부르면 간다."'}],
+ ch:[['정계 복귀를 선언한다',()=>{const y=S.year-S.togul;S.togul=0;S.togulRet=1;S.idle=Math.max(0,S.idle-4);chg({fame:10+y,support:6,party:4,mental:-4});addLog(`칩거 ${y}년 만에 정계 복귀를 선언했다.`);if(elecKinds(S.year).length&&S.age<65&&!S.q.some(x=>x.type==='elec'))S.q.push({type:'elec'});return '흙집 마당에서 복귀 기자회견을 열었다. 장화는 벗지 않았다. "국민이 부르면 간다."'}],
      ['아직 때가 아니다',()=>{chg({mental:4,fame:-3});return '현수막은 비를 맞으며 몇 달을 더 걸려 있었다.'}],
      ['정계 은퇴를 선언한다',()=>{S.pendingEnd='retire';S.q=[];chg({integrity:5});addLog('흙집에서 정계 은퇴를 선언했다.');return '"이제 정말 농사꾼입니다." 기자들이 마지막으로 장화를 찍어 갔다.'}]]},
-{id:'y_forgot',w:3,tag:'칩거',px:'field|me|house',c:()=>!inOffice()&&S.togul&&S.year-S.togul>=3,t:'아무도 찾아오지 않는 겨울',b:'칩거 3년째 겨울. 기자도, 후배도 발길이 끊겼다. 마을 이장만 가끔 김치를 들고 온다. 휴대폰에 저장된 번호 900개 중 올해 전화가 온 건 11개다.',
+{id:'y_forgot',w:3,tag:'칩거',px:'field|me~|house',c:()=>!inOffice()&&S.togul&&S.year-S.togul>=3,t:'아무도 찾아오지 않는 겨울',b:'칩거 3년째 겨울. 기자도, 후배도 발길이 끊겼다. 마을 이장만 가끔 김치를 들고 온다. 휴대폰에 저장된 번호 900개 중 올해 전화가 온 건 11개다.',
  ch:[['이장과 마을 일을 돕는다',()=>{chg({support:4,org:3,mental:4});return '마을 길 포장 민원을 해결했다. 지역 신문에 작게 실렸다.'}],
      ['옛 동료들에게 먼저 전화를 돌린다',()=>{chg({party:4,mental:-4});return '반은 받지 않았다. 받은 반은 "언제 나오세요?"라고 물었다.'}]]},
 {id:'y_panel',w:2,tag:'야인',px:'tv|me,rep|cam',c:()=>!inOffice()&&!wrapMode()&&!S.togul&&s().fame>=25,t:'종편 시사 프로 "독설 패널" 섭외',b:'방송사가 "센 말"을 해 줄 고정 패널을 찾는다. 출연료는 회당 80만원. 시청률이 오르면 이름도 다시 오른다.',
@@ -1609,8 +1643,15 @@ function joinParty(p,offer){
 const wrapMode=()=>!!S.exPres||(S.age>=65&&!inOffice());
 function buildQueue(){
   if(wrapMode()){const q=[];if(S.trial&&S.trial.started<S.year)q.push({type:'trial'});else if(!S.trial&&S.cases.length&&R()<(S.exPres?.7:.4))q.push({type:'detect'});S.qTotal=Math.max(1,q.length);return q}
+  if(S.togul&&!inOffice()){const q=[{type:'ev',id:'tg_day'}];
+    const pool=EV.filter(e=>!e.core&&(e.tg||e.tag==='칩거'||e.tag==='하산')&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<4));
+    const n=Math.min(pool.length,2),chosen=[];let g=0;while(chosen.length<n&&g++<200){const tot=pool.reduce((a,e)=>a+(chosen.includes(e)?0:(e.w||1)),0);let r0=R()*tot;for(const e of pool){if(chosen.includes(e))continue;r0-=(e.w||1);if(r0<=0){chosen.push(e);break}}}
+    chosen.forEach(e=>q.push({type:'ev',id:e.id}));
+    if(S.trial&&S.trial.started<S.year)q.push({type:'trial'});
+    else if(!S.trial&&S.cases.length){S.cases=S.cases.filter(c=>S.year-c.y<7);const p=S.cases.reduce((a,c)=>a+.025*c.sev,0)+(100-s().integrity)/1500;if(R()<p)q.push({type:'detect'})}
+    S.qTotal=q.length;return q}
   const q=[];
-  const BIG=big();const pool=EV.filter(e=>!e.core&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<4)&&!(BIG&&JUNIOR.has(e.id)));
+  const BIG=big();const pool=EV.filter(e=>!e.core&&!e.tg&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<4)&&!(BIG&&JUNIOR.has(e.id)));
   const n=Math.min(pool.length,2);
   const elecSoon=elecKinds(S.year).length>0||elecKinds(S.year+1).length>0;
   const wt=e=>e.tempt?(1+(broke()?2.5:0)+(elecSoon?1:0)):(e.w||1);
@@ -2478,7 +2519,7 @@ function renderQueueItem(st){
 function moodOf(html){if(MOODCASE)return '?';if(/당선!|무죄|기각|완수|창당|통과/.test(html))return '+';if(/낙선|유죄|구속|탈락|파면|부결/.test(html))return '~';
   let sc=0;for(const [k,d] of D){if(k==='money')continue;sc+=k==='mental'?d*.5:d}return sc>=7?'+':sc<=-9?'~':''}
 function finish(html){try{SND.fx(/당선!|무죄|기각|통과|완수|창당/.test(html)?'good':/낙선|유죄|구속|탈락|파면|부결/.test(html)?'bad':'coin')}catch(e){}S.res={html,d:deltaHTML(),mood:moodOf(html)};MOODCASE=0;save();render()}
-const TAGFACE={'논란':'?','폭로':'?','의혹':'?','속보':'?','단독':'?','청문회':'?','대형 참사':'?','경제 위기':'?','해프닝':'?','라이벌':'!','공작':'!','칩거':'~','야인':'~','화제':'+','섭외':'+'};
+const TAGFACE={'논란':'?','폭로':'?','의혹':'?','속보':'?','단독':'?','청문회':'?','대형 참사':'?','경제 위기':'?','해프닝':'?','라이벌':'!','공작':'!','야인':'~','화제':'+','섭외':'+'};
 function tagFace(spec,tag){const f=TAGFACE[tag];if(!f)return spec;return spec.replace(/(^|[|,])me(\^?)(?=[,|]|$)/,'$1me$2'+f)}
 function renderEvent(st,e){
   const V=x=>typeof x==='function'?x():x;const T=V(e.t),B=V(e.b),CH=V(e.ch);
