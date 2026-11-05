@@ -1616,7 +1616,7 @@ function pxGrid(opt){
   const p=(x,y,w,h,cl)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++)set(x+i,y+j,cl)};
   const T=opt.tones;
   const shape=(y0,rows,base,o={})=>rows.forEach(([a,b],k)=>{const y=y0+k;for(let x=a;x<=b;x++){const fr=b===a?.5:(x-a)/(b-a);let f=1;
-      for(const [lim,m] of T)if(fr<=lim){f=m;break}
+      for(const [lim,m] of (o.tones||T))if(fr<=lim){f=m;break}
       if(o.rim&&x===a&&b-a>2)f=Math.max(f,o.rim);if(o.bot&&k>=rows.length-o.bot)f=Math.min(f,.72);set(x,y,shade(base,f))}});
   const span=(y0,hws,cx=18)=>hws.map(h=>[Math.round(cx-h),Math.round(cx+h)]);
   const flush=(r,X,Y)=>{const out=col.slice(),N=[[1,0],[-1,0],[0,1],[0,-1]];
@@ -1671,10 +1671,10 @@ function personHD(r,X,Y,c,wave){
   part();p(16,-1,5,4,S3);p(16,-1,1,4,S2);
   part();if(!(st==='long'||st==='bob')){p(12,-8,1,4,s);p(24,-8,1,4,S2);feat();p(12,-7,1,2,S3);p(24,-7,1,2,S3)}
   // 얼굴
-  part();shape(-13,span(-13,FEM?[3,4.5,5,5,5,5,5,5,4.5,4.5,4,3.5,2.5,1.5]:[3,4.5,5,5,5,5,5,5,5,5,4.5,4,3,2]),s,{rim:1.12});
+  part();shape(-13,span(-13,FEM?[3,4.5,5,5,5,5,5,5,4.5,4.5,4,3.5,2.5,1.5]:[3,4.5,5,5,5,5,5,5,5,5,4.5,4,3,2]),s,{tones:[[.12,1.03],[.86,1],[1,.88]]});
   feat();
   // 광대·턱 음영(빛은 왼쪽)
-  p(22,-6,1,4,S2);p(21,-3,2,1,S2);if(!FEM){p(15,-1,1,1,S2);p(21,-2,1,1,S3)}
+  p(14,-2,1,1,S2);p(22,-2,1,1,S2);if(!FEM){p(15,-1,1,1,S2);p(21,-1,1,1,S2)}
   // 눈썹
   const BR=hd;
   if(face==='angry'){p(14,-10,1,1,BR);p(15,-9,2,1,BR);p(22,-10,1,1,BR);p(20,-9,2,1,BR)}
@@ -1697,7 +1697,7 @@ function personHD(r,X,Y,c,wave){
     if(face==='angry'){p(14,-7,1,1,BR);p(22,-7,1,1,BR)}
     if(face==='sad'){p(14,-5,1,1,'#bfe3ff')}}
   // 코
-  p(19,-5,1,2,S2);p(18,-3,2,1,S3);
+  p(18,-5,1,2,S2);p(17,-3,1,1,S2);p(18,-3,1,1,S3);p(19,-3,1,1,S2);
   // 볼
   if(FEM||face==='smile'){p(14,-4,2,1,'#ef9e8c');p(21,-4,2,1,'#e08a7a')}
   // 입
