@@ -379,13 +379,13 @@ function leanTxt(v){return v>=8?'텃밭':v>=3?'우세':v<=-8?'험지':v<=-3?'열
 function mulFor(k){if(!k)return 1;return (curR().fx[k]||1)*(DTYPE[curD()[3]][k]||1)}
 function J(w,pr){w=String(w==null?'':w);const ch=w.charCodeAt(w.length-1);const has=ch>=0xAC00&&ch<=0xD7A3?(ch-0xAC00)%28!==0:/[0136-8LMNR]$/i.test(w);return w+(has?pr[0]:pr[1])}
 const OFFORD=['basic','metro','mayor','natp','nat','gov','pres'];
-function heldTxt(h){return OFFORD.filter(k=>(h||{})[k]>0).map(k=>k==='pres'?'대통령':`${OFF[k].n} ${h[k]}선`).join(' · ')}
+function heldTxt(h){return OFFORD.filter(k=>(h||{})[k]>0).map(k=>k==='pres'?'대통령':`${OFF[k].n} ${h[k]}선`).concat(((h||{}).min||[]).map(m=>m+' 장관')).join(' · ')}
 function hon(off){off=off||S.office;if(off==='none'){const b=S.best&&S.best!=='none'?S.best:null;return b?hon(b):'후보님'}
   if(off==='pres')return '대통령님';if(off==='gov'){const g=curR().gov;return /지사$/.test(g)?'지사님':'시장님'}
   if(off==='mayor'){const m=(curD()[2]||'').match(/(구청장|시장|군수)$/);return (m?m[1]:'단체장')+'님'}return '의원님'}
 function offName(off){const R=curR(),d=curD();switch(off){case 'basic':return d[1]+'의원';case 'metro':return R.council+' ('+d[1]+')';case 'mayor':return d[2];case 'nat':return R.n+' '+d[0]+' 국회의원';case 'natp':return '비례대표 국회의원';case 'gov':return R.gov;default:return OFF[off].full}}
 const distName=()=>curR().n+' '+curD()[0];
-function presPaths(){const H=S.held,nt=(H.nat||0)+(H.natp||0);return{council:nt>=2&&(!!S.everChair||!!S.everLeader||nt>=3),admin:(H.gov||0)>=1&&((H.mayor||0)>=1||nt>=1)}}
+function presPaths(){const H=S.held,nt=(H.nat||0)+(H.natp||0),mn=!!(H.min&&H.min.length);return{council:nt>=2&&(!!S.everChair||!!S.everLeader||nt>=3||mn),admin:(H.gov||0)>=1&&((H.mayor||0)>=1||nt>=1||mn)}}
 let CTX={mode:'none',m:1,money:1};
 const UPKEEP={none:600,basic:1600,metro:2500,mayor:3700,nat:5200,natp:3800,gov:4800,pres:0};
 const DEPOSIT={basic:200,metro:300,mayor:1000,nat:1500,natp:1500,gov:5000,pres:30000};
@@ -461,6 +461,12 @@ const rulingP=()=>S.ruling||'jj';
 const crOn=k=>!!(S.crisis&&S.crisis.k===k&&S.crisis.left>0);
 function crAdj(n){if(S.crisis)S.crisis.adj=(S.crisis.adj||0)+n}
 function crRole(){return isPres()?' 대통령으로서 첫 대응이 이후 민심을 좌우한다.':inOffice()?'':' 직함은 없지만 할 수 있는 일은 있다.'}
+const MIN={law:{n:'법무부',bg:'lawyer'},env:{n:'환경부',bg:'activist'},sme:{n:'중소벤처기업부',bg:'biz'},cul:{n:'문화체육관광부',bg:'creator'},mois:{n:'행정안전부',bg:'civil'},molit:{n:'국토교통부',bg:'aide'}};
+const minOf=()=>Object.keys(MIN).find(k=>MIN[k].bg===S.bg)||'molit';
+const isMin=()=>!!(S&&S.minister);
+const minN=()=>S.minister?MIN[S.minister.d].n+' 장관':'';
+function endMin(msg){if(!S.minister)return;addLog(msg||`${minN()}직에서 물러났다.`);S.everMin=(S.everMin||0)+1;S.minister=null}
+function minOfferOk(){return !S.minister&&!isPres()&&member()&&S.ruling===S.party&&['nat','natp','gov'].includes(S.office)&&s().party>=50&&s().fame>=45&&!S.trial&&S.year-(S.minOfferY||0)>=3&&!elecKinds(S.year).length}
 const isLeader=()=>!!S&&S.titles&&S.titles.leader>0;
 const big=()=>!!S&&(isPres()||S.office==='gov'||S.titles.leader>0||S.titles.chair>0);
 const prot=()=>(S.prot&&S.prot[0])||'후배';
@@ -1332,6 +1338,100 @@ const EV=[
  ch:[['바로 판다',()=>{chg({integrity:4,support:3,money:Math.round(300*TM())});return '"솔선수범" 기사가 났다. 팔고 나서 집값이 또 올랐다.'}],
      ['"서울 집을 팔겠다"더니 지방 집을 판다',()=>{chg({support:-6,fame:4,money:Math.round(200*TM())});return '"똘똘한 한 채"라는 말이 나를 따라다녔다.'}],
      ['"투기 목적 아니다" 버틴다',()=>{chg({support:-4,integrity:-3});return '재산 공개 시즌마다 같은 기사가 반복됐다.'}]]},
+// ---- 장관 입각: 제안·중앙정치 ----
+{id:'mn_offer',core:true,tag:'입각',px:'office|aide,me?,aide|phone,exclaim',t:()=>`"${MIN[minOf()].n} 장관을 맡아 주십시오"`,
+ b:()=>`대통령실 인사수석이 직접 전화를 걸어왔다. 개각 명단에 ${MIN[minOf()].n} 장관으로 내 이름이 올라 있다고 한다. ${S.office==='gov'?`임명되면 ${offName('gov')} 자리는 내려놓아야 한다.`:'국회의원직은 그대로 두고 겸직한다.'} 인사청문회는 피할 수 없다.`,
+ ch:()=>[['수락하고 인사청문회에 선다',()=>{const d=minOf(),bad=Math.min(.75,.05+Math.max(0,62-s().integrity)/100*.9+S.cases.length*.08+((S.stats&&S.stats.bribes)>0?.08:0));
+     if(R()<bad){chg({support:-5,fame:4,mental:-8});addLog(`${MIN[d].n} 장관 후보자로 지명됐으나 청문회 끝에 자진 사퇴했다.`);return `청문회 사흘째, ${pick(['위장전입','논문 표절','자녀 입시 특혜 의혹','갭투자 아파트','세금 지각 납부'])} 의혹이 터졌다. 결국 "국정에 부담을 줄 수 없다"며 지명 철회를 요청했다.`}
+     const wasGov=S.office==='gov';S.minister={d,from:S.year,party:S.party,wasGov,ext:0};S.held.min=(S.held.min||[]).concat(MIN[d].n);
+     if(wasGov){addLog(`${offName('gov')}직을 사퇴했다.`);S.office='none'}
+     chg({fame:8,policy:3,admin:3,party:3});addLog(`${MIN[d].n} 장관에 임명됐다.`);
+     return `청문회는 "무난" 평가로 끝났다. 국무회의 첫 참석, 명패에 "${MIN[d].n} 장관"이라고 적혀 있었다.`}],
+   ['"지금 자리에서 할 일이 많다"며 고사한다',()=>{chg({party:-2,integrity:1,support:1});return '대통령실은 아쉬워했다. 지역 언론은 "의리"라고 썼다.'}]]},
+{id:'mn_work',core:true,tag:'중앙정치',px:()=>['office|aide,me,aide|desk','press|rep,me,rep|podium,cam','hall|riv,me,aide|'][S.year%3],t:()=>`${minN()}, 올해의 우선순위`,b:()=>`취임 ${S.year-S.minister.from+1}년차. 부처 간부들이 업무보고서를 들고 기다린다. 장관이 어디에 시간을 쓰느냐가 곧 부처의 1년이다.`,
+ ch:[['현장을 돈다',()=>{chg({fame:4,support:2,mental:-3});return '작업복 차림 현장 사진이 매주 나갔다. 직원들은 "보고서를 읽을 시간이 없다"고 수군댔다.'}],
+     ['정책 성과를 챙긴다',()=>{chg({policy:4,admin:3});return '업무 평가에서 부처가 상위권에 올랐다. 기사는 별로 안 났다.'}],
+     ['국회를 설득하러 다닌다',()=>{chg({party:3,legis:2,mental:-2});return '여야 의원실을 하루 여덟 곳씩 돌았다. 법안 두 건이 상임위를 넘었다.'}],
+     ['대통령실과 호흡을 맞춘다',()=>{chg({party:4,support:-1,integrity:-1});return '"대통령 복심"이라는 별명이 붙었다. 부처 직원들은 "우리 장관은 위만 본다"고 했다.'}],
+     ['차기를 위해 존재감을 키운다',()=>{chg({fame:6,party:-3});return '언론 인터뷰를 늘렸다. 대통령실에서 "장관이 너무 앞서 나간다"는 말이 나왔다.'}]]},
+{id:'mn_reshuffle',core:true,tag:'개각',px:'press|rep,me,rep|cam',t:'개각 하마평에 내 이름이 오른다',b:()=>`장관 ${S.year-S.minister.from}년차. 연말 개각을 앞두고 "교체 1순위"와 "유임 유력"이 같은 날 기사로 났다.`,
+ ch:[['박수 칠 때 떠난다',()=>{chg({fame:4,support:2});const n=minN();endMin(`${n}에서 물러났다.`);return '이임식에서 직원들이 꽃다발을 건넸다. "다음엔 더 큰 자리에서"라는 말이 따라왔다.'}],
+     ['유임을 요청한다',()=>{if(R()<.55){S.minister.ext=(S.minister.ext||0)+1;chg({admin:2,mental:-4});return '유임됐다. "장수 장관" 반열에 들었다.'}chg({fame:-3,mental:-6});const n=minN();endMin(`개각으로 ${n}에서 교체됐다.`);return '발표 30분 전에 교체 통보를 받았다. 이임식은 조촐했다.'}]]},
+{id:'mn_audit',mn:true,w:3,tag:'국정감사',px:'hall|riv,me!,riv|gavel',c:isMin,t:'국정감사장의 호통',b:'국정감사 첫날, 야당 의원이 부처 자료 제출 거부를 문제 삼아 "장관, 국민을 무시합니까!"라고 소리친다. 생중계 카메라가 내 얼굴을 잡고 있다.',
+ ch:[['자료를 내겠다며 몸을 낮춘다',()=>{chg({support:2,party:-1});return '그날 저녁 뉴스는 "장관, 결국 자료 제출"이었다.'}],
+     ['"그건 의원님 생각이고요"라며 받아친다',()=>{chg({fame:6,party:3,support:-3});return '짤이 돌았다. 지지층은 "사이다", 반대층은 "오만"이라고 했다.'}],
+     ['"기억나지 않습니다"로 버틴다',()=>{chg({integrity:-3,support:-2});return '"모르쇠 장관" 검색어가 올랐다.'}]]},
+{id:'mn_recommend',mn:true,w:2,tag:'해임건의',px:'hall|riv,me?,riv|ballot',c:()=>isMin()&&myMaj()===false,t:'장관 해임건의안이 가결됐다',b:'야당이 과반인 국회가 내 해임건의안을 통과시켰다. 법적 구속력은 없지만, 대통령이 받아들일지에 정국이 걸렸다.',
+ ch:[['"대통령의 판단에 맡긴다"며 버틴다',()=>{if(R()<.7){chg({party:4,support:-3});return '대통령이 건의를 거부했다. 야당은 "국회 무시"라며 장외로 나갔다.'}chg({fame:2});const n=minN();endMin(`해임건의 끝에 ${n}에서 물러났다.`);return '사흘 뒤 대통령이 사표를 수리했다.'}],
+     ['자진 사퇴한다',()=>{chg({support:3,integrity:2,party:-2});const n=minN();endMin(`해임건의안 가결 뒤 ${n}에서 자진 사퇴했다.`);return '"정쟁의 짐을 덜겠다"는 사퇴문이 짧고 담담했다.'}]]},
+{id:'mn_impeach',mn:true,w:1,tag:'탄핵소추',px:'court|judge,me?,judge|gavel',c:()=>isMin()&&myMaj()===false&&S.year-S.minister.from>=1,t:'국무위원 탄핵소추, 직무정지',b:'야당이 단독으로 장관 탄핵소추안을 통과시켰다. 헌법재판소 결정까지 직무가 정지된다. 부처는 차관 대행 체제로 들어갔다.',
+ ch:[['헌재 결정을 기다린다',()=>{if(R()<.75){chg({fame:6,party:6,mental:-8});return '5개월 만에 기각. 복귀 첫 출근길에 기자들이 몰렸다.'}chg({support:-6,mental:-10,fame:4});const n=minN();endMin(`헌법재판소 인용으로 ${n}에서 파면됐다.`);return '헌재가 탄핵을 인용했다. 장관 파면은 헌정사에 몇 번 없는 일이다.'}],
+     ['스스로 물러나 소추를 무력화한다',()=>{chg({support:2,party:-3});const n=minN();endMin(`탄핵소추 직후 ${n}에서 사퇴했다.`);return '사퇴로 심판은 각하됐다. "꼼수 사퇴"라는 말과 "부처를 위한 결단"이라는 말이 함께 나왔다.'}]]},
+{id:'mn_leak',mn:true,w:2,tag:'국무회의',px:'office|aide,me,aide|desk',c:isMin,t:'국무회의 발언이 새어 나갔다',b:'국무회의에서 대통령 정책에 이견을 낸 발언이 다음 날 그대로 기사화됐다. "장관이 대통령에게 직언" 대 "내각 엇박자" 프레임이 맞섰다.',
+ ch:[['"소신 발언 맞다"고 인정한다',()=>{chg({fame:5,integrity:2,party:-5});return '대통령실 대변인이 "다양한 의견이 오간 것"이라며 수습했다. 대통령과의 거리는 멀어졌다.'}],
+     ['"와전된 것"이라고 해명한다',()=>{chg({party:2,integrity:-2});return '기사를 쓴 기자가 회의 메모를 공개할 수 있다고 했다.'}]]},
+{id:'mn_budgetcut',mn:true,w:2,tag:'예산',px:'office|aide,me!,aide|chart',c:isMin,t:'"부처 예산 20% 깎습니다"',b:'긴축 기조라며 재정 당국이 우리 부처 핵심 사업 예산을 20% 깎겠다고 통보했다. 부처 간부들이 장관 얼굴만 쳐다본다.',
+ ch:[['국무회의에서 정면으로 맞선다',()=>{if(R()<.5){chg({admin:3,fame:3,party:-2});return '절반을 되살렸다. 간부들이 장관실 앞에서 박수를 쳤다.'}chg({party:-3,mental:-4});return '"부처 이기주의" 소리만 듣고 삭감안은 그대로 갔다.'}],
+     ['받아들이고 사업을 정리한다',()=>{chg({admin:2,support:-2});return '사업 세 개가 사라졌다. 지역 의원들의 항의 전화가 쏟아졌다.'}],
+     ['대통령에게 직접 보고한다',()=>{chg({party:2,policy:2});return '대통령이 "필요한 건 챙기라"고 했다. 재정 당국과의 관계는 차가워졌다.'}]]},
+{id:'mn_bhmeddle',mn:true,w:2,tag:'인사 개입',px:'phone|me?|phone,exclaim',c:isMin,t:'대통령실 비서관이 국장 인사를 요구한다',b:'대통령실 비서관이 전화로 "그 국장은 바꾸시죠, 위의 뜻입니다"라고 한다. 해당 국장은 핵심 정책을 맡고 있다.',
+ ch:[['요구대로 바꾼다',()=>{chg({party:3,integrity:-3,admin:-2});return '새 국장은 대통령실과 손발이 잘 맞았다. 부처 안에선 "장관 패싱"이라는 말이 돌았다.'}],
+     ['"인사는 장관 권한"이라며 거절한다',()=>{chg({integrity:3,admin:2,party:-4});return '비서관은 전화를 끊었다. 다음 국무회의에서 대통령 표정이 굳어 있었다.'}]]},
+{id:'mn_holiday',mn:true,w:2,tag:'처신',px:'press|rep,me?,rep|cam,exclaim',c:isMin,t:'재난 중 골프 사진',b:'집중호우로 피해가 커지던 주말, 내가 지방 골프장에 있었다는 사진이 돌기 시작했다. 사진 속 날짜가 정확하다.',
+ ch:[['즉시 사과하고 현장으로 간다',()=>{chg({support:-3,mental:-4});return '장화 신고 수해 현장을 돌았다. 사과는 받아들여졌지만 사진은 남았다.'}],
+     ['"사전에 잡힌 일정"이라고 해명한다',()=>{chg({support:-7,fame:4});return '해명이 불에 기름을 부었다. "골프 장관" 패러디가 쏟아졌다.'}]]},
+{id:'mn_alba',mn:true,w:2,tag:'인사',px:'office|old,me,aide|desk',c:isMin,t:'전 정부 기관장들이 버틴다',b:'산하 공공기관장 절반이 전 정부가 임기 말에 임명한 인사다. 여당은 "알박기 인사를 정리하라"고 압박하고, 기관장들은 "임기 보장"을 외친다.',
+ ch:[['사퇴를 압박한다',()=>{chg({party:5,integrity:-3});if(R()<.3)addCase('직권남용',1);return '기관장 여럿이 물러났다. 몇 명은 녹취를 남겼다.'}],
+     ['임기를 보장한다',()=>{chg({integrity:3,party:-4});return '"정권이 바뀌어도 원칙은 원칙"이라는 사설이 실렸다. 여당 의원들은 불만이다.'}]]},
+{id:'mn_draft',mn:true,w:3,tag:'차출론',px:'stage|aide,me?,aide|banner',c:()=>isMin()&&(elecKinds(S.year+1).length>0),t:'"장관님이 험지에 나가 주셔야"',b:'다음 선거를 앞두고 당이 장관 차출론을 띄웠다. 대통령실 핵심 인사가 "어려운 지역에서 바람을 일으켜 달라"고 한다.',
+ ch:[['차출에 응하겠다고 밝힌다',()=>{chg({party:7,fame:4});return '당은 반겼다. 선거가 다가오면 장관직을 내려놓아야 한다.'}],
+     ['"부처 일이 먼저"라며 선을 긋는다',()=>{chg({admin:2,party:-4,integrity:1});return '"자리 지키기"라는 말과 "책임감"이라는 말이 반반이었다.'}]]},
+// 부처별
+{id:'mn_law_pardon',mn:true,md:'law',w:3,tag:'특별사면',px:'office|aide,me?,aide|desk',c:isMin,t:'광복절 특별사면 명단',b:'대통령실이 보낸 특별사면 검토 명단에 횡령으로 복역 중인 재벌 총수와 여야 정치인 몇 명이 들어 있다. "경제 살리기와 국민 통합"이 명분이다.',
+ ch:[['명단 그대로 올린다',()=>{chg({party:4,support:-5,integrity:-3});return '"유전무죄 사면"이라는 비판이 쏟아졌다. 재계는 환영 성명을 냈다.'}],
+     ['총수는 빼고 생계형 사범 중심으로 바꾼다',()=>{chg({support:4,integrity:3,party:-3});return '서민 사면 140만 명. 대통령실은 "장관이 너무 깐깐하다"고 했다.'}],
+     ['정치인만 뺀다',()=>{chg({support:1,party:-5});return '여야 모두에게서 항의 전화가 왔다. 공평하게 욕을 먹었다.'}]]},
+{id:'mn_law_pros',mn:true,md:'law',w:3,tag:'검찰 인사',px:'court|judge,me,aide|gavel',c:isMin,t:'검찰 고위간부 인사, 수사팀을 바꿀까',b:'여권 인사를 수사하던 검사장들이 이번 인사 대상에 올라 있다. 대통령실은 "정기 인사일 뿐"이라고, 언론은 "수사팀 해체"라고 쓸 준비를 하고 있다.',
+ ch:[['수사팀을 대거 교체한다',()=>{chg({party:6,support:-6,integrity:-4});return '"검찰 인사 학살" 헤드라인이 1면을 덮었다.'}],
+     ['수사팀은 유임시킨다',()=>{chg({integrity:4,support:3,party:-6});return '대통령실과의 통화가 길어졌다. 검찰 내부 게시판에는 "장관 응원" 글이 올라왔다.'}],
+     ['수사지휘권을 발동한다',()=>{chg({fame:6,party:3,support:-4});return '15년 만의 수사지휘권 발동. 검찰총장이 사의를 표명했다.'}]]},
+{id:'mn_env_cup',mn:true,md:'env',w:3,tag:'환경 정책',px:'street|cit,me?,cit2|exclaim',c:isMin,t:'일회용컵 보증금제, 시행 한 달 전',b:'카페 점주들이 "라벨 붙이고 컵 받는 건 결국 우리 몫"이라며 반발한다. 환경단체는 "또 후퇴하면 정부 신뢰는 끝"이라고 경고한다.',
+ ch:[['예정대로 시행한다',()=>{chg({policy:3,support:-4,integrity:2});return '첫 달 컵 회수율은 40%. 점주 단체가 헌법소원을 냈다.'}],
+     ['무기한 유예한다',()=>{chg({support:2,fame:-3,integrity:-2});return '"환경부가 환경을 포기했다"는 성명이 나왔다.'}],
+     ['일부 지역에서 먼저 해 본다',()=>{chg({admin:2});return '시범 지역 두 곳. 양쪽 다 반쯤 만족했다.'}]]},
+{id:'mn_env_dam',mn:true,md:'env',w:3,tag:'댐 건설',px:'field|cit,me,old|exclaim',c:isMin,t:'신규 댐 후보지 주민이 상경했다',b:'기후 위기 대응용 신규 댐 후보지 주민들이 "수몰은 안 된다"며 부처 앞에서 농성 중이다. 하류 지자체는 "홍수·가뭄 대책"이라며 빨리 지어 달라고 한다.',
+ ch:[['추진한다',()=>{chg({admin:3,support:-3});return '타당성 조사가 시작됐다. 농성장은 겨울을 넘겼다.'}],
+     ['백지화한다',()=>{chg({support:3,policy:-2});return '상류 마을은 잔치를 열었다. 하류 지자체장은 "다음 홍수 때 보자"고 했다.'}],
+     ['주민투표에 부친다',()=>{chg({integrity:3,fame:2});return '투표율 71%, 찬성 52%. 진 쪽은 결과를 인정하지 않았다.'}]]},
+{id:'mn_sme_app',mn:true,md:'sme',w:3,tag:'상생',px:'street|cit2,me,biz|phone',c:isMin,t:'배달앱 수수료 갈등',b:'배달앱 중개 수수료가 또 올랐다. 자영업자 단체는 "매출의 30%가 앱으로 간다"고, 플랫폼 기업은 "정부가 시장을 모른다"고 한다.',
+ ch:[['수수료 상한제를 법으로 만든다',()=>{chg({support:4,party:2,policy:2});return '자영업자들은 환호했다. 플랫폼은 "배달비 인상"으로 맞섰다.'}],
+     ['자율 상생안을 중재한다',()=>{chg({admin:3,support:-1});return '석 달 협상 끝에 수수료 1%p 인하. "생색내기"라는 평이 붙었다.'}],
+     ['공공 배달앱을 띄운다',()=>{chg({fame:4,admin:-1});return '출시 첫 달 다운로드는 많았다. 석 달 뒤 주문은 거의 없었다.'}]]},
+{id:'mn_sme_voucher',mn:true,md:'sme',w:3,tag:'상품권',px:'street|biz,me?,cit|cash,exclaim',c:isMin,t:'지역상품권 "깡"이 적발됐다',b:'할인 발행한 지역상품권을 가짜 가맹점에서 현금으로 바꾸는 "상품권 깡"이 대규모로 적발됐다. 예산 1조 원짜리 사업이다.',
+ ch:[['전수 단속하고 시스템을 고친다',()=>{chg({integrity:3,admin:3});return '부정 가맹점 수천 곳이 퇴출됐다. 사업은 살아남았다.'}],
+     ['예산을 더 늘려 경기 부양에 쓴다',()=>{chg({support:3,integrity:-2});return '골목 상권 매출은 올랐다. 감사원이 다음 감사 대상으로 찍었다.'}],
+     ['사업을 축소한다',()=>{chg({support:-3,admin:1});return '전통시장 상인회가 장관실 앞에 화환을 보냈다. 근조 화환이었다.'}]]},
+{id:'mn_cul_sport',mn:true,md:'cul',w:3,tag:'체육계',px:'press|rep,me?,rep|cam',c:isMin,t:'국가대표 감독 선임이 수상하다',b:'인기 종목 협회가 국가대표 감독을 뽑으면서 절차를 건너뛰었다는 폭로가 나왔다. 팬들은 "협회장 사퇴"를 외친다. 정부 개입은 국제연맹 규정 위반 소지가 있다.',
+ ch:[['부처 감사를 벌인다',()=>{chg({support:5,fame:4});return '감사 결과 절차 위반이 확인됐다. 국제연맹이 "정부 간섭" 경고 서한을 보냈다.'}],
+     ['"협회 자율"이라며 지켜본다',()=>{chg({support:-4});return '팬들이 장관 SNS에 몰려왔다.'}],
+     ['협회장 연임 승인을 보류한다',()=>{chg({party:2,fame:3,support:2});return '협회장이 "정치 보복"이라며 소송을 냈다.'}]]},
+{id:'mn_cul_list',mn:true,md:'cul',w:2,tag:'문화계',px:'stage|cit2,me?,rep|exclaim',c:isMin,t:'"지원 배제 명단"이 있다는 제보',b:'부처 산하기관이 정부 비판 예술인을 지원 사업에서 몰래 빼 왔다는 내부 제보가 들어왔다. 명단을 만든 건 전임 장관 시절이다.',
+ ch:[['진상조사위원회를 꾸린다',()=>{chg({integrity:4,support:3,party:-2});return '명단은 실재했다. 전임 정부 인사들이 줄줄이 소환됐다.'}],
+     ['조용히 명단만 폐기한다',()=>{chg({integrity:-4});if(R()<.35){chg({support:-6});return '폐기 사실까지 새어 나갔다. "증거 인멸"이라는 말이 붙었다.'}return '아무 일도 없었던 것처럼 넘어갔다. 지금은.'},{dark:true}]]},
+{id:'mn_mois_disaster',mn:true,md:'mois',w:3,tag:'대형 참사',px:'night|cit,me?,aide|exclaim',c:isMin,t:'참사 다음 날, "컨트롤타워는 어디였나"',b:'대형 인명 사고가 났다. 재난 안전 주무 부처 장관으로서 첫 브리핑에서 무슨 말을 하느냐에 모든 것이 걸려 있다.',
+ ch:[['책임을 통감한다며 고개를 숙인다',()=>{chg({support:3,integrity:3,party:-2,mental:-6});return '유가족들은 "말보다 진상규명"을 요구했다. 사과는 받아들여졌다.'}],
+     ['"경찰·소방을 미리 배치했어도 막기 어려웠다"',()=>{chg({support:-8,fame:5});return '발언이 유가족을 두 번 울렸다. 야당이 탄핵소추를 거론하기 시작했다.'}],
+     ['사의를 표명한다',()=>{chg({support:2,integrity:2});const n=minN();endMin(`참사 책임을 지고 ${n}에서 물러났다.`);return '사표는 즉시 수리됐다. "꼬리 자르기"라는 비판도 함께.'}]]},
+{id:'mn_mois_police',mn:true,md:'mois',w:3,tag:'경찰 통제',px:'office|aide,me!,aide|desk',c:isMin,t:'부처 안에 경찰 지휘 조직을 만든다?',b:'경찰 인사·예산을 관리할 조직을 부처 안에 새로 만들자는 안이 올라왔다. 일선 경찰 지휘관들이 전국 회의를 열고 "경찰 장악"이라며 반발한다.',
+ ch:[['신설을 강행한다',()=>{chg({admin:3,party:3,support:-4});return '조직은 생겼다. 회의를 주도한 지휘관들은 징계를 받았다.'}],
+     ['신설안을 철회한다',()=>{chg({support:2,party:-4});return '경찰 내부 게시판에 "장관님 감사합니다" 글이 올라왔다.'}]]},
+{id:'mn_molit_road',mn:true,md:'molit',w:3,tag:'특혜 의혹',px:'field|rep,me?,cit|chart,exclaim',c:isMin,t:'고속도로 종점이 바뀌었다',b:'예비타당성 조사를 통과한 고속도로 노선의 종점이 갑자기 바뀌었는데, 새 종점 근처에 여권 실세 가족 땅이 있다는 보도가 나왔다.',
+ ch:[['"의혹이 있는 한 사업을 백지화한다"',()=>{chg({fame:6,support:-3,admin:-2});return '지역 주민들은 "왜 우리가 피해를 보냐"며 반발했다. 의혹은 백지화로도 사라지지 않았다.'}],
+     ['원안으로 되돌리고 자료를 전부 공개한다',()=>{chg({integrity:4,support:3,party:-3});return '공개된 회의록에 누가 노선 변경을 요구했는지가 나와 있었다.'}],
+     ['"전문가 판단"이라며 강행한다',()=>{chg({party:3,integrity:-4});if(R()<.3)addCase('직권남용',1);return '국정조사 요구서가 제출됐다.'}]]},
+{id:'mn_molit_jeonse',mn:true,md:'molit',w:3,tag:'전세사기',px:'street|cit,me~,old|house',c:isMin,t:'전세사기 피해자들이 거리에 나왔다',b:'전세 보증금을 떼인 피해자가 수천 명이다. 피해자 단체는 "나라가 먼저 돌려주고 나중에 받아 내라"고 요구한다. 재정 당국은 "사적 계약에 세금을 쓸 수 없다"고 한다.',
+ ch:[['먼저 돌려주고 나중에 받아 내는 특별법을 낸다',()=>{chg({support:5,policy:2,party:-2});return '피해자들이 처음으로 웃었다. 재정 당국과는 얼굴을 붉혔다.'}],
+     ['저리 대출·경매 지원에 그친다',()=>{chg({admin:2,support:-4});return '"빚으로 빚을 갚으라는 거냐"는 반응이 돌아왔다.'}]]},
 // ---- 흙집 칩거 전용 (칩거 중엔 정치 일정 대신 이것만) ----
 {id:'tg_day',core:true,tag:'흙집',px:()=>['field|me|house','field|me,old|house','field|me|book,house'][S.year%3],t:'흙집의 한 해',b:()=>`칩거 ${Math.max(1,S.year-S.togul+1)}년째. 휴대폰은 서랍 속에 있고, 하루는 해가 뜨고 지는 것으로 나뉜다. 올해는 무엇으로 채울까.`,
  ch:()=>[['밭을 일군다',()=>{chg({mental:8,money:Math.round(60*TM())});return pick(['감자 농사가 잘됐다. 장터에서 직접 팔았는데 알아보는 사람은 없었다.','고추가 탄저병에 걸렸다. 정치보다 어렵다.','옥수수를 이웃과 나눴다. 손바닥에 굳은살이 생겼다.'])},{hint:'멘탈·약간의 돈'}],
@@ -1650,8 +1750,21 @@ function buildQueue(){
     if(S.trial&&S.trial.started<S.year)q.push({type:'trial'});
     else if(!S.trial&&S.cases.length){S.cases=S.cases.filter(c=>S.year-c.y<7);const p=S.cases.reduce((a,c)=>a+.025*c.sev,0)+(100-s().integrity)/1500;if(R()<p)q.push({type:'detect'})}
     S.qTotal=q.length;return q}
+  if(S.minister&&(S.ruling!==S.minister.party||isPres()))endMin('정권이 바뀌어 장관직에서 물러났다.');
+  if(S.minister){const q=[{type:'ev',id:'mn_work'}],d=S.minister.d;
+    const ok=e=>!e.core&&e.mn&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<3);
+    const pickW=L=>{const tot=L.reduce((a,e)=>a+(e.w||1),0);let r0=R()*tot;for(const e of L){r0-=(e.w||1);if(r0<=0)return e}return L[0]};
+    const own=EV.filter(e=>ok(e)&&e.md===d),gen=EV.filter(e=>ok(e)&&!e.md);
+    if(own.length)q.push({type:'ev',id:pickW(own).id});if(gen.length)q.push({type:'ev',id:pickW(gen).id});
+    if(R()<.5)q.push({type:'fig'});
+    if(S.office!=='none')q.push({type:'ev',id:'c_fund'});
+    if(S.year-S.minister.from>=2+(S.minister.ext||0))q.push({type:'ev',id:'mn_reshuffle'});
+    if(S.trial&&S.trial.started<S.year)q.push({type:'trial'});
+    else if(!S.trial&&S.cases.length){S.cases=S.cases.filter(c=>S.year-c.y<7);const p=S.cases.reduce((a,c)=>a+.033*c.sev,0)+(100-s().integrity)/1200+s().fame/1200;if(R()<p)q.push({type:'detect'})}
+    if(elecKinds(S.year).length&&S.age<65)q.push({type:'elec'});
+    S.qTotal=q.length;return q}
   const q=[];
-  const BIG=big();const pool=EV.filter(e=>!e.core&&!e.tg&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<4)&&!(BIG&&JUNIOR.has(e.id)));
+  const BIG=big();const pool=EV.filter(e=>!e.core&&!e.tg&&!e.mn&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<4)&&!(BIG&&JUNIOR.has(e.id)));
   const n=Math.min(pool.length,2);
   const elecSoon=elecKinds(S.year).length>0||elecKinds(S.year+1).length>0;
   const wt=e=>e.tempt?(1+(broke()?2.5:0)+(elecSoon?1:0)):(e.w||1);
@@ -1663,6 +1776,7 @@ function buildQueue(){
   if(!isPres()&&S.age<64&&elecKinds(S.year+1).includes('pres')&&(presPaths().council||presPaths().admin))q.splice(1,0,{type:'ev',id:'p_camp'});
   if(S.rvEv&&rvOk()){q.splice(1,0,{type:'ev',id:S.rvEv});S.rvEv=null}
   if(isPres())presQueue(q);
+  if(minOfferOk()&&R()<.55){S.minOfferY=S.year;q.splice(1,0,{type:'ev',id:'mn_offer'})}
   if(S.crisis&&S.crisis.fresh){S.crisis.fresh=0;q.splice(1,0,{type:'ev',id:'n_'+S.crisis.k})}
   if(isPres()&&S.trialHold&&!S.haltShown){S.haltShown=1;q.splice(1,0,{type:'ev',id:'p_halt'})}
   if(!isPres())q.push({type:'ev',id:'c_fund'});
@@ -2338,7 +2452,7 @@ function renderMain(){
   if(S&&S.phase!=='ending'&&st.isConnected)bindFoot();
 }
 function hdrHTML(){
-  const x=s(),o=OFF[S.office],RR=curR(),dt=DTYPE[curD()[3]],pp=presPaths();
+  const x=s(),o=S.minister&&S.office==='none'?Object.assign({},OFF.none,{n:minN(),full:minN()}):OFF[S.office],RR=curR(),dt=DTYPE[curD()[3]],pp=presPaths();
   const titles=[];if(S.titles.chair)titles.push('상임위원장');if(S.titles.leader)titles.push('당대표');if(S.titles.speaker)titles.push('의회 의장');if(S.crisis&&S.crisis.left>0&&S.year>=S.crisis.y)titles.push(`⚠ ${CRISES[S.crisis.k].n} ${S.year-S.crisis.y+1}년차`);if(S.togul&&!inOffice())titles.push(`흙집 칩거 ${S.year-S.togul+1}년차`);if(member()&&(S.fac||0)>=3)titles.push(`친${S.name.slice(-1)}계 ${(S.fac||0)*3}명`);
   const statRow=(k,hl)=>`<div class="stat ${hl?'hl':''}"><span>${LBL[k]}</span><div class="bar"><i style="width:${x[k]}%"></i></div><span class="num">${member()||k!=='party'?x[k]:'—'}</span></div>`;
   const r=o.route;
@@ -2349,7 +2463,7 @@ function hdrHTML(){
   return `<header class="card hdr">
     <div class="giho" role="img" aria-label="${esc(S.name)} · ${PARTIES[S.party].n}"><canvas id="avc" width="36" height="36"></canvas></div>
     <div style="min-width:0"><h2>${esc(S.name)}</h2>
-      <div class="meta">${inOffice()?offName(S.office):'야인 · '+distName()}</div>
+      <div class="meta">${inOffice()?offName(S.office)+(S.minister?' · '+minN()+' 겸직':''):S.minister?minN():'야인 · '+distName()}</div>
       ${(()=>{const A=[],B=[];const ch=(c,s)=>`<span class="chip ${c}">${s}</span>`;
         if(S.banUntil>S.year)A.push(ch('red',`피선거권 제한 ~${S.banUntil}`));if(S.imp&&S.imp.step==='court')A.push(ch('red','직무 정지'));
         titles.forEach(x=>A.push(ch('p',x)));
@@ -2693,14 +2807,14 @@ function renderTrial(st){
     if(t.sev>=3){S.pendingEnd='jail';S.q=[];finish('<b>대법원 유죄 확정 · 징역형</b><br>법정 구속됐다. 정치 인생은 여기서 멈춘다.');return}
     if(wrapMode()){S.taint=true;chg({integrity:-15,support:-10});finish('<b>대법원 유죄 확정</b><br>은퇴한 뒤에 받은 유죄 판결. 이름 앞에 "전과"가 붙었다.');return}
     if(t.sev<=1&&R()<.5+LAW[t.lawyer].b){chg({support:-4,integrity:-6});addLog('대법원 벌금 80만원 확정 (직위 유지).');finish('<b>대법원 벌금 80만원 확정</b><br>유죄지만 당선무효 기준(100만원)은 넘지 않았다. 직위는 지켰다. 상처뿐인 승리.');return}
-    const lost=S.office;S.office='none';S.titles={};S.banUntil=S.year+5;chg({party:-15,integrity:-15,support:-10});
+    const lost=S.office;S.office='none';S.titles={};if(S.minister)endMin('유죄 판결로 장관직을 잃었다.');S.banUntil=S.year+5;chg({party:-15,integrity:-15,support:-10});
     let extra='';if(member()&&R()<.45){S.party='ind';extra=' 당에서 제명돼 무소속이 됐다.'}
     finish(`<b>대법원 유죄 확정 · 당선무효</b><br>${lost!=='none'?offName(lost)+' 직을 잃었다. ':''}5년간 선거에 나갈 수 없다.${extra}`);
   });
 }
 
 /* --- 선거 --- */
-const OFFREQ={basic:'조건 없음',metro:'시군구의원 경력',mayor:'광역의원·국회의원·단체장 경력 중 하나',nat:'광역의원·기초단체장·광역단체장·국회의원 경력 중 하나',natp:'정당 소속 · 당내입지 50 이상 · 비례대표는 한 번만',gov:'기초단체장·국회의원·광역단체장 경력 중 하나',pres:'인지도 60 이상 + 국회의원 2선에 상임위원장·당대표 경험 또는 3선(의회 루트), 또는 광역단체장에 기초단체장·국회의원 경력(행정 루트) · 전년도 대선 캠프 준비'};
+const OFFREQ={basic:'조건 없음',metro:'시군구의원 경력',mayor:'광역의원·국회의원·단체장 경력 중 하나',nat:'광역의원·기초단체장·광역단체장·국회의원 경력 중 하나',natp:'정당 소속 · 당내입지 50 이상 · 비례대표는 한 번만',gov:'기초단체장·국회의원·광역단체장 경력 중 하나',pres:'인지도 60 이상 + 국회의원 2선에 상임위원장·당대표·장관 경험 또는 3선(의회 루트), 또는 광역단체장에 기초단체장·국회의원·장관 경력(행정 루트) · 전년도 대선 캠프 준비'};
 const KIND_OFF={local:['basic','metro','mayor','gov'],general:['nat','natp'],pres:['pres']};
 const ELEC_OF={basic:'local',metro:'local',mayor:'local',gov:'local',nat:'general',natp:'general',pres:'pres'};
 function reqMet(o){const H=S.held,has=k=>(H[k]||0)>0||(k==='nat'&&(H.natp||0)>0);switch(o){case 'basic':case 'metro':return true;case 'natp':return member()&&s().party>=50&&!((H.natp||0)>0);
@@ -2725,7 +2839,7 @@ function renderElection(st){
     const ban=S.banUntil>S.year,opts=ban?[]:[...new Set(kinds.flatMap(eligible))];
     const termOver=S.termEnd===S.year,dt=DTYPE[curD()[3]];
     st.innerHTML=`${pxTag('선거 벽보')}<div class="news"><span class="tag ink">${S.year} 선거</span><h3>${kinds.map(k=>kn[k]).join(' · ')}</h3>
-      <p class="body">${ban?'피선거권이 제한돼 출마할 수 없다.':inOffice()?(termOver?`${cur} 임기가 올해 끝난다. 출마하지 않으면 야인이 된다.`:`현재 ${cur} 임기는 ${S.termEnd}년까지. 다른 선거에 나가면 사퇴해야 한다.`):'어떤 자리에 도전할까?'}</p></div>
+      <p class="body">${S.minister?`<b>출마하면 ${minN()}직을 내려놓아야 한다.</b> `:''}${ban?'피선거권이 제한돼 출마할 수 없다.':inOffice()?(termOver?`${cur} 임기가 올해 끝난다. 출마하지 않으면 야인이 된다.`:`현재 ${cur} 임기는 ${S.termEnd}년까지. 다른 선거에 나가면 사퇴해야 한다.`):'어떤 자리에 도전할까?'}</p></div>
       ${ban?'':`<div class="distbox"><span><span class="label">출마 지역</span><br><b>${distName()}</b> <span class="muted">· ${dt.n} · ${member()?leanTxt(leanFor(S.party)):'무소속'}</span></span>${E.moved?'<span class="muted" style="font-size:12px">이번 선거에서 이미 옮김</span>':'<button class="btn" id="mv">지역구 옮기기</button>'}</div>`}
       <div class="choices">${opts.map(o=>{const re=S.office===o,np=member()?nomProb(o):null;
         return `<button class="choice" data-o="${o}"><span><b>${offName(o)}</b> ${re?'재선 도전':'도전'}${(!re&&inOffice()&&!termOver)?' <span class="muted">(현직 사퇴)</span>':''}</span><small>${o==='natp'?'순번 심사 · 정당 득표로 당선':member()?'공천 '+lvl(np):'무소속 출마'}</small></button>`}).join('')}
@@ -2736,6 +2850,7 @@ function renderElection(st){
     const mv=document.getElementById('mv');if(mv)mv.onclick=()=>{E.step='move';UI.mvR=S.region;save();render()};
     st.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{const o=b.dataset.o;
       if(o==='skip'){D=[];if(termOver&&inOffice()){addLog(`${cur} 임기 만료, 불출마.`);S.office='none';S.titles={}}else addLog('이번 선거는 불출마.');finish('<b>불출마</b><br>'+(inOffice()?'현직에 집중하기로 했다.':'다음 기회를 노린다.'));return}
+      if(S.minister){const n=minN();endMin(`${offName(o)} 출마를 위해 ${n}직을 사퇴했다.`)}
       E.off=o;E.step=o==='natp'?'pnom':member()?'nom':'camp';save();render()});
     return;
   }
@@ -2939,7 +3054,7 @@ function yearEnd(){
   if(r==='both')chg({admin:3,legis:2,speech:2,org:2});
   chg({fame:-Math.max(inOffice()?3:5,Math.round(x.fame*.07)),support:Math.round((35-x.support)*.15),integrity:x.integrity<75?1:0,mental:inOffice()?-Math.max(0,OFF[S.office].tier-1)-(isPres()?2:0):6});
   if(inOffice()&&!isPres()&&S.termEnd<=S.year&&S.age>=65){addLog(`${offName(S.office)} 임기를 마치고 퇴임했다.`);notes.push('마지막 임기를 마쳤다');S.office='none';S.titles={}}
-  if(!inOffice()&&!wrapMode())S.idle++;
+  if(!inOffice()&&!S.minister&&!wrapMode())S.idle++;
   if(!isPres()){S.presAp=clamp(Math.round((S.presAp==null?50:S.presAp)-3+gauss()*5),8,75);
     if(elecKinds(S.year).includes('pres')){const r0=S.ruling==='ind'?'jj':S.ruling,o0=other(r0);let keep=S.pop[r0]+(S.presAp-45)*.3+gauss()*5>S.pop[o0]+gauss()*5;if(S.presLost===S.year)keep=(r0!==S.party);
       S.ruling=keep?r0:o0;S.presAp=55;notes.push(`대선 결과: ${PARTIES[S.ruling].n} 집권`);addLog(`대선에서 ${PARTIES[S.ruling].n} 후보 당선.${keep?'':' 정권 교체.'}`)}}
@@ -3235,6 +3350,7 @@ const ACH=[
  ['mayor','구청장님','기초단체장에 당선',x=>x.held.mayor],
  ['gov','도백','광역단체장에 당선',x=>x.held.gov],
  ['pres','대통령실 입성','대통령에 당선',x=>x.held.pres],
+ ['minister','국무위원','장관에 임명된다',x=>!!(x.held&&x.held.min&&x.held.min.length)],
  ['grand','그랜드슬램','국회의원과 광역단체장을 모두 지낸다',x=>(x.held.nat||x.held.natp)&&x.held.gov],
  ['chair','위원장님','상임위원장이 된다',x=>x.everChair],
  ['leader','당의 얼굴','당대표에 선출된다',x=>x.everLeader],
