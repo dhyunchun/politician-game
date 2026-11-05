@@ -1699,11 +1699,11 @@ function personHD(r,X,Y,c,wave){
   // 코
   p(18,-5,1,2,S2);p(17,-3,1,1,S2);p(18,-3,1,1,S3);p(19,-3,1,1,S2);
   // 볼
-  if(FEM||face==='smile'){p(14,-4,2,1,'#ef9e8c');p(21,-4,2,1,'#e08a7a')}
+  if(FEM||face==='smile'||face==='grin'){p(14,-4,2,1,'#ef9e8c');p(21,-4,2,1,'#e08a7a')}
   // 입
   const lp=FEM?'#c4545c':shade(s,.58);
   if(c.talk&&PF){p(17,-2,3,2,'#4a1818');p(17,-2,3,1,'#ffffff')}
-  else if(face==='smile'){p(16,-2,1,1,lp);p(17,-1,3,1,lp);p(20,-2,1,1,lp);p(17,-2,3,1,'#ffffff')}
+  else if(face==='smile'||face==='grin'){p(16,-2,1,1,lp);p(17,-1,3,1,lp);p(20,-2,1,1,lp);p(17,-2,3,1,'#ffffff')}
   else if(face==='angry'){p(16,-2,5,1,'#4a1818');p(17,-2,3,1,'#f0f0f0')}
   else if(face==='sad'){p(17,-2,3,1,lp);p(16,-1,1,1,lp);p(20,-1,1,1,lp)}
   else if(face==='shock'){p(17,-2,3,2,'#4a1818')}
@@ -2186,7 +2186,7 @@ function drawPx(spec,cv0){
   const n=ppl.length,gap=n>1?Math.min(42,132/(n-1)):0,x0=128-(gap*(n-1))/2-9;
   // 꼬리표: ^ 손 흔들기, + 웃음, ! 화남, ~ 슬픔, ? 놀람
   const FACE={'+':'smile','!':'angry','~':'sad','?':'shock'};
-  ppl.forEach((w,i)=>{const m=w.match(/^([a-z0-9]+)([\^+!~?]*)$/i)||[0,w,''],k=m[1],wave=m[2].includes('^'),fc=[...m[2]].map(ch=>FACE[ch]).find(Boolean);const x=Math.round(x0+i*gap);const col=Object.assign({},whoCol(k));if(k==='me'&&!fc)col.talk=1;if(fc)col.face=fc;
+  ppl.forEach((w,i)=>{const m=w.match(/^([a-z0-9]+)([\^+!~?]*)$/i)||[0,w,''],k=m[1],wave=m[2].includes('^'),fc=[...m[2]].map(ch=>FACE[ch]).find(Boolean);const x=Math.round(x0+i*gap);const col=Object.assign({},whoCol(k));if(k==='me'&&!fc)col.talk=1;if(fc)col.face=(k==='me'&&fc==='smile')?'grin':fc;
     c.fillStyle='rgba(0,0,0,.18)';c.fillRect(x+2,99,16,2);
     PXC.hi=false;c.setTransform(k2/2,0,0,k2/2,0,0);personHD(r,x*2,130-((i+PF)%2&&!col.robe?1:0),col,wave);c.setTransform(k2,0,0,k2,0,0);PXC.hi=k2>=2});
   if(ws.includes('crowd'))crowd(r,rnd);
@@ -2216,7 +2216,7 @@ const EVPX={festival:'stage|me^,cit,old|glass',bookbuy:'office|biz,me|book,cash'
 const $app=document.getElementById('app');
 function drawAvatar(){const cv=document.getElementById('avc'),cx=cv&&cv.getContext&&cv.getContext('2d');if(!cx)return;
   const r=(x,y,w,h,col)=>{cx.fillStyle=col;cx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
-  cx.clearRect(0,0,36,36);const pf=PF;PF=0;const px=PXC;PXC=null;try{personHD(r,0,16,Object.assign(whoCol('me'),{face:'smile'}),false)}finally{PF=pf;PXC=px}}
+  cx.clearRect(0,0,36,36);const pf=PF;PF=0;const px=PXC;PXC=null;try{personHD(r,0,16,Object.assign(whoCol('me'),{face:'grin'}),false)}finally{PF=pf;PXC=px}}
 function render(){try{SND.btn();SND.bgm(pickBgm())}catch(e){}
   try{renderMain()}catch(err){console.error(err);try{store.set('pol-save-broken',S)}catch(e){}
     $app.innerHTML=`<section class="card"><h3>화면을 그리다 문제가 생겼어요</h3><p class="muted" style="font-size:14px">저장된 판은 따로 보관해 뒀어요. 다시 시도해도 같으면 새 판을 시작해 주세요. (${esc(String(err&&err.message||err)).slice(0,80)})</p>
@@ -2388,7 +2388,7 @@ function renderStart(){
   $app.querySelectorAll('[data-fam]').forEach(b=>b.onclick=()=>{c.fam=c.fam||{sp:1,kids:2};c.fam[b.dataset.fam]=+b.dataset.fv;renderStart()});
   $app.querySelectorAll('[data-lk]').forEach(b=>b.onclick=()=>{const k=b.dataset.lk,v=b.dataset.lv;lk[k]=(k==='gl'||k==='sk')?+v:v;renderStart()});
   {const cv=document.getElementById('lookc'),cx=cv&&cv.getContext&&cv.getContext('2d');if(cx){const r=(x,y,w,h,col)=>{cx.fillStyle=col;cx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
-    cx.clearRect(0,0,80,100);r(0,90,80,10,'#d6cfc0');r(0,90,80,1,'#bdb5a4');r(24,89,32,2,'rgba(0,0,0,.15)');const S0=S;S={party:c.party,look:lk};PF=0;try{personHD(r,22,20,Object.assign(whoCol('me'),{face:'smile'}),false)}finally{S=S0}}}
+    cx.clearRect(0,0,80,100);r(0,90,80,10,'#d6cfc0');r(0,90,80,1,'#bdb5a4');r(24,89,32,2,'rgba(0,0,0,.15)');const S0=S;S={party:c.party,look:lk};PF=0;try{personHD(r,22,20,Object.assign(whoCol('me'),{face:'grin'}),false)}finally{S=S0}}}
   document.querySelectorAll('.looks .lbtns').forEach(l=>{const sb=l.querySelector('[aria-pressed="true"]');if(sb&&sb.offsetLeft+sb.offsetWidth>l.clientWidth-10)l.scrollLeft=sb.offsetLeft-l.offsetLeft-24});
   document.getElementById('go').onclick=()=>{c.name=(nm.value.trim()||c.name.trim()||kname()).slice(0,8);c.step=1;newGame(c);save();render();window.scrollTo(0,0)};
   const ct=document.getElementById('cont');if(ct)ct.onclick=()=>{S=sv;fixup();render()};
