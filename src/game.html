@@ -461,6 +461,7 @@ const rulingP=()=>S.ruling||'jj';
 const crOn=k=>!!(S.crisis&&S.crisis.k===k&&S.crisis.left>0);
 function crAdj(n){if(S.crisis)S.crisis.adj=(S.crisis.adj||0)+n}
 function crRole(){return isPres()?' 대통령으로서 첫 대응이 이후 민심을 좌우한다.':inOffice()?'':' 직함은 없지만 할 수 있는 일은 있다.'}
+const isLeader=()=>!!S&&S.titles&&S.titles.leader>0;
 const big=()=>!!S&&(isPres()||S.office==='gov'||S.titles.leader>0||S.titles.chair>0);
 const prot=()=>(S.prot&&S.prot[0])||'후배';
 function addFac(n,newbie){S.fac=Math.min(30,(S.fac||0)+n);S.prot=S.prot||[];if(newbie&&S.prot.length<3){let nm=kname();while(nm===S.name)nm=kname();S.prot.push(nm)}}
@@ -468,7 +469,7 @@ const JUNIOR=new Set(['h_jinbak','h_envelope','nomfee','youth','cmtfight','party
 const isNat=()=>S.office==='nat'||S.office==='natp';
 const isPres=()=>S.office==='pres';
 const member=()=>S.party!=='ind';
-const fig=(p)=>{const f=pick(FIG[p]);return f.r+' '+f.n};
+const fig=(p)=>{const L=FIG[p].filter(f=>!(f.r==='당대표'&&member()&&p===S.party&&isLeader()));const f=pick(L.length?L:FIG[p]);return f.r+' '+f.n};
 
 function newGame(cfg){
   S={name:cfg.name,party:cfg.party,region:cfg.region,dist:cfg.dist||0,bg:cfg.bg,year:2026,age:35,office:'basic',termEnd:2030,
@@ -535,7 +536,7 @@ const ACTS=[
     if(r<35){chg({speech:2,fame:3,support:-3});return '숫자를 틀리게 말했다. 팩트체크 기사가 나왔다.'}
     chg({speech:3,fame:4});return '무난하게 선방. "생각보다 말 잘하네" 정도.'}},
   {id:'partyev',n:'당 행사 줄서기',cost:100,req:member,reqT:'정당 소속 필요',d:'당내입지·조직력↑',run(){chg({party:ri(4,6),org:2,mental:-2});
-    return pick(['당대표 옆자리 사진 확보. 단톡방 반응이 좋다.','당원 연수에서 사회를 맡았다.','계파 모임 만찬에 얼굴을 비쳤다.'])}},
+    return pick(isLeader()?['당원 연수에서 기조연설을 했다. 사진 요청 줄이 길었다.','시도당 순회 간담회를 돌았다.','계파 모임 만찬을 주재했다.']:['당대표 옆자리 사진 확보. 단톡방 반응이 좋다.','당원 연수에서 사회를 맡았다.','계파 모임 만찬에 얼굴을 비쳤다.'])}},
   {id:'fund',k:'fund',n:'후원회 모금',cost:0,once:true,req:()=>inOffice()||elecKinds(S.year+1).length>0,reqT:'현직 또는 선거 전년도',d:'합법 정치자금',run(){const m=Math.round((700+s().support*30+s().fame*25)*Math.sqrt(TM())/10)*10;
     chg({money:m});return `소액 후원 ${ri(80,900)}건, ${won(m)}. 영수증 처리가 일이다.`}},
   {id:'study',k:'policy',n:'정책 세미나',cost:200,d:'정책·입법력·행정력↑',run(){chg({policy:4,legis:2,admin:2,mental:-2});
@@ -921,7 +922,7 @@ const EV=[
  ch:[['즉시 반환하고 사과한다',()=>{chg({support:-2,integrity:3});return '"파우치 사과"가 하루 만에 묻혔다.'}],
      ['"대통령기록물로 보관 중"이라고 해명한다',()=>{chg({support:-7,fame:6,integrity:-5});return '해명이 더 큰 풍자 소재가 됐다. 예능에서 파우치 패러디가 나왔다.'}],
      ['"함정 취재"라며 고발한다',()=>{chg({party:4,support:-4});if(R()<.3)addCase('청탁금지법 위반',1);return '공방이 길어졌다.'}]]},
-{id:'h_envelope',tempt:true,tag:'전당대회',px:'stage|aide,me,aide|env',c:()=>member()&&s().party>=40,t:'전당대회에 돈봉투가 돈다',b:'당대표 경선 캠프가 대의원 표 단속용 봉투를 돌려 달라고 부탁한다. 내 몫의 지역 대의원은 40명.',
+{id:'h_envelope',tempt:true,tag:'전당대회',px:'stage|aide,me,aide|env',c:()=>member()&&s().party>=40&&!isLeader(),t:'전당대회에 돈봉투가 돈다',b:'당대표 경선 캠프가 대의원 표 단속용 봉투를 돌려 달라고 부탁한다. 내 몫의 지역 대의원은 40명.',
  ch:[['봉투를 돌린다',()=>{chg({money:-Math.round(1000*TM()),party:10,integrity:-10});if(R()<.5)addCase('전당대회 금품 살포',2);return '"300만원짜리 봉투"를 돌린 날, 녹음 파일도 같이 생겼다.'}],
      ['거절한다',()=>{chg({party:-3,integrity:3});return '캠프 단톡방에서 조용히 빠졌다.'}],
      ['언론에 폭로한다',()=>{chg({fame:8,party:-12,integrity:5});return '당이 발칵 뒤집혔다. "배신자"와 "양심"이 동시에 붙었다.'}]]},
@@ -982,11 +983,11 @@ const EV=[
 {id:'h_byungpung',tag:'폭로',px:'tv|rep,me|cam,exclaim',c:()=>elecKinds(S.year).length>0&&s().fame>=40,t:'"자녀 병역 면제, 돈으로 샀다"',b:'자칭 "의인"이 방송에 나와 내 자녀의 병역 면제가 돈으로 산 것이라고 폭로했다. 녹음 테이프가 있다고 한다. 자녀는 실제로 체중 미달 면제였다.',
  ch:[['진료 기록을 공개하고 맞고소한다',()=>{chg({support:-2,mental:-6,fame:5});return '선거가 끝난 뒤 테이프는 조작으로 판명됐다. 선거 기간엔 이미 늦었다.'}],
      ['자녀가 재검을 자원한다',()=>{chg({support:4,integrity:3,mental:-4});return '재검에서도 면제. "체중계 공개 검증" 생중계가 화제가 됐다.'}]]},
-{id:'h_okse',tag:'공천 파동',px:'press|aide,me|banner,exclaim',c:()=>member()&&elecKinds(S.year+1).length>0&&s().party>=30,t:'당대표가 직인을 들고 고향으로 떠났다',b:'공천 갈등 끝에 당대표가 공천장에 찍을 당 직인을 들고 고향 섬으로 내려가 버렸다. 내 공천장도 직인 없이 서류함에 있다.',
+{id:'h_okse',tag:'공천 파동',px:'press|aide,me|banner,exclaim',c:()=>member()&&elecKinds(S.year+1).length>0&&s().party>=30&&!isLeader(),t:'당대표가 직인을 들고 고향으로 떠났다',b:'공천 갈등 끝에 당대표가 공천장에 찍을 당 직인을 들고 고향 섬으로 내려가 버렸다. 내 공천장도 직인 없이 서류함에 있다.',
  ch:[['대표 편에 서서 섬으로 동행한다',()=>{if(R()<.5){chg({party:10,fame:5});S.ticket=true;return '대표가 가방에서 직인을 꺼냈다. 내 공천장에 가장 먼저 찍혔다.'}chg({party:-6,mental:-4});return '배 멀미만 하고 돌아왔다. 직인은 끝내 안 찍혔다.'}],
      ['최고위 편에서 "직인 반환"을 요구한다',()=>{chg({party:4,support:-1});return '"옥새 들고 나르샤" 패러디 영상이 100만 뷰를 넘었다.'}],
      ['"공천 따위"라며 무소속 출마를 시사한다',()=>{chg({fame:6,support:3,party:-10});return '당이 서둘러 직인을 돌려받았다. 나에 대한 시선은 차가워졌다.'}]]},
-{id:'h_jinbak',tag:'계파',px:'stage|aide,me,aide|banner',c:()=>member()&&elecKinds(S.year+1).length>0,t:'"진짜 친(親)대표 감별사"가 왔다',b:'당 실세가 지역을 돌며 누가 "진짜" 대표 계파인지 감별하고 있다. 감별 기준은 대표와 찍은 사진 수, 사무실 액자 크기란다.',
+{id:'h_jinbak',tag:'계파',px:'stage|aide,me,aide|banner',c:()=>member()&&elecKinds(S.year+1).length>0&&!isLeader(),t:'"진짜 친(親)대표 감별사"가 왔다',b:'당 실세가 지역을 돌며 누가 "진짜" 대표 계파인지 감별하고 있다. 감별 기준은 대표와 찍은 사진 수, 사무실 액자 크기란다.',
  ch:[['대표 사진을 대형 액자로 건다',()=>{chg({party:7,support:-3,integrity:-2});return '"진짜" 판정을 받았다. 지역 주민들은 "누구 사무실이냐"고 물었다.'}],
      ['"나는 주민 계파"라고 선언한다',()=>{chg({party:-6,support:5,fame:3});return '감별사는 내 이름 옆에 물음표를 쳤다.'}]]},
 {id:'h_teargas',tag:'국회 폭력',px:'hall|aide,me,rep|gavel,exclaim',c:isNat,t:'본회의장 단상 위의 사람들',b:'다수당이 쟁점 법안을 기습 상정하려 한다. 당 동료는 단상 위로 뛰어올라 공중부양을 하자고 하고, 누군가는 가방에서 수상한 깡통을 꺼냈다.',
@@ -1002,6 +1003,33 @@ const EV=[
 {id:'h_29900',tag:'청탁금지법',px:'market|biz,me|glass',c:inOffice,t:'간담회 정식은 2만9천9백원',b:'지역 상인회 간담회 장소인 한정식집 메뉴판에 "공직자 정식 29,900원"이 새로 생겼다. 반찬은 그대로다.',
  ch:[['더치페이를 고집한다',()=>{chg({integrity:2,support:1,money:-Math.round(30*TM())});return '사장님이 계산기를 두 번 두드렸다.'}],
      ['상인회가 사겠다니 그냥 먹는다',()=>{chg({org:2});if(R()<.15){chg({support:-3});return '메뉴판 사진이 지역 커뮤니티에 올라왔다. 갈비 추가분이 문제였다.'}return '반찬 맛은 그대로였다.'}]]},
+// ---- 풍자 추가분 ----
+{id:'h_twohouse',tag:'내로남불',px:'street|rep,me|house,cam',c:()=>inOffice()&&s().fame>=25,t:'"집은 한 채만" 외치던 내가 세 채',b:'부동산 투기를 맹비난해 온 내가 집 세 채를 갖고 있다는 기사가 났다. 당은 "한 채만 남기고 다 팔라"고 지시했다. 남은 선택지는 강남 아파트와 고향 집.',
+ ch:[['고향 집을 판다',()=>{chg({support:-6,integrity:-3,fame:4});return '"강남은 지키고 고향은 팔았다"는 패러디가 쏟아졌다.'}],
+     ['강남 아파트를 판다',()=>{chg({support:3,integrity:3,money:Math.round(800*TM()/10)*10});return '"말과 행동이 같다" 기사가 났다. 팔고 석 달 뒤 집값이 더 올랐다. 가족 단톡방이 조용하다.'}],
+     ['"전부 실거주 목적"이라 버틴다',()=>{chg({support:-8,fame:5,integrity:-2});return '세 집에 동시에 사는 법을 묻는 댓글이 베스트에 올랐다.'}]]},
+{id:'h_fruit',tag:'팬덤',px:'phone|me|phone,exclaim',c:()=>member()&&inOffice()&&s().fame>=25,t:'휴대폰이 문자 2만 통에 멈췄다',b:'당론과 다른 표를 던진 다음 날, 강성 지지층 커뮤니티에 내 번호가 올라왔다. "겉은 우리 색, 속은 상대 당 색"이라며 줄무늬 과일 이모티콘이 끝없이 온다.',
+ ch:[['지지층에 사과하고 당론을 따르겠다고 한다',()=>{chg({party:6,support:-3,integrity:-2,mental:-3});return '문자는 멎었다. 중도층 기사 댓글은 차가웠다.'}],
+     ['"문자 폭탄은 민주주의가 아니다" 공개 비판한다',()=>{chg({fame:6,support:3,party:-6,mental:-6});return '과일 이모티콘이 두 배로 늘었다. 언론은 "소신"이라고 썼다.'}],
+     ['조용히 번호를 바꾼다',()=>{chg({mental:3,org:-2});return '지역 민원인들도 새 번호를 모른다.'}]]},
+{id:'h_bangtan',tag:'방탄 국회',px:'hall|aide,me,rep|ballot',c:()=>isNat()&&member(),t:'임시국회를 1년 내내 열자는 이유',b:'우리 당 중진에게 체포동의안이 올라올 참이다. 회기가 끊기면 영장이 바로 집행되니, 임시국회를 쉬지 않고 소집하자는 서명이 돈다.',
+ ch:[['서명하고 부결표를 던진다',()=>{chg({party:7,support:-6,integrity:-4});return '"방탄 국회"가 올해의 신조어 후보에 올랐다.'}],
+     ['"불체포특권을 내려놓자" 선언한다',()=>{chg({support:5,integrity:4,fame:4,party:-7});return '혁신 행보로 1면에 실렸다. 의원 단톡방에서는 투명인간이 됐다.'}],
+     ['무기명이니 조용히 가결표를 던진다',()=>{chg({integrity:1});if(R()<.35){chg({party:-7});return '이탈표 색출 끝에 내 이름이 지목됐다.'}return '이탈표 색출이 시작됐다. 아직 안 걸렸다.'}]]},
+{id:'h_fakequit',tag:'꼼수',px:'hall|aide,me|ballot,exclaim',c:()=>isNat()&&member()&&!isLeader(),t:'"사흘만 탈당했다 오세요"',b:'쟁점 법안을 상임위 안건조정위원회에서 통과시키려면 "무소속" 위원 한 자리가 필요하다. 지도부가 잠깐만 탈당했다가 돌아오라고 한다.',
+ ch:[['탈당계를 낸다',()=>{chg({party:8,legis:3,support:-6,integrity:-5});return '법안은 17분 만에 통과됐다. "위장 탈당" 꼬리표는 몇 년을 따라다녔다.'}],
+     ['"꼼수에는 못 낀다"며 거절한다',()=>{chg({integrity:4,support:2,party:-6});return '다른 의원이 탈당계를 냈다. 그는 1년 뒤 조용히 복당했다.'}]]},
+{id:'h_hamyeong',tempt:true,tag:'공작',px:'night|aide,me|env',c:()=>OFF[S.office].tier>=3&&elecKinds(S.year+1).length>0,t:'"상대 후보 측근 첩보, 경찰에 넘길까요?"',b:'선거를 앞두고 측근이 상대 후보 측근의 비리 첩보를 들고 왔다. 아는 경찰 간부에게 넘기면 선거 직전에 압수수색이 들어갈 거라고 한다.',
+ ch:[['넘긴다',()=>{chg({support:6,integrity:-8});if(R()<.45)addCase('선거 개입',2);return '선거 한 달 전 상대 캠프에 압수수색이 들어갔다. "하명 수사"라는 단어가 돌기 시작했다.'}],
+     ['정식 고발 절차로 돌린다',()=>{chg({integrity:2,support:1});return '수사는 선거가 끝난 뒤에야 시작됐다.'}],
+     ['묻어 둔다',()=>{chg({integrity:1});return '측근은 "순진하시다"며 서류를 챙겨 나갔다.'}]]},
+{id:'h_macro',tag:'여론 조작',px:'office|cit2,me|phone,exclaim',c:()=>OFF[S.office].tier>=3&&S.stats.wins>=2,t:'"댓글 도와드린 값, 총영사 자리로"',b:'지난 선거 때 "자원봉사"로 온라인 여론을 맡았던 파워블로거가 찾아왔다. 매크로 프로그램으로 공감 수를 올려 줬다며, 대가로 해외 총영사 자리를 달라고 한다.',
+ ch:[['자리를 알아봐 준다',()=>{chg({integrity:-6,party:2});if(R()<.5)addCase('여론조작 공모',2);return '인사 추천 문자가 남았다. 블로거의 USB에는 더 많은 게 남아 있다.'}],
+     ['거절하고 선을 긋는다',()=>{chg({mental:-4,support:-3});return '앙심을 품은 블로거가 폭로 글을 올렸다. "몰랐다"는 해명은 반만 통했다.'}],
+     ['먼저 수사를 의뢰한다',()=>{chg({integrity:4,support:2,fame:4});return '"우리 캠프도 피해자" 프레임이 먹혔다.'}]]},
+{id:'h_solar',tempt:true,tag:'보조금',px:'field|cit2,me|chart',c:isAdmin,t:'"햇빛 협동조합" 보조금 심사',b:'친분 있는 시민단체 출신 인사들이 태양광 협동조합을 차렸다. 보조금 사업 심사를 앞두고 "같은 편끼리 밀어주자"고 한다.',
+ ch:[['몰아준다',()=>{chg({party:4,org:4,integrity:-7});if(R()<.4)addCase('보조금 특혜',1);return '설치하기로 한 패널의 절반은 3년째 창고에 있다.'}],
+     ['공개 경쟁 심사로 돌린다',()=>{chg({integrity:3,org:-3,admin:2});return '"우리 편도 안 챙긴다"는 서운함이 돌았다.'}]]},
 // ---- 지역 확장 ----
 {id:'r2_seoul',c:()=>S.region==='seoul',tag:'서울',px:'street|cit,me,old|house',t:'"한강 뷰" 고도 제한 해제 요구',b:'한강변 아파트 주민들이 35층 높이 제한을 풀어 달라고 한다. 강 건너편 주민들은 "한강이 너희 것이냐"고 반발한다.',
  ch:[['층수 제한 완화 추진한다',()=>{chg({support:curD()[3]==='rich'?6:-2,admin:2,integrity:-1});return '스카이라인 조감도가 공개됐다. 조망권 소송도 함께.'}],['공공 기여 조건부 완화한다',()=>{chg({policy:3,support:2});return '"공원 기부채납" 협상에 1년이 걸렸다.'}]]},
@@ -1355,7 +1383,7 @@ const EV=[
  ch:()=>{const o=[];if((S.prot||[]).length)o.push([`내가 키운 ${J(prot(),'을를')} 민다`,()=>{achMark('king');chg({party:5,fame:4,support:-3});addFac(2);return '"상왕 정치" 비판 속에 계파가 결집했다.'}]);
    o.push(['지지율 1위 주자와 손잡는다',()=>{chg({party:4,support:2});return '대세론에 힘을 보탰다. 다음 정권에서도 내 자리는 있을 것 같다.'}]);
    o.push(['"국민이 고를 일"이라며 중립을 지킨다',()=>{chg({integrity:3,support:3,party:-3});return '"원로다운 처신"이라는 평. 계파 후배들은 갈 곳을 잃었다.'}]);return o}},
-{id:'g_mediate',w:2,tag:'원로',px:'office|riv,me,aide|',c:()=>big()&&member(),t:'당이 두 쪽 날 판, 중재를 맡아 달란다',b:'공천 갈등으로 당 지도부와 비주류가 연일 충돌한다. 양쪽 모두 "어른이 나서 달라"고 연락해 온다.',
+{id:'g_mediate',w:2,tag:'원로',px:'office|riv,me,aide|',c:()=>big()&&member()&&!isLeader(),t:'당이 두 쪽 날 판, 중재를 맡아 달란다',b:'공천 갈등으로 당 지도부와 비주류가 연일 충돌한다. 양쪽 모두 "어른이 나서 달라"고 연락해 온다.',
  ch:[['양쪽을 불러 밤샘 중재한다',()=>{if(R()<.6){chg({party:8,fame:4,mental:-6});return '새벽 4시, 합의문에 도장이 찍혔다. "정치 9단"이라는 말이 붙었다.'}chg({party:-3,mental:-8});return '중재는 결렬됐다. 양쪽 모두 내 탓을 했다.'}],
      ['내 계파 편을 든다',()=>{chg({party:3,support:-4});addFac(1);return '계파는 고마워했고 당은 더 갈라졌다.'}],
      ['한발 물러서 지켜본다',()=>{chg({mental:3,party:-2});return '"어른이 없다"는 칼럼이 실렸다.'}]]},
@@ -1654,10 +1682,14 @@ function personHD(r,X,Y,c,wave){
   else{p(14,-9,3,1,BR);p(20,-9,3,1,BR);if(!FEM){p(14,-10,2,1,BR);p(21,-10,2,1,BR)}}
   // 눈
   const EW=c.gl?'#e2f0f8':'#ffffff';
-  if(face==='smile'){p(14,-7,1,1,INK);p(15,-8,2,1,INK);p(20,-8,2,1,INK);p(22,-7,1,1,INK)}
-  else if(face==='shock'){p(14,-8,3,1,INK);p(20,-8,3,1,INK);p(14,-7,3,2,EW);p(20,-7,3,2,EW);p(15,-7,1,1,INK);p(21,-7,1,1,INK)}
-  else{p(14,-7,3,1,INK);p(20,-7,3,1,INK);p(14,-6,1,1,EW);p(15,-6,2,1,'#2a201c');p(20,-6,2,1,'#2a201c');p(22,-6,1,1,EW);
-    if(FEM){p(13,-7,1,1,INK);p(23,-7,1,1,INK);p(15,-6,1,1,'#5a3c2c');p(21,-6,1,1,'#5a3c2c')}
+  if(face==='smile'){p(14,-7,1,1,INK);p(15,-8,2,1,INK);p(20,-8,2,1,INK);p(22,-7,1,1,INK);p(14,-6,1,1,INK);p(22,-6,1,1,INK)}
+  else if(face==='shock'){p(14,-8,3,1,INK);p(20,-8,3,1,INK);p(14,-7,3,3,EW);p(20,-7,3,3,EW);p(15,-6,1,2,INK);p(21,-6,1,2,INK)}
+  else{const IR='#1e1512',IR2=FEM?'#6a4432':'#4a3328';
+    // 눈: 윗꺼풀 + 2줄 눈동자(위 진하게·아래 갈색) + 흰자 + 하이라이트
+    p(14,-7,3,1,INK);p(20,-7,3,1,INK);
+    p(14,-6,3,1,IR);p(20,-6,3,1,IR);p(14,-5,3,1,IR2);p(20,-5,3,1,IR2);
+    p(15,-6,1,1,'#ffffff');p(21,-6,1,1,'#ffffff');p(16,-5,1,1,shade(IR2,1.5));p(22,-5,1,1,shade(IR2,1.5));
+    if(FEM){p(13,-7,1,1,INK);p(23,-7,1,1,INK);p(13,-8,1,1,INK);p(23,-8,1,1,INK)}
     if(face==='angry'){p(14,-7,1,1,BR);p(22,-7,1,1,BR)}
     if(face==='sad'){p(14,-5,1,1,'#bfe3ff')}}
   // 코
@@ -1673,7 +1705,7 @@ function personHD(r,X,Y,c,wave){
   else if(face==='shock'){p(17,-2,3,2,'#4a1818')}
   else p(17,-2,3,1,lp);
   // 안경
-  if(c.gl){const F='#2a2420';p(13,-8,4,1,F);p(13,-8,1,3,F);p(16,-8,1,3,F);p(13,-6,4,1,F);p(20,-8,4,1,F);p(20,-8,1,3,F);p(23,-8,1,3,F);p(20,-6,4,1,F);p(17,-7,3,1,F);p(14,-7,1,1,'#ffffff');p(21,-7,1,1,'#ffffff')}
+  if(c.gl){const F='#6e5a4c';p(13,-8,5,1,F);p(13,-7,1,3,F);p(17,-7,1,3,F);p(13,-4,5,1,F);p(19,-8,5,1,F);p(19,-7,1,3,F);p(23,-7,1,3,F);p(19,-4,5,1,F);p(18,-7,1,1,F);p(12,-7,1,1,F);p(24,-7,1,1,F);p(16,-7,1,1,'#dff0fa');p(22,-7,1,1,'#dff0fa')}
   // 앞머리
   part();const crown=hw=>shape(-16,span(-16,hw),h,{rim:1.6});const CR=[3,4.5,5.5,6,6,6];
   if(st==='bald'){part();shape(-16,span(-16,[2.5,4,5,5.5,5.5,5.5]),s,{rim:1.15});feat();p(15,-15,3,1,shade(s,1.32));p(14,-14,1,1,shade(s,1.18));p(16,-11,5,1,S2);
