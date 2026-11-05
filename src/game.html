@@ -469,7 +469,7 @@ function endMin(msg){if(!S.minister)return;addLog(msg||`${minN()}직에서 물�
 const opp=()=>member()&&!!S.ruling&&S.party!==S.ruling;
 const isPm=()=>!!(S&&S.pm);
 function endPm(msg){if(!S.pm)return;addLog(msg||'국무총리직에서 물러났다.');S.pm=null}
-function pmOfferOk(){const H=S.held,nt=(H.nat||0)+(H.natp||0);return !S.pm&&!isPres()&&member()&&S.ruling===S.party&&(H.min&&H.min.length)&&(nt>=2||(H.gov||0)>=1)&&s().party>=60&&s().fame>=60&&!S.trial&&S.year-(S.pmOfferY||0)>=4&&!elecKinds(S.year).length&&(S.office!=='none'||S.minister)}
+function pmOfferOk(){const H=S.held,nt=(H.nat||0)+(H.natp||0);return !S.pm&&!isPres()&&member()&&S.ruling===S.party&&(H.min&&H.min.length)&&(nt>=2||(H.gov||0)>=1)&&s().party>=55&&s().fame>=55&&!S.trial&&S.year-(S.pmOfferY||0)>=3&&!elecKinds(S.year).length&&(S.office!=='none'||S.minister)}
 function minOfferOk(){return !S.minister&&!isPres()&&member()&&S.ruling===S.party&&['nat','natp','gov'].includes(S.office)&&s().party>=50&&s().fame>=45&&!S.trial&&S.year-(S.minOfferY||0)>=3&&!elecKinds(S.year).length}
 const isLeader=()=>!!S&&S.titles&&S.titles.leader>0;
 const big=()=>!!S&&(isPres()||S.office==='gov'||S.titles.leader>0||S.titles.chair>0);
@@ -1351,7 +1351,7 @@ const EV=[
  ch:[['핵심 요구 하나를 얻고 합의한다',()=>{chg({party:3,support:3,legis:3});return '자정 직전 합의문에 서명했다. 강성 지지층은 "왜 더 못 받았냐"고 했다.'}],
      ['합의를 거부하고 본회의장을 점거한다',()=>{chg({party:6,support:-4,fame:5});return '여당이 단독 처리했다. 국회 회의장 사진이 해외 토픽에 실렸다.'}],
      ['필리버스터로 시간을 번다',()=>{chg({fame:4,party:4,mental:-6});return '우리 당 의원 30명이 릴레이 토론을 했다. 결과는 같았지만 메시지는 남았다.'}]]},
-{id:'op_sniper',op:true,w:3,tag:'국정감사',px:'hall|riv,me!,riv|chart,cam',c:()=>opp()&&isNat(),t:'장관 저격 자료를 단독 입수했다',b:'국정감사를 앞두고 제보자가 장관 관련 내부 문건을 보내왔다. 사실이면 정국이 뒤집힌다. 출처 확인에는 시간이 걸린다.',
+{id:'op_sniper',op:true,w:3,tag:'국정감사',px:'audit|riv,me!,riv|chart',c:()=>opp()&&isNat(),t:'장관 저격 자료를 단독 입수했다',b:'국정감사를 앞두고 제보자가 장관 관련 내부 문건을 보내왔다. 사실이면 정국이 뒤집힌다. 출처 확인에는 시간이 걸린다.',
  ch:[['확인 없이 국감장에서 터뜨린다',()=>{if(R()<.6){chg({fame:10,party:6});return '생중계로 문건을 흔들었다. 장관은 답을 못 했다. "국감 스타" 칭호가 붙었다.'}chg({fame:4,support:-6,integrity:-4});if(R()<.5)addCase('허위사실 명예훼손',1);return '문건이 조작된 것으로 드러났다. 장관 쪽이 고소장을 냈다.'},{hint:'대박 아니면 역풍',dark:true}],
      ['검증을 마치고 터뜨린다',()=>{chg({fame:6,integrity:3,party:3});return '파급력은 조금 줄었지만 반박할 틈이 없었다.'}],
      ['기자에게 넘긴다',()=>{chg({party:2,fame:1});return '단독 기사가 났다. 내 이름은 "여권 관계자"로도 안 나왔다.'}]]},
@@ -1371,7 +1371,7 @@ const EV=[
 {id:'op_veto',op:true,w:2,tag:'거부권',px:'press|rep,me?,rep|podium,cam',c:()=>opp()&&isNat(),t:'내 대표 법안에 대통령 거부권',b:'2년을 매달린 내 대표 법안이 국회를 통과했는데, 대통령이 거부권을 행사했다. 재의결에는 3분의 2가 필요하다.',
  ch:[['재표결로 정면 승부한다',()=>{chg({fame:5,party:4});if(R()<.2){chg({legis:5,support:4});return '여당 이탈표가 나와 재의결에 성공했다. 헌정사에 남을 장면이다.'}return '재의결은 8표 차로 부결됐다. "거부권 정국" 세 글자가 굳었다.'}],
      ['여당과 수정안을 협상한다',()=>{chg({legis:4,support:2,party:-3});return '알맹이는 반쯤 빠졌지만 법이 됐다.'}]]},
-{id:'op_hearing',op:true,w:3,tag:'인사청문회',px:'hall|riv,me!,riv|chart',c:()=>opp()&&isNat(),t:'장관 후보자 청문위원이 됐다',b:'새 장관 후보자의 인사청문회에 우리 당 간사로 배정됐다. 보좌진이 밤새 등기부와 논문을 뒤졌다.',
+{id:'op_hearing',op:true,w:3,tag:'인사청문회',px:'audit|riv,me!,riv|chart',c:()=>opp()&&isNat(),t:'장관 후보자 청문위원이 됐다',b:'새 장관 후보자의 인사청문회에 우리 당 간사로 배정됐다. 보좌진이 밤새 등기부와 논문을 뒤졌다.',
  ch:[['의혹을 총동원해 낙마시킨다',()=>{if(R()<.5){chg({fame:8,party:5});return '후보자가 사흘 만에 자진 사퇴했다. 청문회 스타로 떠올랐다.'}chg({fame:3,support:-3});return '의혹 대부분이 해명됐다. "신상 털기만 했다"는 비판이 돌아왔다.'}],
      ['정책 검증에 집중한다',()=>{chg({policy:3,integrity:2,support:2,party:-2});return '"품격 있는 청문회"라는 평. 당 지도부는 아쉬워했다.'}]]},
 {id:'op_deal',op:true,w:2,tag:'협치',px:'office|riv,me?|env',c:()=>opp()&&isNat(),t:'"지역 숙원사업 넣어 드릴 테니"',b:'여당 원내 지도부가 조용히 연락해 왔다. 정부 핵심 법안에 찬성표를 주면 내 지역구 숙원사업 예산을 넣어 주겠다고 한다.',
@@ -1379,7 +1379,7 @@ const EV=[
      ['거절하고 공개한다',()=>{chg({fame:4,party:4,integrity:2});return '"예산 매수" 폭로에 여당이 발칵 뒤집혔다.'}],
      ['조용히 거절한다',()=>{chg({integrity:1});return '지역 숙원사업은 내년을 기약했다.'}]]},
 // ---- 국무총리 ----
-{id:'pm_offer',core:true,tag:'총리 지명',px:'press|aide,me?,aide|podium,cam',t:'"국무총리로 지명합니다"',b:()=>`대통령이 직접 전화를 걸어 국무총리 후보자로 지명하겠다고 한다. 인사청문회를 거쳐 국회 본회의 임명동의 표결까지 통과해야 한다. ${myMaj()===false?'<b>야당이 과반</b>이라 인준을 장담할 수 없다.':'여당이 과반이라 표결은 해 볼 만하다.'}`,
+{id:'pm_offer',core:true,tag:'총리 지명',px:'brief|aide,me?,aide|podium,cam',t:'"국무총리로 지명합니다"',b:()=>`대통령이 직접 전화를 걸어 국무총리 후보자로 지명하겠다고 한다. 인사청문회를 거쳐 국회 본회의 임명동의 표결까지 통과해야 한다. ${myMaj()===false?'<b>야당이 과반</b>이라 인준을 장담할 수 없다.':'여당이 과반이라 표결은 해 볼 만하다.'}`,
  ch:()=>[['지명을 받아들인다',()=>{const bad=Math.min(.75,.08+Math.max(0,65-s().integrity)/100+S.cases.length*.1);
      if(R()<bad){chg({support:-6,fame:5,mental:-10});addLog('총리 후보자로 지명됐으나 청문회에서 낙마했다.');return `청문회에서 ${pick(['아들 병역','배우자 주식','관사 리모델링','전관예우 수임료'])} 의혹이 터졌다. 지명 9일 만에 스스로 물러났다.`}
      const pass=myMaj()===false?.4+s().party/400:.88;
@@ -1388,32 +1388,32 @@ const EV=[
      S.pm={from:S.year,party:S.party,ext:0};S.held.pm=(S.held.pm||0)+1;if(wasGov){addLog(`${offName('gov')}직을 사퇴했다.`);S.office='none'}
      chg({fame:12,admin:4,policy:3,party:4});addLog('국무총리에 임명됐다.');return '임명동의안이 가결됐다. 정부서울청사 9층, 총리 집무실 창밖으로 광화문이 보였다.'}],
    ['"아직 그릇이 아닙니다"라며 고사한다',()=>{chg({integrity:2,party:-2});return '대통령은 "다음에 꼭"이라고 했다. 정치권은 "대권 직행을 노린다"고 해석했다.'}]]},
-{id:'pm_work',core:true,tag:'총리',px:()=>['office|aide,me,aide|desk','press|rep,me,rep|podium,cam','hall|riv,me,riv|'][S.year%3],t:'국무총리, 올해는 어디에 힘을 쓸까',b:()=>`총리 ${S.year-S.pm.from+1}년차. 헌법상 "대통령을 보좌하며 행정 각부를 통할"한다. 실제 권한은 대통령이 얼마나 나눠 주느냐에 달렸다.`,
+{id:'pm_work',core:true,tag:'총리',px:()=>['cabinet|aide,me,aide|','brief|rep,me,rep|podium,cam','audit|riv,me,riv|'][S.year%3],t:'국무총리, 올해는 어디에 힘을 쓸까',b:()=>`총리 ${S.year-S.pm.from+1}년차. 헌법상 "대통령을 보좌하며 행정 각부를 통할"한다. 실제 권한은 대통령이 얼마나 나눠 주느냐에 달렸다.`,
  ch:[['"책임총리"로 장관 인사권을 요구한다',()=>{if(R()<.45){chg({admin:5,fame:5,party:2});return '대통령이 장관 제청권을 실질적으로 보장했다. 내각의 무게중심이 옮겨 왔다.'}chg({party:-4,mental:-5});return '대통령실은 "헌법대로 하자"며 선을 그었다. 관계가 서먹해졌다.'}],
      ['대통령 그림자로 묵묵히 보좌한다',()=>{chg({party:5,admin:2,fame:-2});return '"의전 총리"라는 말이 나왔다. 대통령의 신뢰는 깊어졌다.'}],
      ['민생 현장을 돌며 대국민 접점을 넓힌다',()=>{chg({fame:6,support:4,mental:-4});return '시장 상인과 찍은 사진이 차기 주자 여론조사에 이름을 올렸다.'}],
      ['국회를 오가며 법안을 챙긴다',()=>{chg({legis:3,party:3,policy:2});return '대정부질문에 열두 번 섰다. 답변 실력이 늘었다.'}]]},
-{id:'pm_end',core:true,tag:'개각',px:'press|rep,me,rep|cam',t:'총리 교체설이 흘러나온다',b:()=>`총리 ${S.year-S.pm.from}년차. "국정 쇄신용 총리 교체" 기사가 대통령실 관계자발로 나왔다.`,
+{id:'pm_end',core:true,tag:'개각',px:'brief|rep,me,rep|cam',t:'총리 교체설이 흘러나온다',b:()=>`총리 ${S.year-S.pm.from}년차. "국정 쇄신용 총리 교체" 기사가 대통령실 관계자발로 나왔다.`,
  ch:[['스스로 물러나 대권을 준비한다',()=>{chg({fame:6,party:2});endPm('국무총리직에서 물러났다.');return '이임식 마지막 말은 "국민 곁으로 가겠다"였다. 기자들은 그 뜻을 다 알았다.'}],
      ['남아서 국정을 마무리하겠다고 한다',()=>{if(R()<.5){S.pm.ext=(S.pm.ext||0)+1;chg({admin:3,mental:-5});return '유임됐다. "최장수 총리" 기록에 다가간다.'}chg({fame:-2,mental:-6});endPm('총리 교체로 물러났다.');return '후임 지명 소식을 뉴스로 들었다.'}]]},
-{id:'pm_qa',pm:true,w:3,tag:'대정부질문',px:'hall|riv,me!,riv|gavel',c:isPm,t:'대정부질문, 야당 의원과 정면충돌',b:'"총리는 대통령 방패입니까?" 야당 의원이 질문인지 연설인지 모를 말을 7분째 하고 있다.',
+{id:'pm_qa',pm:true,w:3,tag:'대정부질문',px:'audit|riv,me!,riv|',c:isPm,t:'대정부질문, 야당 의원과 정면충돌',b:'"총리는 대통령 방패입니까?" 야당 의원이 질문인지 연설인지 모를 말을 7분째 하고 있다.',
  ch:[['"방패가 아니라 다리입니다"라고 받아친다',()=>{chg({fame:6,speech:2,support:2});return '어록이 됐다. 야당 의원도 웃었다.'}],
      ['언성을 높여 맞선다',()=>{chg({fame:5,party:4,support:-4});return '"총리가 국회를 무시한다" 성명이 나왔다.'}],
      ['"송구하다"로 일관한다',()=>{chg({support:1,fame:-2});return '사고는 없었다. 기억에 남는 장면도 없었다.'}]]},
 {id:'pm_disaster',pm:true,w:2,tag:'재난',px:'field|aide,me?,cit|exclaim',c:isPm,t:'중앙재난안전대책본부장을 맡았다',b:'태풍이 남해안을 덮쳤다. 대통령이 해외 순방 중이라 총리가 재난 대응을 총괄한다.',
  ch:[['현장 지휘소로 내려간다',()=>{chg({fame:6,support:5,mental:-6});return '밤샘 회의 사진이 1면에 실렸다. 피해 복구 속도가 빨랐다.'}],
      ['세종에서 화상으로 총괄한다',()=>{chg({admin:3,support:-2});return '대응은 문제없었다. "총리는 어디 있었나"는 기사가 났다.'}]]},
-{id:'pm_read',pm:true,w:2,tag:'대독',px:'press|me~|podium,cam',c:isPm,t:'대통령 사과문을 대신 읽어 달란다',b:'정부 실책에 대한 대국민 사과문이다. 대통령실은 "총리 명의로 대독해 달라"고 한다. "대독 총리"라는 말이 벌써 돈다.',
+{id:'pm_read',pm:true,w:2,tag:'대독',px:'brief|me~|podium,cam',c:isPm,t:'대통령 사과문을 대신 읽어 달란다',b:'정부 실책에 대한 대국민 사과문이다. 대통령실은 "총리 명의로 대독해 달라"고 한다. "대독 총리"라는 말이 벌써 돈다.',
  ch:[['대독한다',()=>{chg({party:4,support:-3,fame:2});return '사과문을 읽는 동안 플래시가 멈추지 않았다. 대통령 이름은 한 번도 나오지 않았다.'}],
      ['"대통령이 직접 하셔야 한다"고 건의한다',()=>{if(R()<.5){chg({integrity:3,support:3});return '대통령이 직접 카메라 앞에 섰다. 총리 위상이 올라갔다.'}chg({party:-5,integrity:2});return '건의는 묵살됐다. 대통령실과의 사이가 벌어졌다.'}]]},
 {id:'pm_rival',pm:true,w:2,tag:'차기',px:'press|rep,me+,rep|chart,cam',c:()=>isPm()&&s().fame>=55,t:'차기 대선 여론조사 1위에 내 이름',b:'총리가 차기 주자 여론조사 1위에 올랐다. 대통령실 핵심 인사들의 표정이 미묘해졌다.',
  ch:[['"총리 업무에 전념하겠다"며 선을 긋는다',()=>{chg({party:3,integrity:2});return '지지율은 내려가지 않았다. 대통령은 안심했다.'}],
      ['슬쩍 대권 행보를 시작한다',()=>{chg({fame:7,party:-4,org:3});return '팬카페가 생겼다. 국무회의 분위기가 싸늘해졌다.'}]]},
-{id:'pm_gaffe',pm:true,w:2,tag:'실언',px:'press|rep,me?,rep|cam,exclaim',c:isPm,t:'"그건 국민 눈높이가 문제"',b:'기자간담회에서 물가 질문에 답하다 "국민 눈높이가 높아진 탓도 있다"는 말이 나갔다. 영상이 퍼지고 있다.',
+{id:'pm_gaffe',pm:true,w:2,tag:'실언',px:'brief|rep,me?,rep|cam,exclaim',c:isPm,t:'"그건 국민 눈높이가 문제"',b:'기자간담회에서 물가 질문에 답하다 "국민 눈높이가 높아진 탓도 있다"는 말이 나갔다. 영상이 퍼지고 있다.',
  ch:[['즉시 사과한다',()=>{chg({support:-2,integrity:1});return '사과는 빨랐다. 영상은 더 빨랐다.'}],
      ['"맥락이 잘렸다"고 해명한다',()=>{chg({support:-6,fame:4});return '전체 영상이 공개됐는데 맥락이 그대로였다.'}]]},
 // ---- 장관 입각: 제안·중앙정치 ----
-{id:'mn_offer',core:true,tag:'입각',px:'office|aide,me?,aide|phone,exclaim',t:()=>`"${MIN[minOf()].n} 장관을 맡아 주십시오"`,
+{id:'mn_offer',core:true,tag:'입각',px:'brief|aide,me?,aide|phone,exclaim',t:()=>`"${MIN[minOf()].n} 장관을 맡아 주십시오"`,
  b:()=>`대통령실 인사수석이 직접 전화를 걸어왔다. 개각 명단에 ${MIN[minOf()].n} 장관으로 내 이름이 올라 있다고 한다. ${S.office==='gov'?`임명되면 ${offName('gov')} 자리는 내려놓아야 한다.`:'국회의원직은 그대로 두고 겸직한다.'} 인사청문회는 피할 수 없다.`,
  ch:()=>[['수락하고 인사청문회에 선다',()=>{const d=minOf(),bad=Math.min(.75,.05+Math.max(0,62-s().integrity)/100*.9+S.cases.length*.08+((S.stats&&S.stats.bribes)>0?.08:0));
      if(R()<bad){chg({support:-5,fame:4,mental:-8});addLog(`${MIN[d].n} 장관 후보자로 지명됐으나 청문회 끝에 자진 사퇴했다.`);return `청문회 사흘째, ${pick(['위장전입','논문 표절','자녀 입시 특혜 의혹','갭투자 아파트','세금 지각 납부'])} 의혹이 터졌다. 결국 "국정에 부담을 줄 수 없다"며 지명 철회를 요청했다.`}
@@ -1422,16 +1422,16 @@ const EV=[
      chg({fame:8,policy:3,admin:3,party:3});addLog(`${MIN[d].n} 장관에 임명됐다.`);
      return `청문회는 "무난" 평가로 끝났다. 국무회의 첫 참석, 명패에 "${MIN[d].n} 장관"이라고 적혀 있었다.`}],
    ['"지금 자리에서 할 일이 많다"며 고사한다',()=>{chg({party:-2,integrity:1,support:1});return '대통령실은 아쉬워했다. 지역 언론은 "의리"라고 썼다.'}]]},
-{id:'mn_work',core:true,tag:'중앙정치',px:()=>['office|aide,me,aide|desk','press|rep,me,rep|podium,cam','hall|riv,me,aide|'][S.year%3],t:()=>`${minN()}, 올해의 우선순위`,b:()=>`취임 ${S.year-S.minister.from+1}년차. 부처 간부들이 업무보고서를 들고 기다린다. 장관이 어디에 시간을 쓰느냐가 곧 부처의 1년이다.`,
+{id:'mn_work',core:true,tag:'중앙정치',px:()=>['cabinet|aide,me,aide|','brief|rep,me,rep|podium,cam','audit|riv,me,aide|'][S.year%3],t:()=>`${minN()}, 올해의 우선순위`,b:()=>`취임 ${S.year-S.minister.from+1}년차. 부처 간부들이 업무보고서를 들고 기다린다. 장관이 어디에 시간을 쓰느냐가 곧 부처의 1년이다.`,
  ch:[['현장을 돈다',()=>{chg({fame:4,support:2,mental:-3});return '작업복 차림 현장 사진이 매주 나갔다. 직원들은 "보고서를 읽을 시간이 없다"고 수군댔다.'}],
      ['정책 성과를 챙긴다',()=>{chg({policy:4,admin:3});return '업무 평가에서 부처가 상위권에 올랐다. 기사는 별로 안 났다.'}],
      ['국회를 설득하러 다닌다',()=>{chg({party:3,legis:2,mental:-2});return '여야 의원실을 하루 여덟 곳씩 돌았다. 법안 두 건이 상임위를 넘었다.'}],
      ['대통령실과 호흡을 맞춘다',()=>{chg({party:4,support:-1,integrity:-1});return '"대통령 복심"이라는 별명이 붙었다. 부처 직원들은 "우리 장관은 위만 본다"고 했다.'}],
      ['차기를 위해 존재감을 키운다',()=>{chg({fame:6,party:-3});return '언론 인터뷰를 늘렸다. 대통령실에서 "장관이 너무 앞서 나간다"는 말이 나왔다.'}]]},
-{id:'mn_reshuffle',core:true,tag:'개각',px:'press|rep,me,rep|cam',t:'개각 하마평에 내 이름이 오른다',b:()=>`장관 ${S.year-S.minister.from}년차. 연말 개각을 앞두고 "교체 1순위"와 "유임 유력"이 같은 날 기사로 났다.`,
+{id:'mn_reshuffle',core:true,tag:'개각',px:'brief|rep,me,rep|cam',t:'개각 하마평에 내 이름이 오른다',b:()=>`장관 ${S.year-S.minister.from}년차. 연말 개각을 앞두고 "교체 1순위"와 "유임 유력"이 같은 날 기사로 났다.`,
  ch:[['박수 칠 때 떠난다',()=>{chg({fame:4,support:2});const n=minN();endMin(`${n}에서 물러났다.`);return '이임식에서 직원들이 꽃다발을 건넸다. "다음엔 더 큰 자리에서"라는 말이 따라왔다.'}],
      ['유임을 요청한다',()=>{if(R()<.55){S.minister.ext=(S.minister.ext||0)+1;chg({admin:2,mental:-4});return '유임됐다. "장수 장관" 반열에 들었다.'}chg({fame:-3,mental:-6});const n=minN();endMin(`개각으로 ${n}에서 교체됐다.`);return '발표 30분 전에 교체 통보를 받았다. 이임식은 조촐했다.'}]]},
-{id:'mn_audit',mn:true,w:3,tag:'국정감사',px:'hall|riv,me!,riv|gavel',c:isMin,t:'국정감사장의 호통',b:'국정감사 첫날, 야당 의원이 부처 자료 제출 거부를 문제 삼아 "장관, 국민을 무시합니까!"라고 소리친다. 생중계 카메라가 내 얼굴을 잡고 있다.',
+{id:'mn_audit',mn:true,w:3,tag:'국정감사',px:'audit|riv,me!,riv|',c:isMin,t:'국정감사장의 호통',b:'국정감사 첫날, 야당 의원이 부처 자료 제출 거부를 문제 삼아 "장관, 국민을 무시합니까!"라고 소리친다. 생중계 카메라가 내 얼굴을 잡고 있다.',
  ch:[['자료를 내겠다며 몸을 낮춘다',()=>{chg({support:2,party:-1});return '그날 저녁 뉴스는 "장관, 결국 자료 제출"이었다.'}],
      ['"그건 의원님 생각이고요"라며 받아친다',()=>{chg({fame:6,party:3,support:-3});return '짤이 돌았다. 지지층은 "사이다", 반대층은 "오만"이라고 했다.'}],
      ['"기억나지 않습니다"로 버틴다',()=>{chg({integrity:-3,support:-2});return '"모르쇠 장관" 검색어가 올랐다.'}]]},
@@ -1441,17 +1441,17 @@ const EV=[
 {id:'mn_impeach',mn:true,w:1,tag:'탄핵소추',px:'court|judge,me?,judge|gavel',c:()=>isMin()&&myMaj()===false&&S.year-S.minister.from>=1,t:'국무위원 탄핵소추, 직무정지',b:'야당이 단독으로 장관 탄핵소추안을 통과시켰다. 헌법재판소 결정까지 직무가 정지된다. 부처는 차관 대행 체제로 들어갔다.',
  ch:[['헌재 결정을 기다린다',()=>{if(R()<.75){chg({fame:6,party:6,mental:-8});return '5개월 만에 기각. 복귀 첫 출근길에 기자들이 몰렸다.'}chg({support:-6,mental:-10,fame:4});const n=minN();endMin(`헌법재판소 인용으로 ${n}에서 파면됐다.`);return '헌재가 탄핵을 인용했다. 장관 파면은 헌정사에 몇 번 없는 일이다.'}],
      ['스스로 물러나 소추를 무력화한다',()=>{chg({support:2,party:-3});const n=minN();endMin(`탄핵소추 직후 ${n}에서 사퇴했다.`);return '사퇴로 심판은 각하됐다. "꼼수 사퇴"라는 말과 "부처를 위한 결단"이라는 말이 함께 나왔다.'}]]},
-{id:'mn_leak',mn:true,w:2,tag:'국무회의',px:'office|aide,me,aide|desk',c:isMin,t:'국무회의 발언이 새어 나갔다',b:'국무회의에서 대통령 정책에 이견을 낸 발언이 다음 날 그대로 기사화됐다. "장관이 대통령에게 직언" 대 "내각 엇박자" 프레임이 맞섰다.',
+{id:'mn_leak',mn:true,w:2,tag:'국무회의',px:'cabinet|aide,me,aide|',c:isMin,t:'국무회의 발언이 새어 나갔다',b:'국무회의에서 대통령 정책에 이견을 낸 발언이 다음 날 그대로 기사화됐다. "장관이 대통령에게 직언" 대 "내각 엇박자" 프레임이 맞섰다.',
  ch:[['"소신 발언 맞다"고 인정한다',()=>{chg({fame:5,integrity:2,party:-5});return '대통령실 대변인이 "다양한 의견이 오간 것"이라며 수습했다. 대통령과의 거리는 멀어졌다.'}],
      ['"와전된 것"이라고 해명한다',()=>{chg({party:2,integrity:-2});return '기사를 쓴 기자가 회의 메모를 공개할 수 있다고 했다.'}]]},
-{id:'mn_budgetcut',mn:true,w:2,tag:'예산',px:'office|aide,me!,aide|chart',c:isMin,t:'"부처 예산 20% 깎습니다"',b:'긴축 기조라며 재정 당국이 우리 부처 핵심 사업 예산을 20% 깎겠다고 통보했다. 부처 간부들이 장관 얼굴만 쳐다본다.',
+{id:'mn_budgetcut',mn:true,w:2,tag:'예산',px:'cabinet|aide,me!,aide|chart',c:isMin,t:'"부처 예산 20% 깎습니다"',b:'긴축 기조라며 재정 당국이 우리 부처 핵심 사업 예산을 20% 깎겠다고 통보했다. 부처 간부들이 장관 얼굴만 쳐다본다.',
  ch:[['국무회의에서 정면으로 맞선다',()=>{if(R()<.5){chg({admin:3,fame:3,party:-2});return '절반을 되살렸다. 간부들이 장관실 앞에서 박수를 쳤다.'}chg({party:-3,mental:-4});return '"부처 이기주의" 소리만 듣고 삭감안은 그대로 갔다.'}],
      ['받아들이고 사업을 정리한다',()=>{chg({admin:2,support:-2});return '사업 세 개가 사라졌다. 지역 의원들의 항의 전화가 쏟아졌다.'}],
      ['대통령에게 직접 보고한다',()=>{chg({party:2,policy:2});return '대통령이 "필요한 건 챙기라"고 했다. 재정 당국과의 관계는 차가워졌다.'}]]},
 {id:'mn_bhmeddle',mn:true,w:2,tag:'인사 개입',px:'phone|me?|phone,exclaim',c:isMin,t:'대통령실 비서관이 국장 인사를 요구한다',b:'대통령실 비서관이 전화로 "그 국장은 바꾸시죠, 위의 뜻입니다"라고 한다. 해당 국장은 핵심 정책을 맡고 있다.',
  ch:[['요구대로 바꾼다',()=>{chg({party:3,integrity:-3,admin:-2});return '새 국장은 대통령실과 손발이 잘 맞았다. 부처 안에선 "장관 패싱"이라는 말이 돌았다.'}],
      ['"인사는 장관 권한"이라며 거절한다',()=>{chg({integrity:3,admin:2,party:-4});return '비서관은 전화를 끊었다. 다음 국무회의에서 대통령 표정이 굳어 있었다.'}]]},
-{id:'mn_holiday',mn:true,w:2,tag:'처신',px:'press|rep,me?,rep|cam,exclaim',c:isMin,t:'재난 중 골프 사진',b:'집중호우로 피해가 커지던 주말, 내가 지방 골프장에 있었다는 사진이 돌기 시작했다. 사진 속 날짜가 정확하다.',
+{id:'mn_holiday',mn:true,w:2,tag:'처신',px:'brief|rep,me?,rep|cam,exclaim',c:isMin,t:'재난 중 골프 사진',b:'집중호우로 피해가 커지던 주말, 내가 지방 골프장에 있었다는 사진이 돌기 시작했다. 사진 속 날짜가 정확하다.',
  ch:[['즉시 사과하고 현장으로 간다',()=>{chg({support:-3,mental:-4});return '장화 신고 수해 현장을 돌았다. 사과는 받아들여졌지만 사진은 남았다.'}],
      ['"사전에 잡힌 일정"이라고 해명한다',()=>{chg({support:-7,fame:4});return '해명이 불에 기름을 부었다. "골프 장관" 패러디가 쏟아졌다.'}]]},
 {id:'mn_alba',mn:true,w:2,tag:'인사',px:'office|old,me,aide|desk',c:isMin,t:'전 정부 기관장들이 버틴다',b:'산하 공공기관장 절반이 전 정부가 임기 말에 임명한 인사다. 여당은 "알박기 인사를 정리하라"고 압박하고, 기관장들은 "임기 보장"을 외친다.',
@@ -1485,7 +1485,7 @@ const EV=[
  ch:[['전수 단속하고 시스템을 고친다',()=>{chg({integrity:3,admin:3});return '부정 가맹점 수천 곳이 퇴출됐다. 사업은 살아남았다.'}],
      ['예산을 더 늘려 경기 부양에 쓴다',()=>{chg({support:3,integrity:-2});return '골목 상권 매출은 올랐다. 감사원이 다음 감사 대상으로 찍었다.'}],
      ['사업을 축소한다',()=>{chg({support:-3,admin:1});return '전통시장 상인회가 장관실 앞에 화환을 보냈다. 근조 화환이었다.'}]]},
-{id:'mn_cul_sport',mn:true,md:'cul',w:3,tag:'체육계',px:'press|rep,me?,rep|cam',c:isMin,t:'국가대표 감독 선임이 수상하다',b:'인기 종목 협회가 국가대표 감독을 뽑으면서 절차를 건너뛰었다는 폭로가 나왔다. 팬들은 "협회장 사퇴"를 외친다. 정부 개입은 국제연맹 규정 위반 소지가 있다.',
+{id:'mn_cul_sport',mn:true,md:'cul',w:3,tag:'체육계',px:'brief|rep,me?,rep|cam',c:isMin,t:'국가대표 감독 선임이 수상하다',b:'인기 종목 협회가 국가대표 감독을 뽑으면서 절차를 건너뛰었다는 폭로가 나왔다. 팬들은 "협회장 사퇴"를 외친다. 정부 개입은 국제연맹 규정 위반 소지가 있다.',
  ch:[['부처 감사를 벌인다',()=>{chg({support:5,fame:4});return '감사 결과 절차 위반이 확인됐다. 국제연맹이 "정부 간섭" 경고 서한을 보냈다.'}],
      ['"협회 자율"이라며 지켜본다',()=>{chg({support:-4});return '팬들이 장관 SNS에 몰려왔다.'}],
      ['협회장 연임 승인을 보류한다',()=>{chg({party:2,fame:3,support:2});return '협회장이 "정치 보복"이라며 소송을 냈다.'}]]},
@@ -1821,6 +1821,7 @@ function buildQueue(){
     const pool=EV.filter(e=>!e.core&&(e.tg||e.tag==='칩거'||e.tag==='하산')&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<4));
     const n=Math.min(pool.length,2),chosen=[];let g=0;while(chosen.length<n&&g++<200){const tot=pool.reduce((a,e)=>a+(chosen.includes(e)?0:(e.w||1)),0);let r0=R()*tot;for(const e of pool){if(chosen.includes(e))continue;r0-=(e.w||1);if(r0<=0){chosen.push(e);break}}}
     chosen.forEach(e=>q.push({type:'ev',id:e.id}));
+    {const yr=EV.find(e=>e.id==='y_return');if(yr&&yr.c()&&!q.some(x=>x.id==='y_return'))q.push({type:'ev',id:'y_return'})}
     if(S.trial&&S.trial.started<S.year)q.push({type:'trial'});
     else if(!S.trial&&S.cases.length){S.cases=S.cases.filter(c=>S.year-c.y<7);const p=S.cases.reduce((a,c)=>a+.025*c.sev,0)+(100-s().integrity)/1500;if(R()<p)q.push({type:'detect'})}
     S.qTotal=q.length;return q}
@@ -1843,7 +1844,7 @@ function buildQueue(){
     if(R()<.5)q.push({type:'fig'});
     if(S.office!=='none')q.push({type:'ev',id:'c_fund'});
     if(S.year-S.minister.from>=2+(S.minister.ext||0))q.push({type:'ev',id:'mn_reshuffle'});
-    if(pmOfferOk()&&R()<.4){S.pmOfferY=S.year;q.splice(1,0,{type:'ev',id:'pm_offer'})}
+    if(pmOfferOk()&&R()<.5){S.pmOfferY=S.year;q.splice(1,0,{type:'ev',id:'pm_offer'})}
     if(S.age<64&&elecKinds(S.year+1).includes('pres')&&(presPaths().council||presPaths().admin))q.splice(1,0,{type:'ev',id:'p_camp'});
     if(S.trial&&S.trial.started<S.year)q.push({type:'trial'});
     else if(!S.trial&&S.cases.length){S.cases=S.cases.filter(c=>S.year-c.y<7);const p=S.cases.reduce((a,c)=>a+.033*c.sev,0)+(100-s().integrity)/1200+s().fame/1200;if(R()<p)q.push({type:'detect'})}
@@ -1862,7 +1863,7 @@ function buildQueue(){
   if(!isPres()&&S.age<64&&elecKinds(S.year+1).includes('pres')&&(presPaths().council||presPaths().admin))q.splice(1,0,{type:'ev',id:'p_camp'});
   if(S.rvEv&&rvOk()){q.splice(1,0,{type:'ev',id:S.rvEv});S.rvEv=null}
   if(isPres())presQueue(q);
-  if(pmOfferOk()&&R()<.4){S.pmOfferY=S.year;q.splice(1,0,{type:'ev',id:'pm_offer'})}
+  if(pmOfferOk()&&R()<.5){S.pmOfferY=S.year;q.splice(1,0,{type:'ev',id:'pm_offer'})}
   else if(minOfferOk()&&R()<.55){S.minOfferY=S.year;q.splice(1,0,{type:'ev',id:'mn_offer'})}
   if(opp()&&isNat()&&(S.held.nat||0)+(S.held.natp||0)>=2&&s().party>=50&&!(S.titles.whip>=S.year)&&!S.titles.leader&&S.year%2===1)q.splice(1,0,{type:'ev',id:'op_whip'});
   if(opp()&&isNat()&&R()<.5&&!q.some(x=>x.id&&/^op_/.test(x.id))){const L=EV.filter(e=>e.op&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<4));if(L.length)q.splice(q.length-1,0,{type:'ev',id:pick(L).id})}
@@ -2474,6 +2475,45 @@ press(){
   for(let i=0;i<3;i++){P(242,58+i*8,28,4,'#1b1b22');P(243,59+i*8,26,2,'#f4f1ea')}
   P(0,168,512,6,'#101830');P(0,168,512,1,'#3a4a78');
   floor(174,256,'#2c3242','#232838',256,-160,48,'#363d50');glow(256,200,120,22,'#bfd4ff',.08,1)},
+// 국무회의실: 나무 판넬 벽, 대형 스크린, 양옆 국기, 뒤로 이어진 타원 테이블과 가죽 의자
+cabinet(){
+  bands(0,172,['#7a5236','#71492f','#684229','#5e3a24']);
+  for(let x=0;x<512;x+=64){P(x,0,2,172,'#4a2e1a');P(x+2,0,1,172,'#9a6e4a');panel(x+10,30,44,56,'#7e5638','#4a2e1a');panel(x+10,96,44,60,'#7e5638','#4a2e1a')}
+  P(0,0,512,16,'#3e2616');P(0,16,512,3,'#c8a060');P(0,16,512,1,'#ffe0a0');P(0,19,512,2,'#2a180c');
+  glow(256,10,200,30,'#fff1c8',.08,3);for(let x=96;x<512;x+=160){P(x-10,20,20,3,'#ffe9b0');glow(x,24,26,10,'#fff1c8',.12,2)}
+  blk(166,34,180,92,'#1d2433','#0a0d14');P(170,38,172,84,'#26304a');P(170,38,172,10,'#2f3c5c');
+  blob(256,80,18,18,['#ffe48a','#e8b94a','#c8922a','#8a5f1a'],'#3a2a10');blob(256,80,12,12,['#2f5fc0','#24499a','#1d3a7c','#162d60'],'#8a5f1a');
+  P(198,108,116,3,'#8fa3c8');P(214,114,84,2,'#5a6a8a');
+  flag(120,40,PF);flag(380,40,1-PF);
+  // 의자 등받이 줄
+  for(let i=0;i<11;i++){const x=24+i*44;blk(x,118,24,40,'#3a2418','#140a06');P(x+3,121,18,2,'#5a3a26');P(x+3,124,2,30,'#4a2e1e')}
+  // 타원 테이블
+  for(let j=0;j<26;j++){const t=j/25,hw=Math.round(250-60*Math.pow(1-t,2));P(256-hw,150+j,hw*2,1,j<3?'#a87850':j<6?'#8a5e3a':'#6e4a2c')}
+  P(6,175,500,3,'#3a2414');for(let i=0;i<9;i++){const x=40+i*54;blk(x,146,14,5,'#f4f1ea','#5a564e');P(x+5,138,1,8,'#2a2a30');P(x+4,137,3,2,'#1b1b22')}
+  floor(178,256,'#4a3a5a','#3e3050',256,-200,44,'#56466a');glow(256,214,160,28,'#c8a0ff',.05,2)},
+// 정부청사 브리핑룸: 밝은 백월, 반복 엠블럼, 파란 띠
+brief(){
+  bands(0,172,['#eef2f7','#e8edf4','#e1e8f1','#d9e2ed']);
+  for(let y=26;y<160;y+=34)for(let x=((y/34|0)%2)*40+20;x<512;x+=80){blob(x,y,7,7,['#e0384c','#e0384c','#c2321f','#c2321f']);for(let j=0;j<=7;j++){const hw=Math.round(7*Math.sqrt(Math.max(0,1-(j/7.5)**2)));P(x-hw,y+j,hw*2,1,'#2f5fc0')}P(x-12,y+12,24,2,'#9aa8bc')}
+  glow(256,90,180,70,'#ffffff',.25,4);
+  P(0,0,512,14,'#1d3a7c');P(0,14,512,3,'#2f5fc0');P(0,17,512,1,'#8fb0e8');
+  P(0,136,512,24,'#1d3a7c');P(0,136,512,2,'#2f5fc0');for(let x=150;x<362;x+=10){P(x,144,6,8,'#e8eef8')}P(0,160,512,2,'#0f2050');
+  flag(40,46,PF);flag(440,46,1-PF);
+  P(0,162,512,10,'#c8d0dc');P(0,162,512,1,'#ffffff');
+  floor(172,256,'#5a6478','#4c5568',256,-180,46,'#687388');glow(256,210,140,26,'#ffffff',.06,2)},
+// 국정감사 증인석: 계단식 위원석, 모니터와 명패, 위원회 현판, 시계
+audit(){
+  bands(0,120,['#d9d2c2','#d2cab8','#cbc2ae','#c3b9a3']);
+  for(let x=0;x<512;x+=48)P(x,0,1,120,'#b9ae96');
+  blk(176,8,160,22,'#1d3a7c','#0a1a40');for(let x=188;x<324;x+=9)P(x,15,6,8,'#e8eef8');
+  blob(440,22,12,12,['#ffffff','#f1f1f1','#d8d8d8','#bcbcbc'],'#3a3a40');P(440,14,1,9,'#1b1b22');P(440,22,6,1,'#1b1b22');
+  // 위원석 2단
+  for(const [y,h,n] of [[44,34,9],[80,40,10]]){blk(0,y,512,h,'#5e3a24','#2a180c');P(0,y,512,3,'#8a5e3a');
+    for(let i=0;i<n;i++){const w=512/n,x=i*w+w/2;blk(x-12,y-8,24,10,'#2a2a34','#101016');P(x-10,y-6,20,6,'#4a6a9a');blk(x-10,y+6,20,6,'#f4f1ea','#5a564e');P(x-6,y+8,12,1,'#5a564e')}}
+  P(0,120,512,52,'#4a3020');P(0,120,512,2,'#8a5e3a');for(let x=0;x<512;x+=32)P(x,122,1,50,'#3a2416');
+  // 증인 선서대
+  blk(212,134,88,38,'#3a2416','#140a06');P(214,136,84,3,'#6e4a2c');blk(236,142,40,8,'#f4f1ea','#5a564e');P(246,145,20,2,'#1b1b22');P(255,124,1,12,'#2a2a30');P(253,122,5,3,'#1b1b22');
+  for(let y=172;y<256;y+=5){P(0,y,512,5,(y/5)%2?'#2e5a5a':'#285050');dith(0,y,512,1,(y/5)%2?'#285050':'#2e5a5a')}glow(256,200,150,30,'#bff0e8',.05,2)},
 render(bg,c){if(!B[bg])bg='street';C=c;RN=mkRng(bg);NT=false;RAW=false;B[bg]();NT=false;RAW=false;return true},
 run(c,fn){const c0=C;C=c;NT=false;RAW=false;try{fn(H)}finally{C=c0}},H})})();
 const BGC={};
@@ -3266,6 +3306,11 @@ const SND=(()=>{let ac=null,master=null,on=false,cur=null,timer=null,step=0,next
       'F5 . F5 . E5 . D5 . C5 - - - A4 . C5 .','B4 - - - G#4 - - - E4 - - - . . G#4 B4',
       'A4 . A4 . C5 . E5 . A5 - - - G5 . E5 .','F5 . E5 . D5 . C5 . B4 - C5 - D5 - - -',
       'D5 . F5 . A5 - - - F5 . D5 . F5 . A5 .','G#5 - - - B5 - - - E5 - - - . . . .']},
+    togul:{bpm:76,arp:2,ch:'G Em C D G Em C G',bass:'R-------F-------',dr:'--------h-------',mel:[
+      'D5 - - - B4 - D5 - E5 - - - D5 - - -','B4 - - - G4 - A4 - B4 - - - . . . .',
+      'E5 - - - G5 - E5 - D5 - - - B4 - - -','A4 - - - B4 - A4 - D4 - - - . . . .',
+      'G4 - A4 - B4 - D5 - E5 - - - G5 - - -','E5 - D5 - B4 - - - D5 - - - . . . .',
+      'E5 - - - D5 - B4 - A4 - - - B4 - A4 -','G4 - - - - - - - . . . . . . . .']},
     pres:{bpm:88,arp:2,ch:'F C Dm Bb F C Bb C',bass:'R-------F---O---',dr:'k---h---s---h---',mel:[
       'C5 - - - F5 - - - A5 - - G5 F5 - - -','E5 - - - G5 - - - C6 - - - - - - -',
       'A5 - - - D5 - - - F5 - - E5 D5 - - -','D5 - - - F5 - - - Bb5 - - - A5 - G5 -',
@@ -3319,7 +3364,7 @@ const SND=(()=>{let ac=null,master=null,on=false,cur=null,timer=null,step=0,next
   function set(v){on=v;try{localStorage.setItem('pol-snd',v?'1':'0')}catch(e){}if(!v){cur=null;if(timer){clearInterval(timer);timer=null}}else{ctx();const c=cur;cur=null;bgm(c||pickBgm())}btn()}
   function btn(){let b=document.getElementById('sndb');if(!b){b=document.createElement('button');b.id='sndb';b.className='sndb';b.onclick=()=>set(!on);document.body.appendChild(b)}b.textContent=on?'🔊':'🔇';b.setAttribute('aria-label',on?'소리 끄기':'소리 켜기');b.setAttribute('aria-pressed',on)}
   return{fx,bgm,set,btn,_render,get on(){return on}}})();
-function pickBgm(){if(!S||S.phase==='start')return 'title';if(S.phase==='ending')return 'title';if(isPres())return 'pres';if((S.cur&&['trial','elec','impeach','detect'].includes(S.cur.type))||S.trial)return 'tense';return 'play'}
+function pickBgm(){if(!S||S.phase==='start')return 'title';if(S.phase==='ending')return 'title';if(isPres())return 'pres';if(S.togul&&!inOffice()&&!(S.cur&&['trial','detect'].includes(S.cur.type)))return 'togul';if((S.cur&&['trial','elec','impeach','detect'].includes(S.cur.type))||S.trial)return 'tense';return 'play'}
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.choice,.btn,.opt,.linkbtn');if(b&&!b.disabled&&b.id!=='sndb')SND.fx('click')},true);
 /* ============ 정당 내부 정치 ============ */
 const NP_NAMES=['다음세대당','상식연합','제3지대당','내일로당'];
