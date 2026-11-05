@@ -3080,13 +3080,13 @@ function presQueue(q){presInit();const G=S.gov,first=!G.cab;
   if(!first&&myMaj()===false&&R()<.75)q.splice(q.length-1,0,{type:'ev',id:'pg_deal'});
   if(S.termEnd-S.year<=1&&!G.lame&&member()){G.lame=1;q.splice(q.length-1,0,{type:'ev',id:'pg_lame'})}}
 function majF(){const m=myMaj();return m===true?1.3:m===false?(S.gov&&S.gov.deal>S.year-1?1:.65):1}
-function renderAgenda(st){presInit();const G=S.gov;let pick=G.ag.slice();
+function renderAgenda(st){presInit();const G=S.gov;let pick=G.ag.slice(0,1);
   const draw=()=>{st.innerHTML=`${pxTag('국정과제')}<div class="news"><span class="tag ink">국정과제</span><h3>임기 5년, 무엇을 남길까</h3>
-    <p class="body">인수위가 국정과제 후보 7개를 올렸다. 2개를 고르면 해마다 예산을 나눠 추진한다. 완수한 과제는 지지율과 퇴임 평가를 크게 올린다. ${myMaj()===false?'<b>여소야대</b>라 법안 통과가 더디다.':myMaj()?'<b>여대야소</b>라 속도를 낼 수 있다.':''}</p></div>
-    <div class="choices">${Object.entries(AGENDA).map(([k,a])=>`<button class="choice" data-ag="${k}" aria-pressed="${pick.includes(k)}"><span><b>${pick.includes(k)?'☑':'☐'} ${a.n}</b></span><small>${a.d}</small></button>`).join('')}</div>
-    <button class="btn primary" id="agok" ${pick.length!==2?'disabled':''}>이 2개로 확정</button>`;
+    <p class="body">인수위가 국정과제 후보 7개를 올렸다. 하나를 골라 임기 내내 예산을 집중한다. 완수하면 지지율과 퇴임 평가를 크게 올린다. ${myMaj()===false?'<b>여소야대</b>라 법안 통과가 더디다.':myMaj()?'<b>여대야소</b>라 속도를 낼 수 있다.':''}</p></div>
+    <div class="choices">${Object.entries(AGENDA).map(([k,a])=>`<button class="choice" data-ag="${k}" aria-pressed="${pick.includes(k)}"><span><b>${pick.includes(k)?'◉':'○'} ${a.n}</b></span><small>${a.d}</small></button>`).join('')}</div>
+    <button class="btn primary" id="agok" ${pick.length!==1?'disabled':''}>이 과제로 확정</button>`;
     paint('office|aide,me,aide|chart');
-    st.querySelectorAll('[data-ag]').forEach(b=>b.onclick=()=>{const k=b.dataset.ag;if(pick.includes(k))pick=pick.filter(x=>x!==k);else{pick.push(k);if(pick.length>2)pick.shift()}draw()});
+    st.querySelectorAll('[data-ag]').forEach(b=>b.onclick=()=>{const k=b.dataset.ag;pick=[k];draw()});
     document.getElementById('agok').onclick=()=>{D=[];G.ag=pick;pick.forEach(k=>{G.prog[k]=0;chg(AGENDA[k].fx)});addLog(`국정과제 확정: ${pick.map(k=>AGENDA[k].n).join(', ')}.`);
       finish(`<b>국정과제 확정</b><br>${pick.map(k=>'「'+AGENDA[k].n+'」').join(' · ')}. 대통령실 벽에 큼지막하게 걸렸다.`)}};
   draw()}
@@ -3108,14 +3108,14 @@ function renderBudget(st){presInit();const G=S.gov;const B=G.budTmp||(G.budTmp={
       if((cr==='security'||cr==='tragedy')&&B.sec>=3){crAdj(1);sup+=2;out.push('안보·재난 대응을 강화했다')}
       if(B.wel>=5){chg({money:-0});out.push('"퍼주기 예산" 비판도 나왔다');sup-=1}
       if(B.econ>=5)out.push('성장률 전망이 올랐다');
-      const per=G.ag.length?B.ag*11*majF()/G.ag.length:0;const fin=[];
+      const per=G.ag.length?B.ag*11*majF()*(G.ag.length===1?.62:1/G.ag.length):0;const fin=[];
       G.ag.forEach(k=>{const b0=G.prog[k]||0;let gain=per*(k==='defense'&&cr==='security'?1.4:k==='house'&&cr==='house'?1.3:1);G.prog[k]=b0+gain;if(b0<100&&G.prog[k]>=100){fin.push(k);sup+=6;chg({fame:6});addLog(`국정과제 「${AGENDA[k].n}」 완수.`)}});
       chg({support:Math.round(sup),admin:2,mental:-4});
       finish(`<b>${S.year}년 예산안 국회 통과</b><br>${out.length?out.join('. ')+'. ':''}${G.ag.map(k=>`「${AGENDA[k].n}」 ${Math.min(100,Math.round(G.prog[k]))}%`).join(' · ')}${fin.length?`<br><b style="color:var(--good)">완수: ${fin.map(k=>AGENDA[k].n).join(', ')}</b>`:''}`)}};
   draw()}
 function presEval(){const G=S.gov||{ap:[],ag:[],prog:{}};const ap=G.ap.length?G.ap.reduce((a,b)=>a+b,0)/G.ap.length:s().support;const fin=G.ag.filter(k=>(G.prog[k]||0)>=100).length;
   const avgProg=G.ag.length?G.ag.reduce((a,k)=>a+Math.min(100,G.prog[k]||0),0)/G.ag.length:0;
-  let sc=ap*.45+(S.leaveSup??s().support)*.25+avgProg*.22+fin*6-(S.trialHold||S.trial?8:0)-(S.stats.bribes>0?5:0);sc=Math.round(clamp(sc,0,100));
+  let sc=ap*.45+(S.leaveSup??s().support)*.25+avgProg*.22+fin*(G.ag.length===1?12:6)-(S.trialHold||S.trial?8:0)-(S.stats.bribes>0?5:0);sc=Math.round(clamp(sc,0,100));
   const rank=1+PAST_PRES.filter(v=>v>sc).length;return{sc,rank,of:PAST_PRES.length+1,fin,ap:Math.round(ap)}}
 function apSpark(){const G=S.gov;if(!G||!G.ap.length)return '';const a=G.ap,w=120,h=28,mx=Math.max(70,...a),mn=Math.min(20,...a);
   const pts=a.map((v,i)=>`${a.length===1?w:i/(a.length-1)*w},${h-(v-mn)/(mx-mn)*h}`).join(' ');
@@ -3162,7 +3162,7 @@ const ACH=[
  ['joined','영입 인재','무소속으로 시작해 입당 후 당선',x=>x.joined&&x.ach&&x.ach.joinwin],
  ['presok','그리운 대통령','퇴임 지지율 60% 이상 대통령',x=>x.end==='pres'&&(x.leaveSup||0)>=60],
  ['prestop','역대 1위','퇴임 평가 역대 대통령 1위',x=>x.presEv&&x.presEv.rank===1],
- ['agenda2','공약 완수','국정과제 2개를 모두 완수',x=>x.presEv&&x.presEv.fin>=2],
+ ['agenda2','공약 완수','국정과제를 임기 안에 완수',x=>x.presEv&&x.presEv.fin>=1],
  ['newparty','창당','신당을 창당한다',x=>x.ach&&x.ach.newparty],
  ['npwin','제3지대 금배지','신당 간판으로 국회의원·단체장 당선',x=>x.ach&&x.ach.npwin],
  ['rvgrace','정적에게 탄원서','기소된 라이벌에게 선처 탄원서를 낸다',x=>x.ach&&x.ach.rvgrace],
@@ -3296,7 +3296,7 @@ function renderEnding(){
     <dl style="margin-top:16px">
       <dt>이름</dt><dd>${esc(S.name)} (${S.age}세)</dd><dt>지역</dt><dd>${esc(distName())}</dd>
       <dt>최종 소속</dt><dd>${PARTIES[S.party].n}</dd>
-      <dt>최고 직위</dt><dd>${esc(S.bestName||offName(S.best))}</dd>${S.presEv?`<dt>퇴임 평가</dt><dd>${S.presEv.sc}점 · 역대 ${S.presEv.of}명 중 <b>${S.presEv.rank}위</b> · 재임 평균 지지율 ${S.presEv.ap}% · 국정과제 완수 ${S.presEv.fin}개</dd>`:''}
+      <dt>최고 직위</dt><dd>${esc(S.bestName||offName(S.best))}</dd>${S.presEv?`<dt>퇴임 평가</dt><dd>${S.presEv.sc}점 · 역대 ${S.presEv.of}명 중 <b>${S.presEv.rank}위</b> · 재임 평균 지지율 ${S.presEv.ap}% · 국정과제 ${S.presEv.fin?'완수':'미완'}</dd>`:''}
       <dt>거친 자리</dt><dd>${held||'—'}</dd>
       <dt>선거 전적</dt><dd class="num">${S.stats.wins}승 ${S.stats.losses}패</dd>
       <dt>재판</dt><dd>${S.stats.trials?S.stats.trials+'건':'없음'}</dd>${S.rival?`<dt>라이벌</dt><dd>${esc(S.rival.name)} 상대 ${S.rival.l}승 ${S.rival.w}패</dd>`:''}
