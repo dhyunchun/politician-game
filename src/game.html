@@ -153,6 +153,10 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .dex{border:1px dashed var(--line);border-radius:8px;padding:8px;font-size:13px;color:var(--muted);background:var(--card2)}
 .dex b{display:block;color:var(--muted)}.dex small{font-size:11px}
 .ctitle{margin:6px 0 2px;display:flex;flex-direction:column;gap:2px}.ctitle b{color:var(--warn);font-size:17px}.ctitle span{color:var(--muted);font-size:14px}
+.polls{display:flex;flex-direction:column;gap:10px;margin-top:10px}.pollrow{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--card2)}
+.pollhd,.pollft{display:flex;justify-content:space-between;gap:8px;font-size:13px;flex-wrap:wrap}.pollhd b{font-size:15px}.pollft .good{color:var(--good);font-weight:600}.pollft .bad{color:var(--bad);font-weight:600}
+.pollbar{display:flex;height:22px;border-radius:5px;overflow:hidden;margin:6px 0;font-size:12px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
+.pollbar i{display:flex;align-items:center;font-style:normal;white-space:nowrap;overflow:hidden}.pollbar .me{background:var(--p);padding-left:6px}.pollbar .und{background:var(--line)}.pollbar .op{background:#8a8f98;justify-content:flex-end;padding-right:6px}
 .evdex details{border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:var(--card2)}
 .evdex summary{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;font-size:14px}.evdex summary>span:first-child{flex:1;font-weight:600}
 .evbar{display:block;width:60px;height:5px;border-radius:3px;background:var(--line);overflow:hidden}.evbar i{display:block;height:100%;background:var(--warn)}
@@ -1883,7 +1887,7 @@ function buildQueue(){
     if(S.age<64&&elecKinds(S.year+1).includes('pres')&&(presPaths().council||presPaths().admin))q.splice(1,0,{type:'ev',id:'p_camp'});
     if(S.trial&&S.trial.started<S.year)q.push({type:'trial'});
     else if(!S.trial&&S.cases.length){S.cases=S.cases.filter(c=>S.year-c.y<7);const p=S.cases.reduce((a,c)=>a+.033*c.sev,0)+(100-s().integrity)/1200+s().fame/1200;if(R()<p)q.push({type:'detect'})}
-    if(elecKinds(S.year).length&&S.age<65)q.push({type:'elec'});
+    addPoll(q);if(elecKinds(S.year).length&&S.age<65)q.push({type:'elec'});
     S.qTotal=q.length;return q}
   if(S.minister){const q=[{type:'ev',id:'mn_work'}],d=S.minister.d;
     const ok=e=>!e.core&&e.mn&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<3);
@@ -1897,7 +1901,7 @@ function buildQueue(){
     if(S.age<64&&elecKinds(S.year+1).includes('pres')&&(presPaths().council||presPaths().admin))q.splice(1,0,{type:'ev',id:'p_camp'});
     if(S.trial&&S.trial.started<S.year)q.push({type:'trial'});
     else if(!S.trial&&S.cases.length){S.cases=S.cases.filter(c=>S.year-c.y<7);const p=S.cases.reduce((a,c)=>a+.033*c.sev,0)+(100-s().integrity)/1200+s().fame/1200;if(R()<p)q.push({type:'detect'})}
-    if(elecKinds(S.year).length&&S.age<65)q.push({type:'elec'});
+    addPoll(q);if(elecKinds(S.year).length&&S.age<65)q.push({type:'elec'});
     S.qTotal=q.length;return q}
   const q=[];
   const BIG=big();const pool=EV.filter(e=>!e.core&&!e.tg&&!e.mn&&!e.pm&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<4)&&!(BIG&&JUNIOR.has(e.id)));
@@ -1931,7 +1935,7 @@ function buildQueue(){
     if(R()<p)q.push({type:'detect'});
   }
   if(isPres()&&S.impDone!==S.termEnd&&((s().support<25&&myMaj()===false)||s().support<15||(S.trial&&S.trial.sev>=3))&&R()<.65)q.splice(q.length-1,0,{type:'impeach'});
-  if(elecKinds(S.year).length&&!isPres()&&S.age<65)q.push({type:'elec'});
+  addPoll(q);if(elecKinds(S.year).length&&!isPres()&&S.age<65)q.push({type:'elec'});
   S.qTotal=q.length;
   return q;
 }
@@ -2801,6 +2805,7 @@ function renderQueueItem(st){
     document.getElementById('nx').onclick=()=>{S.cur=null;S.res=null;save();render();scrollStage()};return}
   if(it.type==='ev'){const ev=EV.find(e=>e.id===it.id);if(!ev||(!S.res&&(((ev.mn||ev.id==='mn_work'||ev.id==='mn_reshuffle')&&!S.minister)||((ev.pm||ev.id==='pm_work'||ev.id==='pm_end')&&!S.pm)))||(!ev.core&&ev.c&&!S.res&&(()=>{try{return !ev.c()}catch(e){return true}})())){S.cur=null;renderQueueItem(st);return}renderEvent(st,ev)}
   else if(it.type==='fig')renderFig(st);
+  else if(it.type==='poll')renderPoll(st);
   else if(it.type==='chair')renderChair(st);
   else if(it.type==='leader')renderLeader2(st);
   else if(it.type==='detect')renderDetect(st);
@@ -3023,7 +3028,7 @@ function nomProb(off){
   if(off==='basic'&&S.office==='basic')return .9;
   if(S.party==='np')return .97;
   let th=OFF[off].th;if(off!=='pres'&&curR().fx.nomTh&&leanFor(S.party,false)>=8)th+=curR().fx.nomTh;
-  const sc=s().party*.35+s().fame*.2+s().support*.2+route(off)*.25+(S.office===off?8:0)+(S.ticket?15:0)+(isHard()&&off!=='pres'?8:0)+(off==='pres'?(S.presCamp===S.year?6:S.presCamp===-S.year?1:-12):0)-(rvSame()?(S.rival.power-50)*.15:0)-(S.trial?15:0)-(s().integrity<30?8:0)+(twoParty()&&S.align?(S.align==='main'?6:-6):0)+(S.purge===S.year?-15:0)+(S.gerry===S.year&&off==='nat'?6:0);
+  const sc=s().party*.35+s().fame*.2+s().support*.2+route(off)*.25+(S.office===off?8:0)+(S.ticket?15:0)+(isHard()&&off!=='pres'?8:0)+(off==='pres'?(S.presCamp===S.year?6:S.presCamp===-S.year?1:-12):0)-(rvSame()?(S.rival.power-50)*.15:0)-(S.trial?15:0)-(s().integrity<30?8:0)+(twoParty()&&S.align?(S.align==='main'?6:-6):0)+(S.purge===S.year?-15:0)+(S.gerry===S.year&&off==='nat'?6:0)+(off!=='natp'&&pollLead(off)!=null?clamp(pollLead(off),-15,15)*.3:0);
   return clamp(1/(1+Math.exp(-(sc-th)/6)),.03,.97);
 }
 function lvl(p){return p>.75?'높음':p>.45?'보통':p>.2?'낮음':'매우 낮음'}
@@ -3039,7 +3044,7 @@ function renderElection(st){
       <p class="body">${S.minister?`<b>출마하면 ${minN()}직을 내려놓아야 한다.</b> `:''}${S.pm?'<b>출마하면 국무총리직을 내려놓아야 한다.</b> ':''}${ban?'피선거권이 제한돼 출마할 수 없다.':inOffice()?(termOver?`${cur} 임기가 올해 끝난다. 출마하지 않으면 야인이 된다.`:`현재 ${cur} 임기는 ${S.termEnd}년까지. 다른 선거에 나가면 사퇴해야 한다.`):'어떤 자리에 도전할까?'}</p></div>
       ${ban?'':`<div class="distbox"><span><span class="label">출마 지역</span><br><b>${distName()}</b> <span class="muted">· ${dt.n} · ${member()?leanTxt(leanFor(S.party)):'무소속'}</span></span>${E.moved?'<span class="muted" style="font-size:12px">이번 선거에서 이미 옮김</span>':'<button class="btn" id="mv">지역구 옮기기</button>'}</div>`}
       <div class="choices">${opts.map(o=>{const re=S.office===o,np=member()?nomProb(o):null;
-        return `<button class="choice" data-o="${o}"><span><b>${offName(o)}</b> ${re?'재선 도전':'도전'}${(!re&&inOffice()&&!termOver)?' <span class="muted">(현직 사퇴)</span>':''}</span><small>${o==='natp'?'순번 심사 · 정당 득표로 당선':member()?'공천 '+lvl(np):'무소속 출마'}</small></button>`}).join('')}
+        return `<button class="choice" data-o="${o}"><span><b>${offName(o)}</b> ${re?'재선 도전':'도전'}${(!re&&inOffice()&&!termOver)?' <span class="muted">(현직 사퇴)</span>':''}</span><small>${o==='natp'?'순번 심사 · 정당 득표로 당선':member()?'공천 '+lvl(np):'무소속 출마'}${pollTxt(o)}</small></button>`}).join('')}
       ${ban?'':kinds.flatMap(k=>KIND_OFF[k]).filter(o=>!(curR().jeju&&(o==='basic'||o==='mayor'))&&!opts.includes(o)&&!(o==='pres'&&isPres())&&!(o==='natp'&&!member())).map(o=>`<button class="choice" disabled><span><b>${offName(o)}</b> 출마 불가<br><small class="muted">조건: ${reqTxt(o)}</small></span></button>`).join('')}
       <button class="choice" data-o="skip"><span>${inOffice()&&!termOver?'출마하지 않고 현직 유지':'불출마'}</span></button></div>
 `;
@@ -3184,6 +3189,71 @@ function renderElection(st){
     document.getElementById('nx').onclick=()=>{S.cur=null;S.elec=null;save();render();scrollStage()};
   }
 }
+
+/* ============ 여론조사 ============ */
+// 무작위 요소를 뺀 기대 득표 구도(여론조사·선거 공용)
+function elecBase(off,lv){const o=OFF[off],RR=curR(),dt=DTYPE[curD()[3]];
+  let p=s().support*.45+s().fame*.22+route(off)*.3+(off==='pres'?[-10,-3,2,5]:[-8,0,5,11])[lv]+(S.office===off?5:0);
+  if(off==='pres'){if(S.ruling===S.party&&presAp()<40)p-=(40-presAp())*.35;if(s().integrity<40)p-=4;p-=2.5}
+  if(member()){p+=(S.party==='np'?(S.pop.np-22):(S.pop[S.party]-S.pop[other(S.party)]))*.35*(RR.fx.popMul||1);
+    if(off==='gov')p+=leanFor(S.party,false);else if(off!=='pres')p+=leanFor(S.party);
+    if(off!=='pres'){const j=(presAp()-45)*.25;p+=S.ruling===S.party?j:-j*.6}else if(S.ruling===S.party&&!isPres())p+=(presAp()-45)*.3;else p-=(presAp()-45)*.2}
+  else if(!RR.fx.indOk)p-=off==='basic'?3:8;
+  if(off!=='pres'){p+=s().org*((RR.fx.orgW||0)+(dt.orgW||0));if(dt.clean&&s().integrity<45)p-=5}
+  if(S.trial)p-=5;if(s().integrity<30)p-=4;p+=famElec();if(s().mental<30)p-=3;
+  p+=pollFx(off);
+  let opp=o.base+(off!=='pres'?(RR.fx.opp||0):0)+(RR.jeju?(off==='metro'?-4:off==='gov'?3:0):0);
+  if(rivalIn(off))opp+=(S.rival.power-50)*.18;
+  return {p,opp}}
+// 여론조사가 다시 여론을 움직인다: 밴드왜건(앞서면 더 몰림)·언더독·낙인(뒤지면 조직·후원 이탈)
+function pollFx(off){const f=(S.pollFx||{})[off];return f&&S.year-f.y<=1?f.v:0}
+function addPollFx(off,v){S.pollFx=S.pollFx||{};const f=S.pollFx[off];const cur=f&&S.year-f.y<=1?f.v:0;S.pollFx[off]={y:S.year,v:clamp(cur+v,-6,6)}}
+function pollLead(off){const q=(S.polls||{})[off];return q&&S.year-q.y<=1?q.lead:null}
+// 조사 대상: 1~2년 안에 선거가 있는 '다음 자리'와 현직 재선. 다음 단계 우선, 최대 3곳
+function pollTargets(){const t0=inOffice()?OFF[S.office].tier:0,set=new Set();
+  for(const y of [S.year,S.year+1])for(const k of elecKinds(y))for(const o of KIND_OFF[k]){if(o==='natp'||(curR().jeju&&(o==='basic'||o==='mayor')))continue;if(o==='pres'&&isPres())continue;
+    if(!reqMet(o)&&!(o==='pres'&&s().fame>=50&&presPaths&&(presPaths().council||presPaths().admin)))continue;if(OFF[o].tier<t0)continue;set.add(o)}
+  return [...set].sort((a,b)=>Math.abs(OFF[a].tier-(t0+1))-Math.abs(OFF[b].tier-(t0+1))||OFF[b].tier-OFF[a].tier).slice(0,3)}
+function runPolls(){S.polls=S.polls||{};const out=[];
+  for(const o of pollTargets()){const B=elecBase(o,2),small=['basic','metro','mayor'].includes(o),moe=small?4.4:o==='pres'?2.2:3.1,
+      share=clamp(50+(B.p-B.opp)*.9+gauss()*(small?3.5:2.2)+(R()-.5)*2,6,90),und=Math.round(small?ri(18,28):ri(10,18)),
+      me=Math.round(share*(100-und)/100),op=Math.round((100-share)*(100-und)/100),riv=rivalIn(o)?S.rival.name:null;
+    S.polls[o]={y:S.year,me,op,und,moe,lead:me-op,riv};out.push(o)}
+  return out}
+
+function addPoll(q){if(S.age<65&&S.pollY!==S.year&&pollTargets().length)q.push({type:'poll'})}
+function pollTxt(o){const q=(S.polls||{})[o];if(!q||S.year-q.y>1)return '';return ` · 여론조사 ${q.me}% 대 ${q.op}%${q.y<S.year?'(작년)':''}`}
+function pollVerdict(q){return q.lead>2*q.moe?['오차범위 밖 우세','good']:q.lead>0?['오차범위 안 우세','']:q.lead<-2*q.moe?['오차범위 밖 열세','bad']:['오차범위 안 열세','']}
+function renderPoll(st){
+  if(S.pollY!==S.year){const L=runPolls();S.pollY=S.year;S.pollList=L;D=[];const notes=[];
+    // 조사가 공표되는 순간 여론이 다시 움직인다
+    for(const o of L){const q=S.polls[o];if(q.lead>=10){addPollFx(o,1.5);notes.push(`${offName(o)}: "대세론" 기사가 붙으며 표가 몰리기 시작했다`)}else if(q.lead<=-10){addPollFx(o,-1.5);notes.push(`${offName(o)}: "이미 기운 판" 기사에 지지층이 흔들린다`)}}
+    const best=Math.max(...L.map(o=>S.polls[o].lead)),worst=Math.min(...L.map(o=>S.polls[o].lead));
+    if(best>=10){chg({money:Math.round(120*Math.sqrt(TM())/10)*10});notes.push('앞선다는 숫자에 후원금이 몰렸다')}
+    if(worst<=-10&&best<0){chg({org:-2});notes.push('조직 일부가 다른 캠프 쪽을 기웃거린다')}
+    S.pollNotes=notes;S.pollD=D.slice();save()}
+  const L=(S.pollList||[]).filter(o=>S.polls&&S.polls[o]),Y=o=>{const k=ELEC_OF[o];return elecKinds(S.year).includes(k)?'올해':'내년'};
+  const anyLead=L.some(o=>S.polls[o].lead>0),anyBehind=L.some(o=>S.polls[o].lead<0);
+  st.innerHTML=`${pxTag('여론조사')}<div class="news"><span class="tag blue">여론조사</span><h3>${S.year}년 가상 대결 여론조사</h3>
+    <p class="body">다음 선거를 앞두고 언론사 조사가 나왔다. 조사 결과는 그 자체로 기사가 되고, 기사는 다시 여론을 움직인다. ${L.some(o=>Y(o)==='올해')?'선거일 6일 전부터는 공표가 금지된다. 사실상 마지막 공개 조사다.':''}</p>
+    <div class="polls">${L.map(o=>{const q=S.polls[o],v=pollVerdict(q),np=member()&&o!=='pres'?nomProb(o):null;
+      return `<div class="pollrow"><div class="pollhd"><b>${offName(o)}</b><span class="muted">${Y(o)} 선거${S.office===o?' · 재선':''}</span></div>
+        <div class="pollbar"><i class="me" style="width:${q.me}%">나 ${q.me}%</i><i class="und" style="width:${q.und}%"></i><i class="op" style="width:${q.op}%">${q.op}%</i></div>
+        <div class="pollft"><span class="${v[1]}">${v[0]}</span><span class="muted">상대: ${q.riv?esc(q.riv)+'(라이벌)':'유력 후보'} · 부동층 ${q.und}% · ±${q.moe}%p${np!=null?` · 공천 ${lvl(np)}`:''}</span></div></div>`}).join('')}</div>
+    ${(S.pollNotes||[]).length?`<p class="body" style="font-size:13px;margin-top:8px">📈 ${S.pollNotes.map(esc).join(' · ')}</p>`:''}</div>
+    <div class="choices">
+      <button class="choice" data-pp="wave" ${anyLead?'':'disabled'}><span>"대세론"을 띄운다</span><small>앞선 판에 표를 더 몰아온다 · 캠프가 느슨해질 수 있다</small></button>
+      <button class="choice" data-pp="under" ${anyBehind?'':'disabled'}><span>열세를 인정하고 읍소한다</span><small>동정 여론이 붙거나, "진 선거" 낙인이 붙거나</small></button>
+      <button class="choice" data-pp="calm"><span>숫자에 흔들리지 않고 할 일을 한다</span><small>멘탈 · 청렴도</small></button>
+      <button class="choice dark" data-pp="cherry"><span>유리한 조사만 골라 퍼뜨린다</span><small>모든 판에 순풍 · 왜곡 공표로 걸릴 수 있다</small></button></div>`;
+  paint(anyLead&&!anyBehind?'press|rep,me+,rep|chart,cam':anyBehind&&!anyLead?'office|aide~,me?,aide~|chart':'office|aide,me,aide|chart');
+  st.querySelectorAll('[data-pp]').forEach(b=>b.onclick=()=>{const k=b.dataset.pp;D=(S.pollD||[]).slice();let t='';
+    const byLead=L.slice().sort((a,b)=>S.polls[b].lead-S.polls[a].lead),top=byLead[0],low=byLead[byLead.length-1];
+    if(k==='wave'){addPollFx(top,2);chg({support:2,fame:2});if(R()<.25){chg({org:-3});t=`"${offName(top)} 대세론" 기사가 쏟아졌다. 캠프 사람들이 벌써 자리 이야기를 한다.`}else t=`"${offName(top)} 대세론"이 굳어 간다. 관망하던 표가 움직이기 시작했다.`}
+    else if(k==='under'){if(R()<.5){addPollFx(low,2.5);chg({support:2});t=`"끝까지 뛰겠다"는 영상이 퍼졌다. 동정 여론이 붙었다.`}else{addPollFx(low,-1);chg({mental:-3});t=`"이미 진 선거"라는 프레임이 붙었다. 자원봉사자가 줄었다.`}}
+    else if(k==='calm'){chg({mental:2,integrity:1});t='조사 결과는 캠프 내부 자료로만 썼다. 일정표는 그대로였다.'}
+    else{L.forEach(o=>addPollFx(o,2.5));chg({integrity:-4});if(R()<.3){addCase('여론조사 왜곡 공표',1);t='표본이 작은 조사만 골라 퍼뜨린 사실이 선관위에 걸렸다.'}else t='유리한 숫자만 단톡방과 지역 언론에 돌았다. "상승세" 기사가 났다.'}
+    finish('<b>여론조사 이후</b><br>'+t)})}
 function tallyP(E){
   D=E.d0||[];const v=+clamp(S.pop[S.party]+gauss()*3,8,60).toFixed(1),seats=Math.round(46*v/100),win=E.rank<=seats;
   E.name='비례대표 국회의원';E.party=S.party;E.share=v;E.win=win;E.prop=true;
@@ -3198,17 +3268,11 @@ function tallyP(E){
 function tally(E){
   D=E.d0||[];const off=E.off,o=OFF[off],RR=curR(),dt=DTYPE[curD()[3]];chg({money:-E.cost-(E.dep||0)});
   E.name=offName(off);E.party=S.party;
-  let p=s().support*.45+s().fame*.22+route(off)*.3+(off==='pres'?[-10,-3,2,5]:[-8,0,5,11])[E.lv]+(S.office===off?5:0);
-  if(off==='pres'){p+=(E.pv?E.pv.m:0)+(E.pd||0);if(E.lv===3&&R()<.3)addCase('대선 선거비용 한도 초과',2);if(S.ruling===S.party&&presAp()<40)p-=(40-presAp())*.35;if(s().integrity<40)p-=4;p-=ri(0,5)}
-  if(member()){p+=(S.party==='np'?(S.pop.np-22):(S.pop[S.party]-S.pop[other(S.party)]))*.35*(RR.fx.popMul||1);
-    if(off==='gov')p+=leanFor(S.party,false);else if(off!=='pres')p+=leanFor(S.party);
-    if(off!=='pres'){const j=(presAp()-45)*.25;p+=S.ruling===S.party?j:-j*.6}else if(S.ruling===S.party&&!isPres())p+=(presAp()-45)*.3;else p-=(presAp()-45)*.2}
-  else if(!RR.fx.indOk)p-=off==='basic'?3:8;
-  if(off!=='pres'){p+=s().org*((RR.fx.orgW||0)+(dt.orgW||0));if(dt.clean&&s().integrity<45)p-=5}
+  const B=elecBase(off,E.lv);let p=B.p;
+  if(off==='pres'){p+=(E.pv?E.pv.m:0)+(E.pd||0);if(E.lv===3&&R()<.3)addCase('대선 선거비용 한도 초과',2);p+=2.5-ri(0,5)}
   if(E.far)p-=4;
-  if(S.trial)p-=5;if(s().integrity<30)p-=4;p+=famElec();if(s().mental<30)p-=3;
-  let opp=o.base+(off!=='pres'?(RR.fx.opp||0):0)+(RR.jeju?(off==='metro'?-4:off==='gov'?3:0):0)+gauss()*7;p+=gauss()*5;
-  E.riv=rivalIn(off);if(E.riv){opp+=(S.rival.power-50)*.18;S.rivalRaced=S.year;E.rname=S.rival.name;E.rparty=S.rival.party}
+  let opp=B.opp+gauss()*7;p+=gauss()*5;
+  E.riv=rivalIn(off);if(E.riv){S.rivalRaced=S.year;E.rname=S.rival.name;E.rparty=S.rival.party}
   const share=clamp(50+(p-opp)*.9,3,88);const win=share>50;
   E.share=+share.toFixed(1);E.win=win;
   if(E.riv){const v=S.rival;E.rshare=+(win?clamp(100-share-ri(1,6),1,share-.3):clamp(100-share-ri(0,3),share+.3,97)).toFixed(1);
@@ -3356,78 +3420,127 @@ const SND=(()=>{let ac=null,master=null,on=false,cur=null,timer=null,step=0,next
     tick:t=>tone(1800,t,.02,'square',.03),
     ach:t=>{[84,88,91,96].forEach((m,i)=>tone(hz(m),t+i*.06,.18,'triangle',.1))},
     coin:t=>{tone(hz(83),t,.06,'square',.08);tone(hz(88),t+.06,.18,'square',.08)}};
-  // ── 배경음악: 4성부 8비트 트래커 (리드 펄스·아르페지오·베이스·드럼) ──
-  // 마디당 16칸. 음이름(C5, F#5, Bb4) · '-' 늘임 · '.' 쉼
+  // ── 배경음악: 5성부 트래커 (리드·화음·아르페지오·베이스·드럼) ──
+  // 곡마다 A(8마디)+B(8마디) 16마디. 마디당 16칸. 음이름(C5, F#5, Bb4) · '-' 늘임 · '.' 쉼
+  // 연출: 스테레오 배치, 짧은 잔향, 8마디마다 드럼 필인과 심벌, 곡 전환 시 크로스페이드
   const SONGS={
-    title:{bpm:120,arp:1,ch:'C Am F G C Am F G',bass:'R.R.F.R.R.R.F.R.',dr:'k---h-k-s---h---',mel:[
+    title:{bpm:120,arp:1,fill:'ssss',crash:1,
+      ch:'C Am F G C Am F G',bass:'R.R.F.R.R.R.F.R.',dr:'k---h-k-s---h---',mel:[
       'E5 - G5 - C6 - - - G5 - E5 - G5 - - -','A5 - - - E5 - C5 - E5 - A5 - G5 - - -',
       'F5 - A5 - C6 - A5 - F5 - - - E5 - F5 -','G5 - - - D5 - G5 - B5 - - - . . . .',
       'E5 - G5 - C6 - - - D6 - C6 - B5 - C6 -','A5 - - - C6 - A5 - E5 - - - G5 - A5 -',
-      'F5 - A5 - C6 - F5 - G5 - - - D5 - G5 -','G5 - - - - - - - . . . . G4 . B4 .']},
-    play:{bpm:100,arp:2,ch:'G Em C D G Em Am D',bass:'R...F...R...F.R.',dr:'k---h---s---h-h-',mel:[
+      'F5 - A5 - C6 - F5 - G5 - - - D5 - G5 -','G5 - - - - - - - . . . . G4 . B4 .'],
+      chB:'F G Em Am Dm G C C',bassB:'R.F.O.F.R.F.O.F.',drB:'k-h-s-h-k-k-s-h-',melB:[
+      'A5 - - - C6 - A5 - F5 - - - A5 - C6 -','D6 - - - B5 - G5 - D5 - - - G5 - B5 -',
+      'G5 - - - E5 - G5 - B5 - - - G5 - E5 -','A5 - - - - - E5 - C6 - - - A5 - - -',
+      'F5 - A5 - D6 - - - C6 - A5 - F5 - - -','G5 - - - B5 - - - D6 - - - B5 - G5 -',
+      'C6 - - - G5 - E5 - C5 - - - E5 - G5 -','C6 - - - - - - - . . . . . . . .']},
+    play:{bpm:100,arp:2,fill:'hshs',crash:1,sw:.14,
+      ch:'G Em C D G Em Am D',bass:'R...F...R...F.R.',dr:'k---h---s---h-h-',mel:[
       'D5 - - B4 D5 - G5 - - - F#5 - G5 - - -','E5 - - - B4 - - - E5 - G5 - F#5 - E5 -',
       'E5 - - C5 E5 - G5 - C6 - - - B5 - A5 -','A5 - - - F#5 - - - D5 - - - . . . .',
       'B4 - D5 - G5 - - - A5 - B5 - A5 - G5 -','G5 - - - E5 - - - B4 - - - E5 - F#5 -',
-      'G5 - - - E5 - C5 - A4 - C5 - E5 - G5 -','F#5 - - - A5 - - - D5 - - - . . . .']},
-    tense:{bpm:132,arp:1,ch:'Am Am F E Am Am Dm E',bass:'R.R.R.R.R.R.R.F.',dr:'k-h-k-h-s-h-k-hh',mel:[
+      'G5 - - - E5 - C5 - A4 - C5 - E5 - G5 -','F#5 - - - A5 - - - D5 - - - . . . .'],
+      chB:'C D Bm Em C D G G',bassB:'R...O...F...O.R.',drB:'k---h-k-s---h-h-',melB:[
+      'E5 - - - G5 - - - E5 - D5 - C5 - - -','D5 - - - F#5 - - - A5 - - - F#5 - - -',
+      'F#5 - - - D5 - - - B4 - - - D5 - F#5 -','G5 - - - - - E5 - B4 - - - E5 - - -',
+      'E5 - G5 - C6 - - - B5 - A5 - G5 - - -','A5 - - - F#5 - D5 - E5 - F#5 - A5 - - -',
+      'G5 - - - D5 - - - B4 - - - D5 - - -','G5 - - - - - - - . . . . . . . .']},
+    tense:{bpm:132,arp:1,fill:'ssss',crash:1,
+      ch:'Am Am F E Am Am Dm E',bass:'R.R.R.R.R.R.R.F.',dr:'k-h-k-h-s-h-k-hh',mel:[
       'A4 . A4 . C5 . A4 . E5 - - - D5 . C5 .','B4 . C5 . B4 . A4 . G#4 - - - A4 - - -',
       'F5 . F5 . E5 . D5 . C5 - - - A4 . C5 .','B4 - - - G#4 - - - E4 - - - . . G#4 B4',
       'A4 . A4 . C5 . E5 . A5 - - - G5 . E5 .','F5 . E5 . D5 . C5 . B4 - C5 - D5 - - -',
-      'D5 . F5 . A5 - - - F5 . D5 . F5 . A5 .','G#5 - - - B5 - - - E5 - - - . . . .']},
-    togul:{bpm:76,arp:2,ch:'G Em C D G Em C G',bass:'R-------F-------',dr:'--------h-------',mel:[
+      'D5 . F5 . A5 - - - F5 . D5 . F5 . A5 .','G#5 - - - B5 - - - E5 - - - . . . .'],
+      chB:'Dm Dm Am Am F G E E',bassB:'R.R.F.R.R.R.O.R.',drB:'k-hhk-h-s-hhk-hs',melB:[
+      'D5 . D5 . F5 . D5 . A5 - - - G5 . F5 .','E5 . F5 . E5 . D5 . C#5 - - - D5 - - -',
+      'C5 . C5 . E5 . C5 . A5 - - - G5 . E5 .','F5 . E5 . D5 . C5 . B4 - - - C5 - - -',
+      'A5 . A5 . G5 . F5 . E5 - - - F5 . G5 .','B5 . B5 . A5 . G5 . F5 - - - G5 . A5 .',
+      'B5 - - - G#5 - - - E5 - - - B4 - - -','G#5 . A5 . B5 . D6 . E6 - - - . . . .']},
+    togul:{bpm:76,arp:2,fill:'',crash:0,sw:.1,
+      ch:'G Em C D G Em C G',bass:'R-------F-------',dr:'--------h-------',mel:[
       'D5 - - - B4 - D5 - E5 - - - D5 - - -','B4 - - - G4 - A4 - B4 - - - . . . .',
       'E5 - - - G5 - E5 - D5 - - - B4 - - -','A4 - - - B4 - A4 - D4 - - - . . . .',
       'G4 - A4 - B4 - D5 - E5 - - - G5 - - -','E5 - D5 - B4 - - - D5 - - - . . . .',
-      'E5 - - - D5 - B4 - A4 - - - B4 - A4 -','G4 - - - - - - - . . . . . . . .']},
-    pres:{bpm:88,arp:2,ch:'F C Dm Bb F C Bb C',bass:'R-------F---O---',dr:'k---h---s---h---',mel:[
+      'E5 - - - D5 - B4 - A4 - - - B4 - A4 -','G4 - - - - - - - . . . . . . . .'],
+      chB:'C G Am D C G D G',bassB:'R-------F---O---',drB:'----h---k---h---',melB:[
+      'E5 - - - G5 - - - A5 - G5 - E5 - - -','D5 - - - B4 - - - D5 - - - . . . .',
+      'C5 - - - E5 - D5 - C5 - A4 - - - - -','D5 - - - E5 - - - A4 - - - . . . .',
+      'G5 - - - E5 - - - D5 - E5 - G5 - - -','D5 - - - B4 - A4 - G4 - - - B4 - - -',
+      'A4 - - - B4 - D5 - E5 - D5 - B4 - A4 -','G4 - - - - - - - . . . . . . . .']},
+    pres:{bpm:88,arp:2,fill:'s-s-',crash:1,
+      ch:'F C Dm Bb F C Bb C',bass:'R-------F---O---',dr:'k---h---s---h---',mel:[
       'C5 - - - F5 - - - A5 - - G5 F5 - - -','E5 - - - G5 - - - C6 - - - - - - -',
       'A5 - - - D5 - - - F5 - - E5 D5 - - -','D5 - - - F5 - - - Bb5 - - - A5 - G5 -',
       'A5 - - - C6 - - - F5 - - - A5 - - -','G5 - - - E5 - - - C5 - - - E5 - G5 -',
-      'F5 - - - D5 - - - Bb4 - - - D5 - F5 -','E5 - - - G5 - - - C6 - - - . . . .']}};
+      'F5 - - - D5 - - - Bb4 - - - D5 - F5 -','E5 - - - G5 - - - C6 - - - . . . .'],
+      chB:'Bb C Am Dm Gm C F F',bassB:'R---F---O---F---',drB:'k---h---s---h-h-',melB:[
+      'D6 - - - C6 - Bb5 - F5 - - - Bb5 - D6 -','C6 - - - - - G5 - E5 - - - G5 - C6 -',
+      'C6 - - - A5 - - - E5 - - - A5 - - -','D6 - - - C6 - A5 - F5 - - - A5 - - -',
+      'Bb5 - - - G5 - - - D5 - - - G5 - Bb5 -','C6 - - - Bb5 - A5 - G5 - - - E5 - - -',
+      'F5 - - - A5 - - - C6 - - - A5 - - -','F5 - - - - - - - . . . . . . . .']}};
   const PC={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
   const nm=s=>{const r=/^([A-G])([#b]?)(\d)$/.exec(s);return r?12*(+r[3]+1)+PC[r[1]]+(r[2]==='#'?1:r[2]==='b'?-1:0):0};
   function lenAt(tk,i){let n=1;while(i+n<tk.length&&tk[i+n]==='-')n++;return n}
-  function prep(S){if(S._p)return S._p;const mel=[],bass=[],arp=[],dr=[],chs=S.ch.split(' ');
-    S.mel.forEach((bar,bi)=>{const tk=bar.trim().split(/\s+/),c=/^([A-G][#b]?)(m?)$/.exec(chs[bi]),root=nm(c[1]+'2'),tones=[0,c[2]?3:4,7,12];
-      const bt=S.bass.split('');
-      for(let s=0;s<16;s++){mel.push(tk[s]&&tk[s]!=='-'&&tk[s]!=='.'?[nm(tk[s]),lenAt(tk,s)]:null);
+  // 리드 음 아래쪽 화음(3도·6도): 해당 마디 코드 구성음 중 리드보다 3~9반음 아래 가장 높은 음
+  function harmOf(m,pcs){for(let h=m-3;h>=m-9;h--)if(pcs.includes(((h%12)+12)%12))return h;return 0}
+  function prep(S){if(S._p)return S._p;const mel=[],bass=[],arp=[],dr=[],har=[];
+    const half=(chs,bars,bp,dp,last)=>{chs=chs.split(' ');bars.forEach((bar,bi)=>{const tk=bar.trim().split(/\s+/),c=/^([A-G][#b]?)(m?)$/.exec(chs[bi]),root=nm(c[1]+'2'),tones=[0,c[2]?3:4,7,12],pcs=tones.slice(0,3).map(t=>(root+t)%12);
+      const bt=bp.split('');let d=dp.split('');if(bi===7&&S.fill)d=d.slice(0,12).concat(S.fill.split(''));
+      for(let s=0;s<16;s++){const mm=tk[s]&&tk[s]!=='-'&&tk[s]!=='.'?[nm(tk[s]),lenAt(tk,s)]:null;mel.push(mm);
+        har.push(mm&&mm[1]>=3?[harmOf(mm[0],pcs),mm[1]]:null);
         const b=bt[s];bass.push(b==='R'||b==='F'||b==='O'?[root+(b==='F'?7:b==='O'?12:0),lenAt(bt,s)]:null);
-        arp.push((S.arp===1||(S.arp===2&&s%2===0))?root+24+tones[(S.arp===1?s:s/2)%4]:null);dr.push(S.dr[s])}});
-    return S._p={mel,bass,arp,dr,n:mel.length}}
-  let mbus=null,lbus=null,dly=null,waves={},nbuf=null;
+        arp.push((S.arp===1||(S.arp===2&&s%2===0))?root+24+tones[(S.arp===1?s:s/2)%4]:null);
+        dr.push(s===0&&bi===0&&S.crash?'c'+(d[s]||'-'):d[s])}})};
+    half(S.ch,S.mel,S.bass,S.dr);half(S.chB||S.ch,S.melB||S.mel,S.bassB||S.bass,S.drB||S.dr);
+    return S._p={mel,bass,arp,dr,har,n:mel.length}}
+  let mbus=null,fade=null,lbus=null,hbus=null,abus=null,dly=null,waves={},nbuf=null;const MG=1.3;
+  function pan(v){if(ac.createStereoPanner){const p=ac.createStereoPanner();p.pan.value=v;return p}return ac.createGain()}
   function music(){if(mbus&&mbus.context===ac)return;waves={};
     const pw=d=>{const N=24,re=new Float32Array(N),im=new Float32Array(N);for(let n=1;n<N;n++)re[n]=2/(n*Math.PI)*Math.sin(n*Math.PI*d);return ac.createPeriodicWave(re,im)};
-    waves.p25=pw(.25);waves.p12=pw(.125);
+    waves.p25=pw(.25);waves.p12=pw(.125);waves.p50=pw(.5);
     nbuf=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);const a=nbuf.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1;
     const comp=ac.createDynamicsCompressor();comp.threshold.value=-18;comp.ratio.value=4;comp.attack.value=.004;comp.release.value=.15;
-    mbus=ac.createGain();mbus.gain.value=1.3;mbus.connect(comp);comp.connect(master);
-    lbus=ac.createGain();lbus.connect(mbus);dly=ac.createDelay(1);const fb=ac.createGain(),wet=ac.createGain();fb.gain.value=.28;wet.gain.value=.2;
-    lbus.connect(dly);dly.connect(fb);fb.connect(dly);dly.connect(wet);wet.connect(mbus)}
+    fade=ac.createGain();fade.gain.value=1;fade.connect(comp);comp.connect(master);
+    mbus=ac.createGain();mbus.gain.value=MG;mbus.connect(fade);
+    // 짧은 방 잔향
+    try{const L=Math.round(ac.sampleRate*1.3),ir=ac.createBuffer(2,L,ac.sampleRate);for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<L;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/L,3.2)}
+      const cv=ac.createConvolver();cv.buffer=ir;const rg=ac.createGain();rg.gain.value=.16;mbus.connect(cv);cv.connect(rg);rg.connect(fade)}catch(e){}
+    const lp=pan(-.18);lp.connect(mbus);lbus=ac.createGain();lbus.connect(lp);
+    dly=ac.createDelay(1);const fb=ac.createGain(),wet=ac.createGain(),dp=pan(.35);fb.gain.value=.26;wet.gain.value=.18;
+    lbus.connect(dly);dly.connect(fb);fb.connect(dly);dly.connect(wet);wet.connect(dp);dp.connect(mbus);
+    const hp=pan(.32);hp.connect(mbus);hbus=ac.createGain();hbus.connect(hp);
+    const ap=pan(.12);ap.connect(mbus);abus=ac.createGain();abus.connect(ap)}
   function env(g,t,d,v,a=.005,sus=.7){g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+a);g.gain.setTargetAtTime(v*sus,t+a,.06);
     const r=Math.max(t+a+.01,t+d-.03);g.gain.setValueAtTime(v*sus,r);g.gain.linearRampToValueAtTime(0,r+.04)}
   function osc(wave,f,t,d,v,out,a,sus){const o=ac.createOscillator(),g=ac.createGain();if(waves[wave])o.setPeriodicWave(waves[wave]);else o.type=wave;
     o.frequency.setValueAtTime(f,t);env(g,t,d,v,a,sus);o.connect(g);g.connect(out);o.start(t);o.stop(t+d+.08);return o}
-  function vLead(m,t,d){const f=hz(m),o=osc('p25',f,t,d,.075,lbus,.006,.75);
+  function vLead(m,t,d,acc){const f=hz(m),o=osc('p25',f,t,d,.07*acc,lbus,.006,.75);
     if(d>.28){const l=ac.createOscillator(),lg=ac.createGain();l.frequency.value=5.6;lg.gain.setValueAtTime(0,t);lg.gain.setValueAtTime(0,t+.16);lg.gain.linearRampToValueAtTime(f*.007,t+.34);
       l.connect(lg);lg.connect(o.frequency);l.start(t);l.stop(t+d+.08)}}
-  function vArp(m,t,d){osc('p12',hz(m),t,Math.min(d,.09),.022,mbus,.002,.4)}
+  function vHarm(m,t,d){if(m)osc('p50',hz(m),t,d*.95,.022,hbus,.02,.8)}
+  function vArp(m,t,d){osc('p12',hz(m),t,Math.min(d,.09),.02,abus,.002,.4)}
   function vBass(m,t,d){osc('triangle',hz(m),t,d*.92,.2,mbus,.004,.85)}
   function nz(t,d,v,type,fq,q=.7){const n=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();n.buffer=nbuf;f.type=type;f.frequency.value=fq;f.Q.value=q;
-    g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0005,t+d);n.connect(f);f.connect(g);g.connect(mbus);n.start(t,Math.random()*.8,d+.02)}
-  function vDrum(k,t){if(k==='k'){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(42,t+.12);
+    g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0005,t+d);n.connect(f);f.connect(g);g.connect(mbus);n.start(t,Math.random()*.6,d+.02)}
+  function vDrum(k,t){for(const ch of k){if(ch==='k'){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(42,t+.12);
       g.gain.setValueAtTime(.55,t);g.gain.exponentialRampToValueAtTime(.001,t+.18);o.connect(g);g.connect(mbus);o.start(t);o.stop(t+.2)}
-    else if(k==='s'){nz(t,.13,.22,'bandpass',1900,.8);osc('triangle',190,t,.07,.09,mbus,.001,.3)}
-    else if(k==='h')nz(t,.035,.06,'highpass',7500)}
+    else if(ch==='s'){nz(t,.13,.22,'bandpass',1900,.8);osc('triangle',190,t,.07,.09,mbus,.001,.3)}
+    else if(ch==='h')nz(t,.035,.06,'highpass',7500);
+    else if(ch==='c')nz(t,.9,.09,'highpass',5200,.5)}}
   function schedTo(tEnd){const S=SONGS[cur],P=prep(S),sx=60/S.bpm/4;dly.delayTime.setValueAtTime(sx*3,ac.currentTime);
-    while(nextT<tEnd){const i=step%P.n,t=nextT;
-      const m=P.mel[i];if(m)vLead(m[0],t,m[1]*sx);const b=P.bass[i];if(b)vBass(b[0],t,b[1]*sx);
+    while(nextT<tEnd){const i=step%P.n,s16=i%16,t=nextT+(S.sw&&s16%2===1?sx*S.sw:0),acc=s16===0?1.12:s16%4===0?1:.9;
+      const m=P.mel[i];if(m)vLead(m[0],t,m[1]*sx,acc);const h=P.har[i];if(h)vHarm(h[0],t,h[1]*sx);const b=P.bass[i];if(b)vBass(b[0],t,b[1]*sx);
       if(P.arp[i])vArp(P.arp[i],t,sx);if(P.dr[i]&&P.dr[i]!=='-')vDrum(P.dr[i],t);nextT+=sx;step++}}
   function sched(){if(!ac||!cur)return;music();schedTo(ac.currentTime+.3)}
   // 미리듣기 렌더(테스트용): OfflineAudioContext로 곡을 WAV 버퍼로
   async function _render(name,secs){const O=window.OfflineAudioContext||window.webkitOfflineAudioContext,sv=[ac,master,cur,step,nextT,mbus];
     ac=new O(2,44100*secs,44100);master=ac.createGain();master.gain.value=.5;master.connect(ac.destination);mbus=null;music();cur=name;step=0;nextT=.05;schedTo(secs-.1);
-    const buf=await ac.startRendering();[ac,master,cur,step,nextT,mbus]=sv;if(ac)music();return buf}
-  function bgm(name){if(!on){cur=null;return}if(cur===name)return;if(!ctx())return;cur=name;step=0;nextT=ac.currentTime+.05;if(!timer)timer=setInterval(sched,90)}
+    const buf=await ac.startRendering();[ac,master,cur,step,nextT,mbus]=sv;mbus=null;if(ac)music();return buf}
+  function bgm(name){if(!on){cur=null;return}if(cur===name)return;if(!ctx())return;music();const t=ac.currentTime;
+    if(cur&&fade){fade.gain.cancelScheduledValues(t);fade.gain.setValueAtTime(fade.gain.value,t);fade.gain.linearRampToValueAtTime(.0001,t+.35);fade.gain.setValueAtTime(.0001,t+.45);fade.gain.linearRampToValueAtTime(1,t+.9);nextT=t+.45}
+    else{if(fade){fade.gain.cancelScheduledValues(t);fade.gain.setValueAtTime(1,t)}nextT=t+.05}
+    cur=name;step=0;if(!timer)timer=setInterval(sched,90)}
   function fx(n){if(!on||!FX[n])return;if(!ctx())return;try{FX[n](ac.currentTime+.01)}catch(e){}}
   function set(v){on=v;try{localStorage.setItem('pol-snd',v?'1':'0')}catch(e){}if(!v){cur=null;if(timer){clearInterval(timer);timer=null}}else{ctx();const c=cur;cur=null;bgm(c||pickBgm())}btn()}
   function btn(){let b=document.getElementById('sndb');if(!b){b=document.createElement('button');b.id='sndb';b.className='sndb';b.onclick=()=>set(!on);document.body.appendChild(b)}b.textContent=on?'🔊':'🔇';b.setAttribute('aria-label',on?'소리 끄기':'소리 켜기');b.setAttribute('aria-pressed',on)}
