@@ -37,6 +37,8 @@ function mergeAch(a, b) {
   const out = { ach: { ...(b.ach || {}) }, ends: { ...(b.ends || {}) }, runs: Math.max(a.runs || 0, b.runs || 0) };
   for (const [k, v] of Object.entries(a.ach || {})) out.ach[k] = out.ach[k] ? Math.min(out.ach[k], v) : v;
   for (const [k, v] of Object.entries(a.ends || {})) out.ends[k] = Math.max(out.ends[k] || 0, v);
+  out.bgs = { ...(b.bgs || {}), ...(a.bgs || {}) };
+  out.dex = { ...(b.dex || {}), ...(a.dex || {}) };
   return out;
 }
 function mergeHof(a, b) {
