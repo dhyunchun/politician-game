@@ -56,4 +56,4 @@ for(let g=0;g<N;g++){console.error("G",g,Math.round(process.memoryUsage().heapUs
   else errs.push('not ended steps='+steps);
   w.close();
 }
-require('fs').writeFileSync(process.env.SEENOUT||'seen.json',JSON.stringify(global.SEEN||{}));console.log(STRAT,'ends',res);console.log(JSON.stringify(KW),'prespoor',typeof PRESPOOR==='undefined'?0:PRESPOOR);console.log('best',bestC);console.log('rival',JSON.stringify(RIV));console.log('avg years',(yearsTot/N).toFixed(1),'trials',trials,'paints',paints);console.log('BG',JSON.stringify(BGR));console.log('PT',JSON.stringify(PTR));console.log('errs',[...new Set(errs)].slice(0,8),errs.length);
+if(process.env.SEENOUT)require('fs').writeFileSync(process.env.SEENOUT,JSON.stringify(global.SEEN||{}));console.log(STRAT,'ends',res);console.log(JSON.stringify(KW),'prespoor',typeof PRESPOOR==='undefined'?0:PRESPOOR);console.log('best',bestC);console.log('rival',JSON.stringify(RIV));console.log('avg years',(yearsTot/N).toFixed(1),'trials',trials,'paints',paints);console.log('BG',JSON.stringify(BGR));console.log('PT',JSON.stringify(PTR));console.log('errs',[...new Set(errs)].slice(0,8),errs.length);
