@@ -5,16 +5,18 @@ const kAt=(sc,fy)=>HD.KF*(fy-sc.hz)/(HD.FY-sc.hz);
 const pxm=(sc,fy)=>kAt(sc,fy)*84/1.7;// 그 깊이에서 1m가 몇 픽셀인지
 
 /* ── 앨리어싱 없는 도트 그리기 도구 ── */
-function PX2(ctx){
-  const R=(x,y,w,h,c)=>{if(w<=0||h<=0)return;ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))};
-  const poly=(pts,c)=>{let y0=1e9,y1=-1e9;for(const p of pts){y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1])}ctx.fillStyle=c;
+let ZZ=1;// 배경 좌표(1024 기준) → 실제 캔버스 배율. 512 격자면 0.5
+function PX2(ctx){const Z=ZZ;
+  const rawR=(x,y,w,h,c)=>{if(w<=0||h<=0)return;ctx.fillStyle=c;ctx.fillRect(x,y,w,h)};
+  const sc=(x,y,w,h)=>{const X=Math.round(x*Z),Y=Math.round(y*Z);return[X,Y,Math.max(1,Math.round((x+w)*Z)-X),Math.max(1,Math.round((y+h)*Z)-Y)]};
+  const R=(x,y,w,h,c)=>{if(w<=0||h<=0)return;rawR(...sc(x,y,w,h),c)};
+  const poly=(pts,c)=>{pts=pts.map(([x,y])=>[x*Z,y*Z]);let y0=1e9,y1=-1e9;for(const p of pts){y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1])}ctx.fillStyle=c;
     for(let y=Math.floor(y0);y<=Math.ceil(y1);y++){const yc=y+.5,xs=[];for(let i=0,j=pts.length-1;i<pts.length;j=i++){const[xi,yi]=pts[i],[xj,yj]=pts[j];if((yi>yc)!==(yj>yc))xs.push(xi+(yc-yi)/(yj-yi)*(xj-xi))}
       xs.sort((a,b)=>a-b);for(let k=0;k+1<xs.length;k+=2){const a=Math.round(xs[k]),b=Math.round(xs[k+1]);if(b>a)ctx.fillRect(a,y,b-a,1)}}};
-  const ell=(cx,cy,rx,ry,c)=>{ctx.fillStyle=c;for(let y=Math.floor(cy-ry);y<=Math.ceil(cy+ry);y++){const t=(y+.5-cy)/ry;if(Math.abs(t)>1)continue;const w=rx*Math.sqrt(1-t*t);const a=Math.round(cx-w),b=Math.round(cx+w);if(b>a)ctx.fillRect(a,y,b-a,1)}};
-  // 테두리 있는 상자: 윗면 밝게, 아래 어둡게
-  const box=(x,y,w,h,c,o={})=>{x=Math.round(x);y=Math.round(y);w=Math.round(w);h=Math.round(h);const e=o.e||shade(c,.32);R(x,y,w,h,e);R(x+1,y+1,w-2,h-2,c);if(!o.flat){R(x+1,y+1,w-2,Math.max(1,Math.round(h*.06)),shade(c,1.18));R(x+1,y+h-1-Math.max(1,Math.round(h*.08)),w-2,Math.max(1,Math.round(h*.08)),shade(c,.82))}};
-  const dith=(x,y,w,h,c,step=2)=>{ctx.fillStyle=c;for(let j=0;j<h;j++)for(let i=(j%2)*1;i<w;i+=step)ctx.fillRect(x+i,y+j,1,1)};
-  return{R,poly,ell,box,dith}}
+  const ell=(cx,cy,rx,ry,c)=>{cx*=Z;cy*=Z;rx=Math.max(.6,rx*Z);ry=Math.max(.6,ry*Z);ctx.fillStyle=c;for(let y=Math.floor(cy-ry);y<=Math.ceil(cy+ry);y++){const t=(y+.5-cy)/ry;if(Math.abs(t)>1)continue;const w=rx*Math.sqrt(1-t*t);const a=Math.round(cx-w),b=Math.round(cx+w);if(b>a)ctx.fillRect(a,y,b-a,1)}};
+  // 테두리 있는 상자: 테두리 1픽셀, 윗면 밝게, 아래 어둡게
+  const box=(x,y,w,h,c,o={})=>{const[X,Y,W,H]=sc(x,y,w,h);const e=o.e||shade(c,.32);rawR(X,Y,W,H,e);rawR(X+1,Y+1,W-2,H-2,c);if(!o.flat&&H>4){const t=Math.max(1,Math.round(H*.06)),b=Math.max(1,Math.round(H*.08));rawR(X+1,Y+1,W-2,t,shade(c,1.18));rawR(X+1,Y+H-1-b,W-2,b,shade(c,.82))}};
+  return{R,poly,ell,box}}
 
 /* ── 소품(실제 크기, m 단위 → 깊이별 픽셀) ── */
 function hdCar(ctx,x,base,m,col,toRight){// 승용차 길이 4.5m, 높이 1.45m. x는 차 왼쪽 끝
@@ -101,11 +103,11 @@ const BGHD={
 };
 
 /* 장면: ppl = [[종류, 자세, x, 발 y, 왼쪽 보기, 표정/외모]] */
-function sceneHD(cv,bg,ppl,more){const ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=false;const sc=BGHD[bg];sc.draw(ctx);
+function sceneHD(cv,bg,ppl,more){ZZ=cv.width/1024;const ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=false;const sc=BGHD[bg];sc.draw(ctx);
   const items=[];(sc.props?sc.props(sc):[]).forEach(([fy,fn])=>items.push({fy,fn}));
   const add=([k,pose,x,fy,flip,o],extra)=>items.push({fy,fn:c=>{const K=kAt(sc,fy);const col=Object.assign({},whoCol(k),(o&&o.look)||{});if(o&&o.face)col.face=o.face;
     if(o&&(o.st||o.h)){col.st=o.st||col.st;col.h=o.h||col.h}
     const T=PX2(c),rx=13*K,ry=2.2*K,ly=o&&o.lift?o.lift*pxm(sc,fy):0;const sx=x+((HPOSE[pose]||{}).d==='s'?(flip?-2:2)*K:0);if(!ly)T.ell(sx,fy+1.6*K,rx,ry,'rgba(30,20,20,.22)');
-    personH(c,x,fy-ly,K,col,pose,!!flip)}});
+    personH(c,x*ZZ,(fy-ly)*ZZ,K*ZZ,col,pose,!!flip)}});
   (more||[]).forEach(([fy,fn])=>items.push({fy,fn:c=>fn(c,sc)}));(sc.extras||[]).forEach(e=>add(e,1));ppl.forEach(p=>add(p));
   items.sort((a,b)=>a.fy-b.fy).forEach(it=>it.fn(ctx))}

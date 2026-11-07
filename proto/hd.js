@@ -14,10 +14,10 @@ function HDR(K,flip){
   const tone=(fr,o)=>{if(o.flat)return o.f||1;if(flip)fr=1-fr;for(const[l,m]of(o.tones||TT))if(fr<=l)return m*(o.f||1);return 1};
   const api={K,
     part(){L++;NL=0},feat(){L++;NL=1},
-    cap(ax,ay,bx,by,ra,rb,c,o={}){const dx=bx-ax,dy=by-ay,len=Math.hypot(dx,dy)||.001,ux=dx/len,uy=dy/len,R=Math.max(ra,rb);
+    cap(ax,ay,bx,by,ra,rb,c,o={}){if(o.flat){ra=Math.max(ra,.55/K);rb=Math.max(rb,.55/K)}const dx=bx-ax,dy=by-ay,len=Math.hypot(dx,dy)||.001,ux=dx/len,uy=dy/len,R=Math.max(ra,rb);
       each(Math.min(ax,bx)-R,Math.min(ay,by)-R,Math.max(ax,bx)+R,Math.max(ay,by)+R,(x,y)=>{const vx=x-ax,vy=y-ay;let al=vx*ux+vy*uy;al=Math.max(0,Math.min(len,al));const qx=vx-ux*al,qy=vy-uy*al,d=Math.hypot(qx,qy),r=ra+(rb-ra)*al/len;if(d>r)return null;
         return shade(c,band(d<.05?0:lit(qx/d,qy/d)*Math.min(1,d/r*1.3),o))})},
-    ell(cx,cy,rx,ry,c,o={}){each(cx-rx,cy-ry,cx+rx,cy+ry,(x,y)=>{const nx=(x-cx)/rx,ny=(y-cy)/ry,d=nx*nx+ny*ny;if(d>1)return null;if(o.clip&&!o.clip(x,y))return null;return shade(c,band(lit(nx,ny)*Math.min(1,Math.sqrt(d)*1.2),o))})},
+    ell(cx,cy,rx,ry,c,o={}){rx=Math.max(rx,.55/K);ry=Math.max(ry,.55/K);each(cx-rx,cy-ry,cx+rx,cy+ry,(x,y)=>{const nx=(x-cx)/rx,ny=(y-cy)/ry,d=nx*nx+ny*ny;if(d>1)return null;if(o.clip&&!o.clip(x,y))return null;return shade(c,band(lit(nx,ny)*Math.min(1,Math.sqrt(d)*1.2),o))})},
     poly(pts,c,o={}){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const[x,y]of pts){x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)}
       each(x0,y0,x1,y1,(x,y)=>{let ins=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const[xi,yi]=pts[i],[xj,yj]=pts[j];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)ins=!ins}
         if(!ins)return null;if(o.clip&&!o.clip(x,y))return null;return shade(c,tone((x-x0)/(x1-x0||1),o))})},
