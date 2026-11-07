@@ -87,7 +87,7 @@ const BGHD={
     R(0,420,1024,220,'#c08a58');for(let k=0,y=420;y<640;k++,y+=8+k*2.2){R(0,Math.round(y),1024,1,'#a87444')}for(let i=-12;i<=12;i++){const x0=512+i*60,x1=512+i*150;T.poly([[x0,420],[x0+1,420],[x1+1,640],[x1,640]],'#b07a4a')}
     R(0,420,1024,3,'#7a4e2c')},
     props(sc){return[[470,ctx=>{hdChair(ctx,820,452,pxm(sc,452));hdDesk(ctx,820,470,pxm(sc,470),{monitor:1,files:1})}],[440,ctx=>hdPlant(ctx,236,440,pxm(sc,440))]]},
-    extras:[['aide','paper',900,452,1]]},
+    extras:[['aide','paper',982,462,1]]},
   court:{hz:200,draw(ctx){const T=PX2(ctx),{R,box}=T;
     R(0,0,1024,440,'#7a4e2c');for(let x=0;x<1024;x+=128){box(x+8,16,112,180,'#8a5a33');box(x+8,206,112,214,'#8a5a33');R(x+20,28,88,156,'#7a4e2c');R(x+20,218,88,190,'#7a4e2c')}
     R(508,30,8,74,'#c8a050');R(436,50,152,6,'#c8a050');T.ell(512,30,9,9,'#e8c060');for(const x of[444,580]){R(x-1,56,2,26,'#c8a050');T.ell(x,86,28,7,'#c8a050');R(x-28,82,56,4,'#e8c060')}R(484,100,56,8,'#c8a050');
@@ -99,7 +99,7 @@ const BGHD={
         T.box(496,top+34,32,32,'#c8a050');T.R(502,top+40,20,20,'#e8c060');
         const gy=top-.2*m*.5;T.box(612,gy-.05*m,.26*m,.05*m,'#5a3a20');T.box(618,gy-.15*m,.16*m,.1*m,'#7a5230');T.box(626,gy-.34*m,.04*m,.2*m,'#6b4426')}],
       [530,ctx=>{const mm=pxm(sc,530);hdDesk(ctx,150,530,mm,{files:1});hdDesk(ctx,874,530,mm,{files:1})}]]},
-    extras:[['judge','judge',512,452,0,{lift:.45}],['rep','paper',150,512,0],['aide','paper',876,512,1]]},
+    extras:[['judge','judge',512,452,0,{lift:.45}],['rep','idleQ',150,512,0],['aide','talkQ',876,512,1]]},
 };
 
 /* 장면: ppl = [[종류, 자세, x, 발 y, 왼쪽 보기, 표정/외모]] */

@@ -61,6 +61,7 @@ const HPOSE={
   give:   {d:'q',A:[[-1,12],[0,25]],B:[[5,10],[13,10]],hB:'env',lA:[[0,18],[-2,36]],lB:[[2,18],[5,36]],lean:3,face:'smile'},
   camera: {d:'q',A:[[5,9],[8,-3]],B:[[6,8],[11,-4]],aFront:2,hB:'cam',lA:[[-1,18],[-3,36]],lB:[[3,18],[6,36]]},
   sign:   {d:'f',A:[[-5,4],[-3,-10]],B:[[5,4],[3,-10]],aFront:1,hA:'fist',hB:'sign',lA:[[-1,18],[-2,36]],lB:[[1,18],[2,36]],face:'talk'},
+  cheerQ: {d:'q',A:[[-1,12],[0,25]],B:[[5,-6],[7,-18]],hB:'fist',lA:[[0,18],[-2,36]],lB:[[2,18],[4,36]],face:'talk'},
   clap:   {d:'q',A:[[3,10],[10,6]],B:[[5,9],[11,5]],aFront:2,hA:'open',hB:'open',lA:[[0,18],[-1,36]],lB:[[2,18],[3,36]],face:'smile'},
   judge:  {d:'f',A:[[-3,11],[2,20]],B:[[3,11],[-2,20]],aFront:1,lA:[[-1,18],[-1,36]],lB:[[1,18],[1,36]]},
 };
@@ -160,7 +161,7 @@ function backHairH(G,c,d,dx,dy,st,h){const{ell,poly}=G,cx=18+dx+(d==='q'?-1:d===
 
 function headH(G,c,d,dx,dy,st,face,talk,FEM,pf){const{part,feat,ell,poly,line,cap,rect}=G;
   const X=x=>x+dx,Y=y=>y+dy,s=c.s||'#f1c7a0',S2=shade(s,.86),S3=shade(s,.72),h=c.h||'#2b2421',hd=shade(h,.6),H=shade(h,1.75),INK='#1e1616',IR=FEM?'#5a3a2a':'#3a2a22',EW=c.gl?'#e8f2f8':'#ffffff',lp=FEM?'#c4545c':shade(s,.6);
-  const P=pts=>pts.map(([x,y])=>[X(x),Y(y)]);const FT=[[.14,1.04],[.84,1],[1,.86]];
+  const P=pts=>pts.map(([x,y])=>[X(x),Y(y)]);const BALD=st==='bald';const skull=(pts,cx)=>{if(!BALD)return pts;const arc=[];for(let a=192;a<=348;a+=12){const r=a*Math.PI/180;arc.push([cx+6*Math.cos(r),-9.5+5.7*Math.sin(r)])}return arc.concat(pts.slice(2))};const FT=[[.14,1.04],[.84,1],[1,.86]];
   // 눈 하나: 중심(ex,ey), 반폭 w(측면이면 좁게), 바깥쪽 방향 side(-1 왼쪽 눈, +1 오른쪽 눈)
   const eye=(ex,ey,w,side,look=0)=>{ex=X(ex);ey=Y(ey);
     if(face==='smile'||face==='grin'){cap(ex-w,ey+.1,ex,ey-.7,.36,.36,INK,{flat:1});cap(ex,ey-.7,ex+w,ey+.1,.36,.36,INK,{flat:1});return}
@@ -181,7 +182,7 @@ function headH(G,c,d,dx,dy,st,face,talk,FEM,pf){const{part,feat,ell,poly,line,ca
   const glasses=(xs,ws,ey)=>{if(!c.gl)return;const F='#4c5158';for(let i=0;i<xs.length;i++){const ex=X(xs[i]),w=ws[i],y0=Y(ey)-1.1,y1=Y(ey)+1.2;line(ex-w-.4,y0,ex+w+.4,y0,.34,F);line(ex-w-.3,y0,ex-w-.1,y1-.2,.2,shade(s,.7));line(ex+w+.3,y0,ex+w+.1,y1-.2,.2,shade(s,.7));line(ex-w,y1,ex+w,y1,.2,'#aab0b8')}};
   if(d==='f'){
     part();if(!(st==='long'||st==='bob')){ell(X(12.6),Y(-6),1.2,1.9,S2);ell(X(23.4),Y(-6),1.2,1.9,S2)}
-    part();poly(P([[13,-12.6],[23,-12.6],[23.4,-6],[22.8,-3],[21,-.8],[18,.3],[15,-.8],[13.2,-3],[12.6,-6]]),s,{tones:FT});
+    part();poly(P(skull([[13,-12.6],[23,-12.6],[23.4,-6],[22.8,-3],[21,-.8],[18,.3],[15,-.8],[13.2,-3],[12.6,-6]],18)),s,{tones:FT});
     feat();line(X(14.2),Y(-2.2),X(15.4),Y(-1.2),.3,S2);line(X(21.8),Y(-2.2),X(20.6),Y(-1.2),.3,S2);
     brow(15.4,-8.9,1.6,-1);brow(20.6,-8.9,1.6,1);eye(15.4,-6.3,1.45,-1);eye(20.6,-6.3,1.45,1);
     line(X(18.5),Y(-5.6),X(18.6),Y(-3.6),.32,S2);ell(X(18.1),Y(-3.2),.9,.34,S3,{flat:1});
@@ -190,21 +191,21 @@ function headH(G,c,d,dx,dy,st,face,talk,FEM,pf){const{part,feat,ell,poly,line,ca
     if(c.gl){line(X(17.3),Y(-7.3),X(18.7),Y(-7.3),.26,'#4c5158')}
     part();hairH(G,X,Y,P,st,h,hd,H,FEM,'f',s)}
   else if(d==='q'){
-    part();poly(P([[13.4,-12.6],[22.4,-12.8],[23.2,-9],[23.4,-6.4],[24.4,-4.4],[23.2,-3.6],[22.8,-2],[21.2,-.4],[19,.3],[16,-1],[14,-3.4],[12.9,-7]]),s,{tones:FT});
+    part();poly(P(skull([[13.4,-12.6],[22.4,-12.8],[23.1,-9],[23.3,-6.4],[23.8,-4.8],[23.6,-3.9],[23,-3.3],[22.7,-2],[21.2,-.4],[19,.3],[16,-1],[14,-3.4],[12.9,-7]],17.6)),s,{tones:FT});
     if(!(st==='long'||st==='bob')){part();ell(X(14),Y(-5.8),1.2,1.9,S2);feat();line(X(14),Y(-6.8),X(14.3),Y(-4.8),.3,S3)}
     feat();brow(16.6,-8.9,1.6,-1);brow(21.6,-9,1.1,1);eye(16.6,-6.3,1.45,-1,.55);eye(21.7,-6.3,.95,1,.4);
-    line(X(23),Y(-5.6),X(23.7),Y(-4.2),.3,S2);ell(X(22.6),Y(-3.6),.6,.3,S3,{flat:1});line(X(16),Y(-1.8),X(17.2),Y(-.9),.3,S2);
+    line(X(22.8),Y(-5.6),X(23.2),Y(-4.4),.3,S2);ell(X(22.5),Y(-3.7),.5,.3,S3,{flat:1});line(X(16),Y(-1.8),X(17.2),Y(-.9),.3,S2);
     if(FEM||face==='smile'||face==='grin')ell(X(16),Y(-3.8),1,.4,'#f0a090',{flat:1});
     mouthAt(20.6,-1.7,1.05);glasses([16.6,21.7],[1.5,1],-6.3);if(c.gl){line(X(18.4),Y(-7.3),X(20.5),Y(-7.3),.26,'#4c5158');line(X(15),Y(-7.2),X(14.3),Y(-6.4),.26,'#4c5158')}
     part();hairH(G,X,Y,P,st,h,hd,H,FEM,'q',s)}
   else{
-    part();poly(P([[14,-12.6],[21.6,-12.8],[22.8,-10],[22.9,-7.4],[24.6,-4.4],[23.2,-3.8],[23.4,-2.8],[22.7,-2.3],[22.8,-1.2],[21.8,-.1],[19.4,.4],[16.6,-.6],[14.2,-3],[13,-7]]),s,{tones:FT});
+    part();poly(P(skull([[14,-12.6],[21.6,-12.8],[22.6,-10],[22.8,-7.6],[23.3,-6],[23.9,-4.7],[23.6,-3.9],[23.1,-3.5],[23.2,-2.7],[22.7,-2.1],[22.6,-1.2],[21.7,-.1],[19.4,.4],[16.6,-.6],[14.2,-3],[13,-7]],17)),s,{tones:FT});
     if(!(st==='long'||st==='bob')){part();ell(X(16.4),Y(-5.8),1.3,2,S2);feat();line(X(16.2),Y(-6.8),X(16.6),Y(-4.8),.32,S3)}
     feat();brow(21,-9,1.2,1);
     {const ex=X(21.4),ey=Y(-6.3);if(face==='smile'||face==='grin'){cap(ex-.9,ey+.1,ex,ey-.6,.34,.34,INK,{flat:1});cap(ex,ey-.6,ex+.6,ey,.34,.34,INK,{flat:1})}
       else if(face==='down'||face==='down2')line(ex-.9,ey,ex+.5,ey+.3,.34,INK);
       else{poly([[ex-.9,ey-.6],[ex+.7,ey-.5],[ex+.7,ey+.9],[ex-.6,ey+.8]],EW,{flat:1});ell(ex+.35,ey+.15,.45,.8,IR,{flat:1});line(ex-.9,ey-.7,ex+.8,ey-.8,.36,INK);if(FEM)line(ex+.6,ey-.8,ex+1.2,ey-1.2,.24,INK)}}
-    line(X(23.4),Y(-4.6),X(22.6),Y(-3.9),.28,S3);
+    line(X(23.1),Y(-4.6),X(22.5),Y(-4),.28,S3);
     {const mx=X(22.4),my=Y(-2);if(talk||face==='shock'||face==='angry'){ell(mx,my,.6,.6,'#5a1c1c',{flat:1})}else if(face==='smile'||face==='grin')line(mx-.8,my+.1,mx+.2,my-.4,.3,lp);else line(mx-.6,my,mx+.3,my,.3,lp)}
     if(c.gl){const F='#4c5158';line(X(20),Y(-7.4),X(22.8),Y(-7.4),.34,F);line(X(22.8),Y(-7.4),X(22.7),Y(-5.2),.22,F);line(X(20),Y(-7.3),X(17),Y(-6.6),.3,F)}
     part();hairH(G,X,Y,P,st,h,hd,H,FEM,'s',s)}}
@@ -212,7 +213,7 @@ function headH(G,c,d,dx,dy,st,face,talk,FEM,pf){const{part,feat,ell,poly,line,ca
 function hairH(G,X,Y,P,st,h,hd,H,FEM,d,s){const{ell,poly,line,feat,part,cap}=G;
   const dome=(cx,cy,rx,ry,ymax,cl,o={})=>ell(X(cx),Y(cy),rx,ry,cl,{clip:(x,y)=>y<=Y(ymax)+(o.dip?o.dip(x-X(cx)):0),...o});
   if(d==='f'){
-    if(st==='bald'){dome(18,-9.5,6,5.6,-11.4,s,{});part();poly(P([[12.1,-10.6],[13.8,-10],[13.6,-8.6],[12.7,-8.3],[12.2,-9]]),h);poly(P([[23.9,-10.6],[22.2,-10],[22.4,-8.6],[23.3,-8.3],[23.8,-9]]),hd);feat();line(X(15.4),Y(-14.4),X(17.4),Y(-14.8),.5,shade(s,1.3));return}
+    if(st==='bald'){feat();cap(X(14.8),Y(-13.6),X(16.8),Y(-14.6),.45,.4,shade(s,1.14),{flat:1});feat();const hg=shade(h,.92);poly(P([[12.3,-9.9],[13.3,-9.5],[13.2,-8.4],[12.4,-8.2]]),hg);poly(P([[23.7,-9.9],[22.7,-9.5],[22.8,-8.4],[23.6,-8.2]]),shade(hg,.85));return}
     const fem=FEM;dome(18,-10.2,6.4,5.8,-9.2,h,{dip:x=>st==='slick'?-1.4:st==='part'?(x>1?-.6:.8):fem?(x<0?1.8:.6):Math.sin(x*1.9)*.8+.3});
     // 옆머리
     poly(P([[11.6,-11],[13.4,-11],[13.4,-6.6+(fem?(st==='long'?6:st==='bob'?3:-1):0)],[11.8,-7+(fem?(st==='long'?6:st==='bob'?3:-1):0)]]),h);
@@ -226,8 +227,9 @@ function hairH(G,X,Y,P,st,h,hd,H,FEM,d,s){const{ell,poly,line,feat,part,cap}=G;
     return}
   // 3/4·측면: 정수리를 뒤(왼쪽)로, 뒤통수를 귀 뒤까지 덮고 이마 쪽 앞머리는 짧게
   const cx=d==='q'?17.2:16.6,bk=d==='q'?12.6:12.4,tail=st==='long'?4:st==='bob'?0:-4.6;
-  if(st==='bald'){dome(cx+.4,-9.5,6,5.6,-11.6,s,{});part();if(d==='s')poly(P([[12.6,-10.4],[13.8,-9.6],[17.8,-9.3],[18,-8.5],[14.8,-8.3],[14.4,-6],[14.6,-3.4],[13.4,-3],[12.5,-5.2],[12.3,-8]]),h);
-  else poly(P([[12.6,-10.4],[13.8,-9.8],[15.6,-9.6],[15.7,-8.7],[13.3,-8.5],[12.9,-6],[13.1,-4],[12.5,-4.2],[12.3,-7.2]]),h);return}
+  if(st==='bald'){feat();cap(X(cx-2.6),Y(-13.6),X(cx-.6),Y(-14.6),.45,.4,shade(s,1.14),{flat:1});feat();const hg=shade(h,.92);
+    if(d==='s'){poly(P([[12.5,-9.6],[13.5,-9.2],[14.3,-8.4],[14.1,-7.6],[14.5,-6.6],[14.2,-5.6],[14.4,-4.4],[13.4,-3.4],[12.5,-5]]),hg);line(X(13.3),Y(-8.4),X(13.5),Y(-4.6),.3,shade(h,.78))}
+    else poly(P([[12.5,-9.4],[13.3,-9],[13.2,-6.2],[13,-4.4],[12.5,-4.6],[12.3,-7]]),hg);return}
   dome(cx,-10.2,6.6,5.8,-9.4,h,{dip:x=>x<-1?4:st==='slick'?-1.2:st==='part'?(x>2?-.4:.6):FEM?1.4:Math.sin(x*1.9)*.7+.2});
   poly(P([[bk-.6,-11],[bk+(d==='q'?2.2:4),-11],[bk+(d==='q'?1.6:3.6),tail],[bk-.4,tail+.6]]),shade(h,.9));
   if(d==='q'&&FEM)poly(P([[22.2,-11],[23.6,-11],[23.6,-6+(st==='long'?5:st==='bob'?3:0)],[22.6,-6.4+(st==='long'?5:st==='bob'?3:0)]]),hd);
