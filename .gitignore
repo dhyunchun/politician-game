@@ -1,2 +1,4 @@
 _site/
 __pycache__/
+tools/node_modules/
+tools/*.json.out

@@ -1,0 +1,6 @@
+{
+  "name": "politician-game-tools",
+  "private": true,
+  "description": "정치인키우기 테스트 도구 (시뮬레이션 봇, 등장 조건 점검, 배경음악 렌더)",
+  "dependencies": { "jsdom": "24.1.3" }
+}
