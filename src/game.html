@@ -258,7 +258,7 @@ details.log>summary .muted{font-size:12px}
 .reqs li span.ok,.reqs li span.no{display:inline-block;font-size:11px;font-weight:700;padding:0 6px;border-radius:3px;margin-right:6px;color:#fff}
 .reqs li span.ok{background:var(--good)} .reqs li span.no{background:var(--muted)}
 .tag.gray{background:var(--ind)}
-.share img{display:block;width:100%;max-width:420px;border-radius:8px;border:1px solid var(--line);background:var(--card2);aspect-ratio:720/1000}
+.share img{display:block;width:100%;max-width:420px;border-radius:8px;border:1px solid var(--line);background:var(--card2);height:auto;min-height:200px}
 .ending .px{margin-top:8px;max-width:420px}
 .looks{display:grid;grid-template-columns:120px minmax(0,1fr);gap:14px;align-items:start}
 #lookc{width:120px;height:150px;image-rendering:pixelated;image-rendering:crisp-edges;border:2px solid var(--ink);border-radius:8px;background:#eef3f6}
@@ -3773,7 +3773,7 @@ function cardText(cd){return `[정치인키우기] ${cd.name} (${(PARTIES[cd.par
 function makeCard(cd,img){
   cd=cd||cardData();img=img||document.getElementById('shareImg');if(!img)return;UI.cardBlob=null;UI.cardName=cd.name;UI.cardGrade=cd.grade;
   const go=()=>{try{
-    const W=720,H=1000,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');if(!x)return;
+    const W=720,H=1600,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');if(!x)return;
     const pc=PHEX[cd.party]||'#8a9099',ink='#15191E',paper='#F3F1EC',mut='#5D646C',disp='"Black Han Sans","Malgun Gothic",sans-serif',body='"IBM Plex Sans KR","Malgun Gothic",sans-serif',num='"IBM Plex Mono",monospace';
     x.fillStyle=paper;x.fillRect(0,0,W,H);x.fillStyle=pc;x.fillRect(0,0,W,14);
     x.fillStyle=ink;x.font=`30px ${disp}`;x.fillText('정치인키우기',36,62);x.font=`600 22px ${num}`;x.fillStyle=mut;x.textAlign='right';x.fillText(cd.y0?`${cd.y0}–${cd.y1}`:`${cd.y1}`,W-36,62);x.textAlign='left';
@@ -3787,15 +3787,17 @@ function makeCard(cd,img){
     x.font=`36px ${disp}`;x.fillStyle=cd.end==='pres'?'#1E8A4C':['jail','impeach','presjail'].includes(cd.end)?'#C2321F':ink;x.fillText(cd.grade,36,y);y+=40;if(cd.title){x.font=`700 22px ${body}`;x.fillStyle='#B8860B';x.fillText('「'+cd.title+'」',36,y-6);y+=28}
     x.strokeStyle='#D6DADB';x.lineWidth=2;x.beginPath();x.moveTo(36,y);x.lineTo(W-36,y);x.stroke();y+=40;
     x.fillStyle=mut;x.font=`700 18px ${body}`;x.fillText(cd.old?'최고 직위':'경력',36,y);x.fillStyle=ink;x.font=`500 22px ${body}`;
-    let line='',ly=y;const parts=cd.career;for(let i=0;i<parts.length;i++){const seg=(i?' → ':'')+parts[i];if(x.measureText(line+seg).width>W-150){x.fillText(line,120,ly);ly+=32;line=parts[i]}else line+=seg}x.fillText(line,120,ly);y=ly+38;
-    if(cd.held){x.fillStyle=mut;x.font=`700 18px ${body}`;x.fillText('선출',36,y);x.fillStyle=ink;x.font=`500 20px ${body}`;let l2='',yy=y;for(const seg of cd.held.split(' · ')){const s2=(l2?l2+' · ':'')+seg;if(x.measureText(s2).width>W-150){x.fillText(l2,120,yy);yy+=30;l2=seg}else l2=s2}x.fillText(l2,120,yy);y=yy+44}else y+=10;
+    let line='',ly=y;const parts=cd.career;for(let i=0;i<parts.length;i++){const seg=(i?' → ':'')+parts[i];if(x.measureText(line+seg).width>W-164){x.fillText(line,120,ly);ly+=32;line=parts[i]}else line+=seg}x.fillText(line,120,ly);y=ly+38;
+    if(cd.held){x.fillStyle=mut;x.font=`700 18px ${body}`;x.fillText('선출',36,y);x.fillStyle=ink;x.font=`500 20px ${body}`;let l2='',yy=y;for(const seg of cd.held.split(' · ')){const s2=(l2?l2+' · ':'')+seg;if(x.measureText(s2).width>W-164){x.fillText(l2,120,yy);yy+=30;l2=seg}else l2=s2}x.fillText(l2,120,yy);y=yy+44}else y+=10;
     if(!cd.old){
     const stat=(lab,val,xx)=>{x.fillStyle=mut;x.font=`700 18px ${body}`;x.fillText(lab,xx,y);x.fillStyle=ink;x.font=`600 30px ${num}`;x.fillText(val,xx,y+38)};
     stat('선거',`${cd.w}승 ${cd.l}패`,36);stat('재판',`${cd.tr}건`,250);stat(cd.rv?'라이벌전':'청렴도',cd.rv?`${cd.rv.l}승 ${cd.rv.w}패`:`${cd.st.integrity}`,440);y+=86;
     [['인지도','fame'],['지지율','support'],['청렴도','integrity']].forEach(([l,k])=>{x.fillStyle=mut;x.font=`700 16px ${body}`;x.fillText(l,36,y);x.fillStyle='#D6DADB';x.fillRect(120,y-14,W-240,14);x.fillStyle=k==='integrity'?ink:pc;x.fillRect(120,y-14,(W-240)*cd.st[k]/100,14);x.fillStyle=ink;x.font=`600 16px ${num}`;x.textAlign='right';x.fillText(String(cd.st[k]),W-36,y);x.textAlign='left';y+=30})}
-    else{x.fillStyle=mut;x.font=`500 18px ${body}`;x.fillText('예전 기록이라 세부 전적은 남아 있지 않아요.',36,y)}
-    x.fillStyle=pc;x.fillRect(0,H-14,W,14);x.fillStyle=mut;x.font=`500 18px ${body}`;x.fillText('나도 키워 보기 · 정치인키우기',36,H-36);
-    img.src=c.toDataURL('image/png');try{c.toBlob(b=>{UI.cardBlob=b},'image/png')}catch(e){}
+    else{x.fillStyle=mut;x.font=`500 18px ${body}`;x.fillText('예전 기록이라 세부 전적은 남아 있지 않아요.',36,y);y+=30}
+    // 내용 길이에 맞춰 카드 높이를 정하고 바닥글은 그 아래에
+    const HF=Math.max(1000,Math.ceil(y+56)),f=document.createElement('canvas');f.width=W;f.height=HF;const fx2=f.getContext('2d');fx2.drawImage(c,0,0,W,HF,0,0,W,HF);
+    fx2.fillStyle=pc;fx2.fillRect(0,HF-14,W,14);fx2.fillStyle=mut;fx2.font=`500 18px ${body}`;fx2.fillText('나도 키워 보기 · 정치인키우기',36,HF-30);
+    img.src=f.toDataURL('image/png');try{f.toBlob(b=>{UI.cardBlob=b},'image/png')}catch(e){}
   }catch(e){}};
   (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(go,go);
 }
