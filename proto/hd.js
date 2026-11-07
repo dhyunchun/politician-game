@@ -63,6 +63,11 @@ const HPOSE={
   sign:   {d:'f',A:[[-5,4],[-3,-10]],B:[[5,4],[3,-10]],aFront:1,hA:'fist',hB:'sign',lA:[[-1,18],[-2,36]],lB:[[1,18],[2,36]],face:'talk'},
   cheerQ: {d:'q',A:[[-1,12],[0,25]],B:[[5,-6],[7,-18]],hB:'fist',lA:[[0,18],[-2,36]],lB:[[2,18],[4,36]],face:'talk'},
   clasp:  {d:'q',A:[[1,12],[8,21]],B:[[0,11],[-4,21]],aFront:2,hA:'open',hB:'fist',lA:[[0,18],[-1,36]],lB:[[2,18],[3,36]],face:'down2'},
+  umb:    {d:'q',A:[[-1,12],[0,25]],B:[[4,9],[7,3]],hB:'umb',lA:[[0,18],[-1,36]],lB:[[2,18],[4,36]]},
+  toast:  {d:'q',A:[[-1,12],[0,25]],B:[[5,5],[9,-5]],hB:'glass',lA:[[0,18],[-2,36]],lB:[[2,18],[4,36]],face:'smile'},
+  memo:   {d:'q',A:[[3,10],[9,11]],B:[[5,10],[10,8]],aFront:2,hA:'note',hB:'pen',lA:[[0,18],[-1,36]],lB:[[2,18],[3,36]]},
+  shock:  {d:'f',A:[[-7,6],[-7,-5]],B:[[7,6],[7,-5]],hA:'palm',hB:'palm',lA:[[-1,18],[-4,36]],lB:[[1,18],[3,36]],lean:-1,face:'shock'},
+  holdBag:{d:'q',A:[[-1,12],[-1,25]],B:[[1,12],[2,24]],hA:'bag',lA:[[0,18],[-1,36]],lB:[[2,18],[4,36]]},
   clap:   {d:'q',A:[[3,10],[10,6]],B:[[5,9],[11,5]],aFront:2,hA:'open',hB:'open',lA:[[0,18],[-1,36]],lB:[[2,18],[3,36]],face:'smile'},
   judge:  {d:'f',A:[[-3,11],[2,20]],B:[[3,11],[-2,20]],aFront:1,lA:[[-1,18],[-1,36]],lB:[[1,18],[1,36]]},
 };
@@ -103,6 +108,10 @@ function personH(ctx,cx,fy,K,c,pose,flip){
     if(hand==='env'){part();poly([[x+1,y-3],[x+9,y-3.4],[x+9.2,y+2],[x+1.2,y+2.2]],'#e9d9a8',{flat:1});feat();line(x+1.2,y-2.9,x+5,y,.32,'#b89a50');line(x+5,y,x+9,y-3.3,.32,'#b89a50');part();ell(x,y,1.8,1.8,s)}
     if(hand==='cam'){part();rect(x-6,y-4,9,6,'#2a2d34');rect(x-5,y-5.4,3,1.4,'#2a2d34');feat();ell(x-1.6,y-1,2.1,2.1,'#3a4a5a');ell(x-2,y-1.4,.8,.8,'#9fd0ee');rect(x+1.4,y-3.4,1,.8,'#e8eef2');part()}
     if(hand==='sign'){part();rect(x-.5,y-14,1,16,'#8a5a33');rect(x-9,y-24,18,11,'#fbfbf6');feat();rect(x-6.5,y-21,13,2.4,'#c2321f');rect(x-5,y-17.4,10,1.4,'#3a3a44');part();ell(x,y,1.9,1.9,s)}
+    if(hand==='umb'){part();line(x,y+1,x+.4,y-21,.45,'#3a3a44');poly([[x-15,y-18],[x-11,y-23],[x-4,y-26],[x+5,y-26],[x+12,y-23],[x+16,y-18]],'#c8283a');feat();for(const dx of[-8,0,8])line(x+dx*.3,y-26,x+dx,y-18.4,.35,'#a01a2a');cap(x-15,y-18,x+16,y-18,.5,.5,'#7a1020',{flat:1});part();ell(x,y,1.9,1.9,s)}
+    if(hand==='glass'){part();poly([[x-1.4,y-6],[x+1.8,y-6],[x+1.5,y-1],[x-1.1,y-1]],'#e8f0f4',{flat:1});feat();rect(x-1.2,y-4.6,2.8,3.4,'#f2c860');rect(x-1.2,y-5.6,2.8,1,'#fff8e0');part();ell(x,y,1.8,1.8,s)}
+    if(hand==='note'){part();rect(x-.8,y-5,5.6,7,'#f6f4ec');feat();rect(x-.8,y-5,5.6,.8,'#c2321f');for(let i=0;i<3;i++)line(x+.2,y-3+i*1.6,x+4,y-3+i*1.6,.25,'#a8aeb6');part();ell(x,y,1.8,1.8,s)}
+    if(hand==='pen'){part();line(x-1,y+1,x-3,y-4,.35,'#22252b');ell(x,y,1.8,1.8,s)}
     if(hand==='bag'){part();line(x,y,x-1.4,y+3,.4,'#3a2a20');line(x,y,x+1.4,y+3,.4,'#3a2a20');poly([[x-3.6,y+3],[x+3.6,y+3],[x+4.2,y+9],[x-4.2,y+9]],'#7a4a2a');part();ell(x,y,1.8,1.8,s)}};
   const arm=(sh0,A,hand,fr)=>{const el=J(sh0,A[0]),hn=J(sh0,A[1]),k=fr?{f:.9}:{};part();
     if(ROBE){cap(...sh0,...el,2.7,2.6,AC,k);cap(...el,...hn,2.6,3.1,AC,k)}else{cap(...sh0,...el,2.3,2.05,AC,k);cap(...el,...hn,2.05,1.85,AC,k);
