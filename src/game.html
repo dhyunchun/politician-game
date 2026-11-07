@@ -2797,6 +2797,7 @@ function bgFrame(bg){const key=bg+'|'+PF;if(BGF[key])return BGF[key];const old=b
   const sc=SCN[bg]||{};const ext=sc.ext||[216,256];
   if(typeof ext==='function')ext(c,old);else{const[a,b]=ext,h=b-a;for(let y=256+O;y<320;y+=h)c.drawImage(old,0,a,512,h,0,y,512,h)}
   return BGF[key]=cv}
+function bands2(c,old,list){for(const[a,b,y0,y1]of list){const h=b-a;for(let y=y0;y<y1;y+=h)c.drawImage(old,0,a,512,Math.min(h,y1-y),0,y,512,Math.min(h,y1-y))}}
 // 앞쪽 인도(거리용): 연석 + 원근 보도블록
 function walkway(c,y0,col,line){const T=PX2(c);T.R(0,y0,512,5,shade(col,.82));T.R(0,y0,512,1,shade(col,1.1));T.R(0,y0+5,512,320-y0-5,col);
   for(let k=0,y=y0+12;y<320;k++,y+=7+k*2.2){T.R(0,Math.round(y),512,1,line);const off=k%2?0:20;for(let x=off;x<512;x+=40+k*4)T.R(x,Math.round(y),1,Math.round(7+k*2.2),line)}}
@@ -2813,10 +2814,10 @@ const SCN={
     deco:()=>[[262,c=>hdCar(c,PF?360:366,282,mz(262),'#e8e4d8',false)]]},
   market:{extras:[['cit','walkB',30,232,0],['old','talkQ',150,230,0],['cit2','idleQ',184,232,1,{st:'bob',h:'#3a2a20'}],['cit','walk',470,236,1]]},
   office:{extras:[['aide','paper',440,226,1]]},
-  stage:{heads:1,extras:[['aide','phone',62,222,0],['aide','paper',452,222,1]]},
+  stage:{heads:1,ext:(c,old)=>bands2(c,old,[[191,209,233,306],[209,222,306,319],[222,256,319,320]]),extras:[['aide','phone',62,222,0],['aide','paper',452,222,1]]},
   press:{heads:1,extras:[['aide','idleQ',36,226,0],['aide','paper',478,226,1]]},
   hall:{extras:[['aide','phone',22,232,0],['rep','camera',56,236,0],['cit','sign',430,236,1],['cit2','sign',476,232,1]]},
-  court:{heads:1,bench:128,extras:[['rep','idleQ',58,214,0,{clipY:190}],['aide','paper',454,214,1,{clipY:190}]]},
+  court:{heads:1,bench:128,ext:(c,old)=>bands2(c,old,[[186,220,244,306],[220,234,306,320]]),extras:[['rep','idleQ',58,214,0,{clipY:190}],['aide','paper',454,214,1,{clipY:190}]]},
   tv:{extras:[['rep','camera',20,236,0],['aide','paper',494,232,1]]},
   school:{extras:[['cit','walk',30,234,0],['cit2','talkQ',62,236,0],['cit','talkQ',448,236,1,{st:'bob',h:'#3a2a20'}],['cit2','walkB',486,232,1]]},
   rain:{extras:[['cit','umb',36,234,0],['cit2','umb',470,234,1]]},
@@ -2832,7 +2833,7 @@ const SCN={
 };
 
 /* ── 소품: 실제 크기 ── */
-function hdPodium(c,cx,fy){const m=mz(fy),T=PX2(c),w=.62*m,h=1.12*m,top=fy-h;
+function hdPodium(c,cx,fy){const m=mz(fy),T=PX2(c),w=.62*m,h=1.0*m,top=fy-h;
   T.poly([[cx-w*.62,top],[cx+w*.62,top],[cx+w*.56,top+.08*m],[cx-w*.56,top+.08*m]],'#b8804a');T.box(cx-w/2,top+.08*m,w,h-.08*m,'#8a5a33');T.R(cx-w/2+2,top+.1*m,2,h-.12*m,'#a8744a');
   T.ell(cx,top+.42*m,.13*m,.13*m,'#e8b94a');T.ell(cx,top+.42*m,.08*m,.08*m,'#24499a');
   for(const dx of[-.1,.1]){T.R(cx+dx*m,top-.32*m,1.6,.32*m,'#3a3a44');T.ell(cx+dx*m+1,top-.33*m,.035*m,.035*m,'#5a626c')}}
@@ -2879,7 +2880,8 @@ function stageScene(bg,who,props){
   const mood=me?me.face:'',rival=others.find(p=>p.k==='riv'),anyone=others.length+judges.length;
   // 두 사람이 웃는 얼굴로 만나면 악수, 봉투·돈 소품이면 건네기
   const partner=others.find(p=>['cit','cit2','old','biz','fjj','fsm','aide'].includes(p.k));
-  const shakeMode=me&&partner&&m===2&&(mood==='smile'||me.wave)&&!has('podium')&&!has('desk')&&partner.face!=='angry';
+  const meProp=['podium','desk','umbrella','phone','glass','bag'].some(has)||(has('env')&&!others.some(p=>p.k==='biz'));
+  const shakeMode=me&&partner&&m===2&&(mood==='smile'||me.wave)&&!meProp&&partner.face!=='angry';
   const giveMode=me&&others.some(p=>p.k==='biz')&&(has('env')||has('cash')||has('book')||has('bag'));
   order.forEach((p,i)=>{let[x,fy]=slots[Math.min(i,slots.length-1)];let pose='idleQ',face=p.face;
     if(p.k==='me'){
