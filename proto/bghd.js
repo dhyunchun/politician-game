@@ -99,7 +99,7 @@ const BGHD={
         T.box(496,top+34,32,32,'#c8a050');T.R(502,top+40,20,20,'#e8c060');
         const gy=top-.2*m*.5;T.box(612,gy-.05*m,.26*m,.05*m,'#5a3a20');T.box(618,gy-.15*m,.16*m,.1*m,'#7a5230');T.box(626,gy-.34*m,.04*m,.2*m,'#6b4426')}],
       [530,ctx=>{const mm=pxm(sc,530);hdDesk(ctx,150,530,mm,{files:1});hdDesk(ctx,874,530,mm,{files:1})}]]},
-    extras:[['judge','judge',512,452,0,{lift:.45}],['rep','idleQ',150,512,0],['aide','talkQ',876,512,1]]},
+    extras:[['judge','judge',512,452,0,{lift:.45}],['rep','idleQ',150,512,0],['aide','point',876,512,1,{face:'angry'}]]},
 };
 
 /* 장면: ppl = [[종류, 자세, x, 발 y, 왼쪽 보기, 표정/외모]] */
