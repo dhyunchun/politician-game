@@ -1,5 +1,5 @@
 // 시뮬레이션 봇: node --max-old-space-size=3000 tools/sim.js <판 수(≤60)> <rand|smart|mod>
-// 출력: 엔딩 분포, 로그 키워드 집계, 최고 직위, 출신·정당별 성과, errs(런타임 오류). SEENOUT=파일 지정 시 등장한 이벤트 집계를 JSON으로 저장
+// 출력: 엔딩 분포, 로그 키워드 집계, 최고 직위, 출신·정당별 성과, errs(런타임 오류). SEENOUT=파일 지정 시 이벤트별 등장한 판 수, EVNOUT=파일 지정 시 이벤트별 총 등장 횟수(S.evn 합)를 JSON으로 저장
 // FORCEPRES=1 이면 국회의원 3선 상태로 시작(대선 구간 점검용). HTML=경로 로 다른 빌드 검사
 const {JSDOM,VirtualConsole}=require('jsdom');const fs=require('fs');
 const html=fs.readFileSync(process.env.HTML||require('path').join(__dirname,'../src/game.html'),'utf8');
@@ -52,8 +52,9 @@ for(let g=0;g<N;g++){console.error("G",g,Math.round(process.memoryUsage().heapUs
   const S=w.eval('S');
   if(S){for(const [y,l] of S.log){for(const k of ['국무총리에 임명','원내대표에 선출','임명동의안이','총리 후보자','장관에 임명','청문회 끝에','장관직을 사퇴','라이벌','새 라이벌','퇴임했다','정계를 떠나기로','전직 대통령','비례대표','탄핵소추안 가결','탄핵소추안 부결','파면 선고','탄핵 기각','대통령 파면','정권 교체','대한민국 대통령 낙선','대한민국 대통령 공천 탈락','대한민국 대통령 당선','도지사 당선','광역시장 당선','특별시장 당선','다수당','소수당','여대야소','여소야대','낙선','당선','유죄 확정','무죄 확정','불기소','기소.','공천 탈락','운영비 부족','기탁금이 없어','벌금'])if(l.includes(k))KW[k]=(KW[k]||0)+1}}
   if(S&&S.seen){global.SEEN=global.SEEN||{};for(const k in S.seen)SEEN[k]=(SEEN[k]||0)+1}
+  if(S&&S.evn){global.EVN=global.EVN||{};for(const k in S.evn)EVN[k]=(EVN[k]||0)+S.evn[k]}
   if(S&&S.phase==='ending'){const tier=w.eval('OFF[S.best].tier');for(const [M,k] of [[BGR,S.bg],[PTR,['jj','sm','ind'][g%3]]]){M[k]=M[k]||{n:0,t3:0,t4:0,pres:0,yrs:0};M[k].n++;if(tier>=3)M[k].t3++;if(tier>=4)M[k].t4++;if(S.end==='pres'||S.held.pres)M[k].pres++;M[k].yrs+=S.year-2026}res[S.end]=(res[S.end]||0)+1;AGES.push(S.end+':'+S.age);if(S.rival)RIV.push(S.rival.l+'-'+S.rival.w);bestC[S.best]=(bestC[S.best]||0)+1;yearsTot+=S.year-2026;trials+=S.stats.trials}
   else errs.push('not ended steps='+steps);
   w.close();
 }
-if(process.env.SEENOUT)require('fs').writeFileSync(process.env.SEENOUT,JSON.stringify(global.SEEN||{}));console.log(STRAT,'ends',res);console.log(JSON.stringify(KW),'prespoor',typeof PRESPOOR==='undefined'?0:PRESPOOR);console.log('best',bestC);console.log('rival',JSON.stringify(RIV));console.log('avg years',(yearsTot/N).toFixed(1),'trials',trials,'paints',paints);console.log('BG',JSON.stringify(BGR));console.log('PT',JSON.stringify(PTR));console.log('errs',[...new Set(errs)].slice(0,8),errs.length);
+if(process.env.SEENOUT)require('fs').writeFileSync(process.env.SEENOUT,JSON.stringify(global.SEEN||{}));if(process.env.EVNOUT)require('fs').writeFileSync(process.env.EVNOUT,JSON.stringify(global.EVN||{}));console.log(STRAT,'ends',res);console.log(JSON.stringify(KW),'prespoor',typeof PRESPOOR==='undefined'?0:PRESPOOR);console.log('best',bestC);console.log('rival',JSON.stringify(RIV));console.log('avg years',(yearsTot/N).toFixed(1),'trials',trials,'paints',paints);console.log('BG',JSON.stringify(BGR));console.log('PT',JSON.stringify(PTR));console.log('errs',[...new Set(errs)].slice(0,8),errs.length);

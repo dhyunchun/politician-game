@@ -1868,11 +1868,20 @@ function joinParty(p,offer){
 
 /* ============ 연말 큐 ============ */
 const wrapMode=()=>!!S.exPres||(S.age>=65&&!inOffice());
+/* 이벤트 고르게 나오게
+   - 같은 판에서 이미 본 이벤트는 볼 때마다 가중치 ×0.35
+   - 도감에 아직 없는(어느 판에서도 못 본) 이벤트는 ×2
+   - 기획 가중치 w는 2를 넘는 부분을 절반만 반영(가족·라이벌 이벤트 독식 방지) */
+let DXQ=null;
+const evW=w=>w<=2?w:2+(w-2)*.5;
+function evFresh(e){const n=(S.evn&&S.evn[e.id])||0;return Math.pow(.35,n)*(DXQ&&!DXQ[e.id]?2:1)}
+function pickWt(L,wf){const tot=L.reduce((a,e)=>a+wf(e),0);let r0=R()*tot;for(const e of L){r0-=wf(e);if(r0<=0)return e}return L[L.length-1]}
 function buildQueue(){
+  try{DXQ=achStore().dex||{}}catch(x){DXQ=null}
   if(wrapMode()){const q=[];if(S.trial&&S.trial.started<S.year)q.push({type:'trial'});else if(!S.trial&&S.cases.length&&R()<(S.exPres?.7:.4))q.push({type:'detect'});S.qTotal=Math.max(1,q.length);return q}
   if(S.togul&&!inOffice()){const q=[{type:'ev',id:'tg_day'}];
     const pool=EV.filter(e=>!e.core&&(e.tg||e.tag==='칩거'||e.tag==='하산')&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<4));
-    const n=Math.min(pool.length,2),chosen=[];let g=0;while(chosen.length<n&&g++<200){const tot=pool.reduce((a,e)=>a+(chosen.includes(e)?0:(e.w||1)),0);let r0=R()*tot;for(const e of pool){if(chosen.includes(e))continue;r0-=(e.w||1);if(r0<=0){chosen.push(e);break}}}
+    const n=Math.min(pool.length,2),chosen=[];while(chosen.length<n){const L=pool.filter(e=>!chosen.includes(e));if(!L.length)break;chosen.push(pickWt(L,e=>evW(e.w||1)*evFresh(e)))}
     chosen.forEach(e=>q.push({type:'ev',id:e.id}));
     {const yr=EV.find(e=>e.id==='y_return');if(yr&&yr.c()&&!q.some(x=>x.id==='y_return'))q.push({type:'ev',id:'y_return'})}
     if(S.trial&&S.trial.started<S.year)q.push({type:'trial'});
@@ -1881,7 +1890,7 @@ function buildQueue(){
   if(S.minister&&(S.ruling!==S.minister.party||isPres()))endMin('정권이 바뀌어 장관직에서 물러났다.');
   if(S.pm&&(S.ruling!==S.pm.party||isPres()))endPm('정권이 바뀌어 국무총리직에서 물러났다.');
   if(S.pm){const q=[{type:'ev',id:'pm_work'}];const ok=e=>!e.core&&e.pm&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<3);
-    const L=EV.filter(ok);for(let i=0;i<2&&L.length;i++){const e=L.splice(Math.floor(R()*L.length),1)[0];q.push({type:'ev',id:e.id})}
+    const L=EV.filter(ok);for(let i=0;i<2&&L.length;i++){const e=pickWt(L,evFresh);L.splice(L.indexOf(e),1);q.push({type:'ev',id:e.id})}
     if(R()<.3)q.push({type:'fig'});if(S.office!=='none')q.push({type:'ev',id:'c_fund'});
     if(S.year-S.pm.from>=2+(S.pm.ext||0))q.push({type:'ev',id:'pm_end'});
     if(S.age<64&&elecKinds(S.year+1).includes('pres')&&(presPaths().council||presPaths().admin))q.splice(1,0,{type:'ev',id:'p_camp'});
@@ -1891,7 +1900,7 @@ function buildQueue(){
     S.qTotal=q.length;return q}
   if(S.minister){const q=[{type:'ev',id:'mn_work'}],d=S.minister.d;
     const ok=e=>!e.core&&e.mn&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<3);
-    const pickW=L=>{const tot=L.reduce((a,e)=>a+(e.w||1),0);let r0=R()*tot;for(const e of L){r0-=(e.w||1);if(r0<=0)return e}return L[0]};
+    const pickW=L=>pickWt(L,e=>evW(e.w||1)*evFresh(e));
     const own=EV.filter(e=>ok(e)&&e.md===d),gen=EV.filter(e=>ok(e)&&!e.md);
     if(own.length)q.push({type:'ev',id:pickW(own).id});if(gen.length)q.push({type:'ev',id:pickW(gen).id});
     if(R()<.3)q.push({type:'fig'});
@@ -1904,12 +1913,12 @@ function buildQueue(){
     addPoll(q);if(elecKinds(S.year).length&&S.age<65)q.push({type:'elec'});
     S.qTotal=q.length;return q}
   const q=[];
-  const BIG=big();const pool=EV.filter(e=>!e.core&&!e.tg&&!e.mn&&!e.pm&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<4)&&!(BIG&&JUNIOR.has(e.id)));
+  const BIG=big();const pool=EV.filter(e=>!e.core&&!e.tg&&!e.mn&&!e.pm&&!e.op&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<4)&&!(BIG&&JUNIOR.has(e.id)));
   const n=Math.min(pool.length,2);
   const elecSoon=elecKinds(S.year).length>0||elecKinds(S.year+1).length>0;
-  // 직책 전용 이벤트(단체장·의원 등)는 범용 풍자에 묻히지 않게 2배 가중
-  const SPEC=/isAdmin|isNat|isCouncil|isLocalCouncil|isPres/;
-  const wt=e=>(e.tempt?(1+(broke()?2.5:0)+(elecSoon?1:0)):(e.w||1))*(e.c&&SPEC.test(String(e.c))?1.8:1);
+  // 직책 전용 이벤트(단체장·의원 등)는 범용 풍자에 묻히지 않게 ×1.8(기획 가중치가 이미 2 이상이면 생략), 대통령 전용은 임기(5년) 안에 볼 수 있게 ×3. 야당 이벤트(e.op)는 아래 전용 칸에서만 뽑는다
+  const SPEC=/isAdmin|isNat|isCouncil|isLocalCouncil|isPres|S\.office/,PRESONLY=/^\(\)=>(S\.office==='pres'|isPres\(\)&&)/;
+  const wt=e=>(e.tempt?(1+(broke()?1.5:0)+(elecSoon?.5:0)):evW(e.w||1))*(e.c&&PRESONLY.test(String(e.c))?3:(e.w||1)<=1&&e.c&&SPEC.test(String(e.c))?1.8:1)*evFresh(e);
   const chosen=[];let guard=0;while(chosen.length<n&&guard++<200){const tot=pool.reduce((a,e)=>a+(chosen.includes(e)?0:wt(e)),0);let r0=R()*tot;
     for(const e of pool){if(chosen.includes(e))continue;r0-=wt(e);if(r0<=0){chosen.push(e);break}}}
   S.fv=elecKinds(S.year+1).length?3:(R()<.5?0:R()<.5?1:2);
@@ -1921,7 +1930,7 @@ function buildQueue(){
   if(pmOfferOk()&&R()<.5){S.pmOfferY=S.year;q.splice(1,0,{type:'ev',id:'pm_offer'})}
   else if(minOfferOk()&&R()<.55){S.minOfferY=S.year;q.splice(1,0,{type:'ev',id:'mn_offer'})}
   if(opp()&&isNat()&&(S.held.nat||0)+(S.held.natp||0)>=2&&s().party>=50&&!(S.titles.whip>=S.year)&&!S.titles.leader&&S.year%2===1)q.splice(1,0,{type:'ev',id:'op_whip'});
-  if(opp()&&isNat()&&R()<.5&&!q.some(x=>x.id&&/^op_/.test(x.id))){const L=EV.filter(e=>e.op&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<4));if(L.length)q.splice(q.length-1,0,{type:'ev',id:pick(L).id})}
+  if(opp()&&isNat()&&R()<.35&&!q.some(x=>x.id&&/^op_/.test(x.id))){const L=EV.filter(e=>e.op&&(!e.c||e.c())&&!(S.seen[e.id]&&S.year-S.seen[e.id]<4));if(L.length)q.splice(q.length-1,0,{type:'ev',id:pickWt(L,e=>evW(e.w||1)*evFresh(e)).id})}
   if(S.titles.whip&&S.titles.whip>=S.year&&opp()&&isNat())q.splice(1,0,{type:'ev',id:'op_whipwork'});
   if(S.crisis&&S.crisis.fresh){S.crisis.fresh=0;q.splice(1,0,{type:'ev',id:'n_'+S.crisis.k})}
   if(isPres()&&S.trialHold&&!S.haltShown){S.haltShown=1;q.splice(1,0,{type:'ev',id:'p_halt'})}
@@ -3215,7 +3224,7 @@ function renderEvent(st,e){
   st.innerHTML=`${pxTag(T)}<div class="news"><span class="tag ${e.tag==='화제'||e.tag==='정책'||e.core||e.tag==='다수당'||e.tag==='여대야소'?'blue':e.tag==='소수당'||e.tag==='여소야대'?'gray':''}">${e.tag}</span><h3>${T}</h3><p class="body">${B}</p></div>
     <div class="choices">${CH.map((c,i)=>{const o=c[2]||{};return `<button class="choice ${o.dark?'dark':''}" data-i="${i}" ${o.dis?'disabled':''}><span>${c[0]}</span>${o.hint?`<small>${o.hint}</small>`:''}</button>`}).join('')}</div>`;
   paint(tagFace(V(e.px)||EVPX[e.id]||'street|me|',e.tag));
-  st.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{D=[];if(!e.core)S.seen[e.id]=S.year;const c=CH[+b.dataset.i],o=c[2]||{};MOODCASE=0;const t=withMode('ev',()=>c[1](),1,1,!!e.tempt||!!o.dark);addLog(T+' → '+c[0]);finish(`<b>${T}</b><br>${t}`)});
+  st.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{D=[];if(!e.core){S.seen[e.id]=S.year;S.evn=S.evn||{};S.evn[e.id]=(S.evn[e.id]||0)+1}const c=CH[+b.dataset.i],o=c[2]||{};MOODCASE=0;const t=withMode('ev',()=>c[1](),1,1,!!e.tempt||!!o.dark);addLog(T+' → '+c[0]);finish(`<b>${T}</b><br>${t}`)});
 }
 function renderFig(st){
   if(!S.fig){
