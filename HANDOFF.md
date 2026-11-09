@@ -62,6 +62,7 @@
 - 효과음 `FX`(click, good, bad, win, lose, gavel, stamp, tick, ach, coin).
 - 배경음악 트래커: 곡마다 A+B 16마디(`SONGS`: title, play, tense, pres, togul). 성부: 펄스 리드(비브라토·딜레이, 왼쪽), 화음(3·6도, 오른쪽), 아르페지오, 삼각파 베이스, 드럼(k·s·h·c). 짧은 잔향, 8마디마다 필인, 셔플(`sw`), 곡 전환 크로스페이드.
 - 곡 선택 `pickBgm()`. 기본 꺼짐(오른쪽 위 버튼). 미리듣기는 `SND._render(곡,초)`(OfflineAudioContext).
+- 화면 밖에서 멈추기(2026-11-09): `visibilitychange`·`pagehide`·`pageshow`에서 `onVis()`. 가려지면 장면 애니메이션 타이머(`PXT`)를 지우고(`pxStop`) `SND.pause(true)`로 AudioContext suspend + 음악 스케줄러 정지. 돌아오면 `pxRun()`·`SND.pause(false)`로 이어서 재생. 가려진 동안 `bgm()`이 불려도 곡만 바꾸고 소리는 안 냄. 상태 확인은 `SND.state`.
 
 ## 테스트 도구 (tools/)
 - 준비: `cd tools && npm install` (jsdom). Playwright·Chromium은 환경에 설치돼 있음(`playwright install` 금지).
