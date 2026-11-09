@@ -2793,8 +2793,9 @@ const mz=fy=>kz(fy)*84/1.7;// 그 깊이에서 1m가 몇 픽셀인지
 
 /* ── 인물 그림 캐시: (색·자세·방향·배율·입 모양)별로 한 번만 래스터화 ── */
 const SPC=new Map();
-function sprite(col,pose,flip,K){const key=JSON.stringify([col,pose,flip?1:0,Math.round(K*200)]);let s=SPC.get(key);if(s)return s;
-  if(SPC.size>260)SPC.clear();const cv=document.createElement('canvas');cv.width=Math.ceil(88*K)+2;cv.height=Math.ceil(112*K)+2;const x=cv.getContext('2d');
+function sprite(col,pose,flip,K){const key=JSON.stringify([col,pose,flip?1:0,Math.round(K*200)]);let s=SPC.get(key);if(s){SPC.delete(key);SPC.set(key,s);return s}
+  // 오래 안 쓴 그림부터 지운다(지금 보는 장면 그림은 최근에 쓴 것이라 남는다)
+  if(SPC.size>=320){const it=SPC.keys();for(let n=SPC.size-260;n>0;n--)SPC.delete(it.next().value)}const cv=document.createElement('canvas');cv.width=Math.ceil(88*K)+2;cv.height=Math.ceil(112*K)+2;const x=cv.getContext('2d');
   personH(x,44*K,102*K,K,col,pose,!!flip);s={cv,ax:44*K,ay:102*K};SPC.set(key,s);return s}
 function drawPerson(c,x,fy,K,col,pose,flip){const s=sprite(col,pose,flip,K);c.drawImage(s.cv,Math.round(x-s.ax),Math.round(fy-s.ay))}
 function shadowAt(c,x,fy,K){const T=PX2(c);T.ell(x,fy+1.4*K,13*K,2.2*K,'rgba(30,20,20,.2)')}
@@ -2936,6 +2937,37 @@ function stageScene(bg,who,props){
 function clipDraw(c,y,fn){if(!y||y>=320){fn();return}c.save();c.beginPath();c.rect(0,0,512,y);c.clip();try{fn()}finally{c.restore()}}
 /* ── 새 drawPx ── */
 const OLDPLANE=['gavel','cam','chart','car','house','flower','glassbox','truck'],OVERLAY=['banner','sun','heart','exclaim','xmark'];
+// 장면 인물의 색·표정(그리기와 미리 그리기가 같은 캐시 키를 쓰도록 공유)
+function pplCol(o){const col=Object.assign({},whoCol(o.k));if(o.face)col.face=o.face==='smile'&&o.me?'grin':o.face;if(o.me&&!o.face)col.talk=PF;return col}
+function specParts(spec){let[bg,who='',props='']=spec.split('|');if(!SCN[bg]&&!['night','street'].includes(bg))bg=bg||'street';return[bg,who,props?props.split(','):[]]}
+/* 다음 장면 미리 그리기: 곧 쓸 장면을 배경 한 장·인물 한 명 단위로 쪼개 브라우저가 쉬는 틈에 캐시에 넣는다 */
+const WARM={q:[],done:new Set(),busy:false},LASTSPEC={};
+function warmTasks(spec){const[bg,who,pr]=specParts(spec),sc=SCN[bg]||{},t=[],withPF=(pf,f)=>()=>{const p0=PF;PF=pf;try{f()}finally{PF=p0}};
+  const ppl=stageScene(bg,who,pr),heads=who.split(',').includes('crowd')||sc.heads;
+  for(const pf of[0,1]){t.push(withPF(pf,()=>bgFrame(bg)));ppl.forEach(o=>t.push(withPF(pf,()=>sprite(pplCol(o),o.pose,o.flip,kz(o.fy)))));if(heads)t.push(withPF(pf,headsLayer))}
+  (sc.extras||[]).forEach(([kk,pose,x,fy,flip,o])=>t.push(()=>sprite(Object.assign({},whoCol(kk),o||{}),pose,flip,kz(fy))));
+  return t}
+// 배경과 배경 인물만 미리(주인공 모습을 아직 모를 때: 시작 화면)
+function warmBg(bgs){for(const bg of bgs){const sc=SCN[bg]||{};for(const pf of[0,1])WARM.q.push(()=>{const p0=PF;PF=pf;try{bgFrame(bg)}finally{PF=p0}});
+  (sc.extras||[]).forEach(([kk,pose,x,fy,flip,o])=>WARM.q.push(()=>sprite(Object.assign({},whoCol(kk),o||{}),pose,flip,kz(fy))))}warmRun()}
+function warm(specs){for(const sp of specs){if(!sp||WARM.done.has(sp))continue;if(WARM.done.size>300)WARM.done.clear();WARM.done.add(sp);try{WARM.q.push(...warmTasks(sp))}catch(e){}}warmRun()}
+function warmRun(){if(WARM.busy||!WARM.q.length||document.hidden)return;WARM.busy=true;
+  const go=dl=>{WARM.busy=false;const t0=performance.now();do{const f=WARM.q.shift();try{f&&f()}catch(e){}}while(WARM.q.length&&performance.now()-t0<6&&(!dl||dl.timeRemaining()>3));warmRun()};
+  if(window.requestIdleCallback)requestIdleCallback(go,{timeout:2000});else setTimeout(()=>go(null),50)}
+// 이벤트가 아닌 일정이 쓰는 장면(렌더 함수의 paint 인자와 맞춤). 선거는 화면 순서대로
+const TYPESPEC={fig:['press|me|cam,exclaim','press|fjj|podium,cam','press|fsm|podium,cam'],chair:['hall|aide,me,aide|'],
+  leader:['stage|me^,crowd|banner','tv|me,riv|cam'],impeach:['hall|aide,me,aide|exclaim','court|judge,judge,me|gavel'],detect:['office|rep,me,rep|boxes,cam'],trial:['court|judge,me|gavel'],
+  elec:['street|cit,me,old|banner','office|aide,me,aide|desk','street|me,crowd|truck','press|rep,me,rep|cam,exclaim','tv|me,riv|cam','ballot|cit,me,old|ballot,heart','ballot|cit,old|ballot','office|aide,me|xmark','office|biz,me|env','office|me|xmark'],
+  poll:['office|aide,me,aide|chart','press|rep,me+,rep|chart,cam','office|aide~,me?,aide~|chart'],pfound:['stage|aide,me^,aide|banner'],pagenda:['office|aide,me,aide|chart'],pbudget:['hall|aide,me,aide|chart']};
+function evSpec(id){const e=EV.find(x=>x.id===id);if(!e)return null;const v=typeof e.px==='function'?e.px():e.px;return tagFace(v||EVPX[e.id]||'street|me|',e.tag)}
+function itemSpecs(it){if(!it)return[];if(it.type==='ev')return[evSpec(it.id)];return(LASTSPEC[it.type]?[LASTSPEC[it.type]]:[]).concat(TYPESPEC[it.type]||[])}
+// 곧 쓸 장면: 지금 장면의 결과 표정(웃음·슬픔) + 다음 일정 + 놀람 표정 + 그다음 일정
+function nextSpecs(cur){const out=[];if(cur)out.push(moodSpec(cur,'+'),moodSpec(cur,'~'));
+  try{const q=(S&&S.q)||[];out.push(...itemSpecs(q[0]));if(cur)out.push(moodSpec(cur,'?'));out.push(...itemSpecs(q[1]))}catch(e){}
+  return out}
+// 한 해 정리 화면에서: 다음 해 첫 일정(새해 일정은 넘어가는 순간 만들어지므로 미리 짐작)
+function yearStartSpecs(){if(S.togul&&!inOffice())return[evSpec('tg_day')];if(S.pm)return[evSpec('pm_work')];if(S.minister)return[evSpec('mn_work')];
+  const first=(s().mental<35||(S.year+1)%2)?'c_work':'c_promo';return[evSpec(first),evSpec(first==='c_work'?'c_promo':'c_work')].concat(S.trial?TYPESPEC.trial:[])}
 function drawPx(spec,cv0){
   const cv=cv0||document.getElementById('pxc');if(!cv)return;const c=cv.getContext&&cv.getContext('2d');if(!c)return;
   let[bg,who='',props='']=spec.split('|');if(!SCN[bg]&&!['night','street'].includes(bg))bg=bg||'street';const pr=props?props.split(','):[];const rnd=mkRng(spec);
@@ -2952,7 +2984,7 @@ function drawPx(spec,cv0){
   (sc.deco?sc.deco(pr):[]).forEach(([fy,fn])=>items.push({fy,fn:()=>fn(c)}));
   (sc.extras||[]).forEach(([kk,pose,x,fy,flip,o])=>items.push({fy,fn:()=>{const K=kz(fy),col=Object.assign({},whoCol(kk),o||{});const cy=o&&o.clipY;if(!cy)shadowAt(c,x,fy,K);clipDraw(c,cy,()=>drawPerson(c,x,fy-(o&&o.lift||0),K,col,pose,flip))}}));
   const ppl=stageScene(bg,who,pr);
-  ppl.forEach((o,i)=>items.push({fy:o.fy,fn:()=>{const K=kz(o.fy),col=Object.assign({},whoCol(o.k));if(o.face)col.face=o.face==='smile'&&o.me?'grin':o.face;if(o.me&&!o.face)col.talk=PF;
+  ppl.forEach((o,i)=>items.push({fy:o.fy,fn:()=>{const K=kz(o.fy),col=pplCol(o);
     const bob=(i+PF)%2&&o.k!=='judge'?1:0;if(!o.lift)shadowAt(c,o.x,o.fy,K);clipDraw(c,o.clipY,()=>drawPerson(c,o.x,o.fy-(o.lift||0)+bob,K,col,o.pose,o.flip))}}));
   // 실제 크기 소품
   const meO=ppl.find(o=>o.me)||ppl[0]||{x:256,fy:298};
@@ -2977,7 +3009,7 @@ function drawPx(spec,cv0){
   pr.filter(p=>OVERLAY.includes(p)).forEach(p=>{try{PROPS[p]&&PROPS[p](r,rnd,c)}catch(e){}});
   c.setTransform(1,0,0,1,0,0);PXC=null}
 
-function paint(spec){PXS=spec;PF=0;drawPx(spec);pxRun()}
+function paint(spec){PXS=spec;PF=0;drawPx(spec);pxRun();try{if(S&&S.cur&&S.cur.type!=='ev'&&!S.res)LASTSPEC[S.cur.type]=spec;warm(nextSpecs(spec))}catch(e){}}
 // 장면 숨쉬기 애니메이션: 화면이 가려지면(탭 전환·화면 꺼짐) 타이머를 아예 멈춘다
 function pxRun(){let still=true;try{still=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
   if(!PXT&&!still&&!document.hidden)PXT=setInterval(()=>{if(!document.getElementById('pxc'))return;PF^=1;try{drawPx(PXS)}catch(e){}},520)}
@@ -3686,6 +3718,7 @@ function tally(E){
 function yearEnd(){
   D=[];const x=s(),o=OFF[S.office],notes=[];
   if(S.pendingEnd){endGame(S.pendingEnd);return}
+  setTimeout(()=>{try{if(S&&!S.pendingEnd)warm(yearStartSpecs())}catch(e){}},0);
   if(o.sal){chg({money:o.sal});notes.push(`세비 ${won(o.sal)}`)}
   if(isPres()){presInit();S.gov.ap.push(s().support)}
   if(inOffice()&&isHard()&&!isPres()){chg({party:3});notes.push('험지 현역 프리미엄 (당내입지)')}
@@ -3758,7 +3791,7 @@ function nextYear(){
   if(S.age===65&&!S.lastTermLogged){S.lastTermLogged=1;addLog('65세. 더는 선거에 나가지 않고 남은 임기를 끝으로 정계를 떠나기로 했다.')}
   if(S.age>=90){endGame('age');return}
   if(!wrapMode()&&S.idle>=10){endGame('forgotten');return}
-  S.used={};S.cur=null;S.res=null;S.q=buildQueue();S.phase='queue';D=[];const y0=window.scrollY;save();render();window.scrollTo(0,y0);
+  S.used={};S.cur=null;S.res=null;S.q=buildQueue();S.phase='queue';try{warm(nextSpecs(null))}catch(e){}D=[];const y0=window.scrollY;save();render();window.scrollTo(0,y0);
 }
 const ENDS={
   pres:{t:'임기를 마친 대통령',b:'5년의 국정을 마치고 사저로 돌아간다.'},
@@ -3935,8 +3968,10 @@ const SND=(()=>{let ac=null,master=null,on=false,cur=null,timer=null,step=0,next
     if(!paused)return;paused=false;if(!on)return;
     Promise.resolve(ac.state==='suspended'?ac.resume():0).catch(()=>{}).then(()=>{if(cur&&!timer&&!paused){nextT=Math.max(nextT,ac.currentTime+.05);timer=setInterval(sched,90)}})}
   return{fx,bgm,set,btn,pause,_render,get on(){return on},get state(){return{audio:ac?ac.state:'none',music:!!timer,song:cur}}}})();
-function onVis(){const h=document.hidden;if(h)pxStop();else if(PXS&&document.getElementById('pxc'))pxRun();try{SND.pause(h)}catch(e){}}
+function onVis(){const h=document.hidden;if(h)pxStop();else{if(PXS&&document.getElementById('pxc'))pxRun();warmRun()}try{SND.pause(h)}catch(e){}}
 document.addEventListener('visibilitychange',onVis);
+// 첫 판 첫 장면(의정 활동·홍보)의 배경을 시작 화면에 머무는 동안 미리
+setTimeout(()=>{try{warmBg(['press','phone','street','office'])}catch(e){}},300);
 window.addEventListener('pagehide',()=>{pxStop();try{SND.pause(true)}catch(e){}});
 window.addEventListener('pageshow',onVis);
 function pickBgm(){if(!S||S.phase==='start')return 'title';if(S.phase==='ending')return 'title';if(isPres())return 'pres';if(S.togul&&!inOffice()&&!(S.cur&&['trial','detect'].includes(S.cur.type)))return 'togul';if((S.cur&&['trial','elec','impeach','detect'].includes(S.cur.type))||S.trial)return 'tense';return 'play'}

@@ -53,6 +53,8 @@
 - 배경: 기존 `BGK` 배경(512×256, K=1 인물 기준)을 24px 내려 '뒤쪽 평면'으로 쓰고(`bgFrame`), 위는 첫 줄 늘림, 아래 40px는 배경별 확장(`SCN[bg].ext`, 거리는 `walkway` 인도). 옛 단역(`mini`/`miniSit`/`smallCar`)은 `PXC.nomini`로 끄고, `SCN[bg].extras`의 자세 있는 배경 인물로 대체. 지나가는 차는 `SCN[bg].deco`(실제 4.5m 크기).
 - 소품: 실제 크기로 다시 그린 것(`hdPodium`·`hdTable`(desk)·`hdBallot`·`hdBooks`·`hdCase`(cash)·`hdBoxes`·`hdBus`·법정 밖 `hdGavel`)은 사람 없는 빈자리(`freeX`, 빈자리 없으면 뒤쪽 깊이)에. 배경 평면 소품(`OLDPLANE`: 법정 의사봉·카메라·차트·승용차·집·화환·트럭)은 K=1 깊이에, 현수막·아이콘(`OVERLAY`)은 맨 위.
 - 앞줄 관객 뒷머리(`crowd` 토큰 또는 `SCN[bg].heads`)는 `headsLayer()`로 캐시.
+- 다음 장면 미리 그리기(2026-11-09): `paint()` 직후 `warm(nextSpecs(spec))`. 지금 장면의 결과 표정(+·~·?)과 다음 일정 두 개(`itemSpecs`: 이벤트는 `evSpec`, 그 밖의 일정은 `TYPESPEC` 표 + 마지막에 본 장면 `LASTSPEC`)를 `warmTasks`로 배경 한 장·인물 한 명 단위로 쪼개 `requestIdleCallback` 틈에 캐시에 넣는다(한 번에 약 6ms). 한 해 정리 화면에서는 `yearStartSpecs()`(다음 해 첫 일정), 시작 화면에서는 `warmBg`로 첫 배경. 인물 캐시 `SPC`는 LRU(320장 넘으면 오래된 것부터 260장까지). 새 일정 종류나 고정 장면을 추가하면 `TYPESPEC`에도 넣을 것. 장면 색 결정은 `pplCol(o)` 하나로 공유(그리기와 미리 그리기의 캐시 키가 같아야 함).
+  - 효과(CPU 4배 감속): 처음 보는 장면 그리기 중앙 46→4ms, 느린 10% 161→11ms, 최대 222→41ms.
 - 표정 자동화: `tagFace`(이벤트 태그→주인공·상대 인물 표정, `TAGFACE`/`NPCTAG`), 결과 화면 `moodSpec`(내 결과에 따라 내 편은 같이, 라이벌은 반대로, 판사는 굳은 얼굴).
 - 상단 아바타·외모 미리보기도 `drawPerson`(stand 자세). 공유 카드는 16:10 장면.
 - 개발용 원본: `proto/hd.js`(인물)·`proto/bghd.js`(실제 크기 소품 도구)·`proto/dot2.js`(엔진·배치) → `proto/dot2_all.js`로 합쳐 game.html의 `/* ===== 도트 2판 엔진` 구역에 넣었다. 게임 쪽을 직접 고쳐도 된다(이후 proto는 참고용).
