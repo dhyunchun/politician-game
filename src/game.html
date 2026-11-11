@@ -249,6 +249,10 @@ details.log>summary .muted{font-size:12px}
 .lawhead{display:grid;grid-template-columns:1fr auto auto;gap:10px;font-size:11px;color:var(--muted);padding:0 13px 4px;font-weight:700}
 .odds{background:var(--card2);border-radius:8px;padding:10px 12px;font-size:13px;margin:0 0 10px;display:flex;flex-direction:column;gap:3px}
 .odds b{font-family:var(--f-num)}
+.goal{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:13px;line-height:1.45;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.goal .ok{color:var(--good)}.goal .bad{color:var(--bad)}.goal .gw{color:var(--bad);font-weight:600}
+.tip{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;font-size:13.5px;line-height:1.55;padding:10px 12px;border-radius:10px;background:var(--card2);border:1px dashed var(--muted)}
+.tip .linkbtn{flex:none;white-space:nowrap}
 .prog{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;padding:0 2px}
 .prog .dots{display:flex;gap:4px;flex-wrap:wrap} .prog .dots i{width:18px;height:6px;border-radius:3px;background:var(--line)}
 .prog .dots i.on{background:var(--p)} .prog .dots i.cur{background:var(--p);opacity:.45}
@@ -3044,14 +3048,14 @@ function renderMain(){
   document.body.dataset.party=S?S.party:'ind';
   if(!S||S.phase==='start'){renderStart();return}
   if(S.phase==='ending'){renderEnding();return}
-  {const h=hdrHTML(),i=h.indexOf('<details class="card statpanel"');$app.innerHTML=h.slice(0,i)+trialHTML()+progHTML()+`<section class="card stage" id="stage"></section>`+h.slice(i)+logHTML()+footHTML();
+  {const h=hdrHTML(),i=h.indexOf('<details class="card statpanel"');$app.innerHTML=h.slice(0,i)+goalHTML()+trialHTML()+progHTML()+`<section class="card stage" id="stage"></section>`+h.slice(i)+logHTML()+footHTML();
   {const hm=document.getElementById('hdrMore');if(hm)hm.onclick=()=>{UI.hdrMore=!UI.hdrMore;render()}}
   const sp=document.getElementById('statp');if(sp)sp.addEventListener('toggle',()=>{try{localStorage.setItem('pol-statopen',sp.open?'1':'0')}catch(e){}})}
   drawAvatar();
   const st=document.getElementById('stage');
   if(S.phase==='queue')renderQueueItem(st);
   else if(S.phase==='summary')renderSummary(st);
-  if(S&&S.phase!=='ending'&&st.isConnected)bindFoot();
+  if(S&&S.phase!=='ending'&&st.isConnected){bindFoot();try{showTip(st)}catch(e){}}
 }
 function hdrHTML(){
   const x=s(),o=S.minister&&S.office==='none'?Object.assign({},OFF.none,{n:minN(),full:minN()}):OFF[S.office],RR=curR(),dt=DTYPE[curD()[3]],pp=presPaths();
@@ -3078,7 +3082,7 @@ function hdrHTML(){
         return `<div class="chips">${show.join('')}${more.length?`<button type="button" class="chip more" id="hdrMore" aria-expanded="${open}">${open?'접기':'+'+more.length}</button>`:''}</div>${more.length&&open?`<div class="chips more">${more.join('')}</div>`:''}`})()}</div>
     <div class="yr"><div class="num">${S.year}년</div><div class="meta">${S.age}세${S.age>=65||S.exPres?' · 불출마':` · 다음 ${en[nextE.k]} ${nextE.y}`}</div>${isPres()?apSpark():''}</div>
   </header>
-  <details class="card statpanel" id="statp" ${statOpen()?'open':''}><summary><span class="sumstrip">${[['인지','fame'],['지지','support'],['당','party'],['청렴','integrity'],['멘탈','mental']].map(([l,k])=>`<span><small>${l}</small><b class="num">${x[k]}</b></span>`).join('')}<span><small>자금</small><b class="num" style="${broke()?'color:var(--bad)':''}">${won(x.money).replace('원','')}</b></span></span><span class="sumhint">능력치·정당·지역</span></summary>
+  <details class="card statpanel" id="statp" ${statOpen()?'open':''}><summary><span class="sumstrip">${[['인지','fame'],['지지','support'],['당','party'],['청렴','integrity'],['멘탈','mental']].map(([l,k])=>`<span><small>${l}</small><b class="num"${riskCol(k)}>${x[k]}</b></span>`).join('')}<span><small>자금</small><b class="num" style="${broke()?'color:var(--bad)':''}">${won(x.money).replace('원','')}</b></span></span><span class="sumhint">능력치·정당·지역</span></summary>
     <div class="stats">${['fame','support','party','integrity','mental','policy'].map(k=>statRow(k,k==='support'||k==='fame')).join('')}
       <div class="money"><span>정치자금</span><b class="num" style="${broke()?'color:var(--bad)':''}">${won(x.money)}</b></div>
       <div class="money" style="border-top:none;padding-top:0;margin-top:-4px"><span class="muted">다음 도전(${OFF[nextTarget()].n}) 정석 선거 예상 비용</span><span class="num muted">${won(needMoney())}</span></div>
@@ -3100,6 +3104,43 @@ function hdrHTML(){
       <div><span class="label">${esc(curD()[0])}</span> ${dt.n} · ${dt.t}${member()?` · 우리 당 기준 <b>${leanTxt(leanFor(S.party))}</b>`:''}</div><div><span class="label">살림</span> ${distTxt()}</div></div>
   </details>`;
 }
+// 위험 수치 색: 멘탈(0이면 번아웃)·청렴도(30 미만 선거 감점)
+function riskCol(k){const v=s()[k];if(wrapMode())return '';const c=k==='mental'?(v<25?'bad':v<40?'warn':''):k==='integrity'?(v<30?'bad':v<40?'warn':''):'';return c?` style="color:var(--${c})"`:''}
+// 다음 선거 준비 한 줄: 나갈 자리·필요 자금·여론조사, 그리고 당장 위험한 것
+function goalOffice(){if(wrapMode()||isPres()||S.age>=65||S.banUntil>S.year+4)return null;
+  const done=S.phase==='summary'||!(S.q||[]).some(q=>q.type==='elec')&&!(S.cur&&S.cur.type==='elec'),t0=inOffice()?OFF[S.office].tier:0;
+  for(let y=S.year+(done?1:0);y<=S.year+5;y++){if(S.age+(y-S.year)>=65||S.banUntil>y)continue;const ks=elecKinds(y);if(!ks.length)continue;
+    const offs=ks.flatMap(k=>KIND_OFF[k]).filter(o=>o!=='natp'&&reqMet(o)&&!(curR().jeju&&(o==='basic'||o==='mayor')));
+    const up=offs.filter(o=>OFF[o].tier>t0).sort((a,b)=>OFF[a].tier-OFF[b].tier||route(b)-route(a))[0],re=offs.includes(S.office)&&S.termEnd===y?S.office:null;
+    // 야인은 예전에 올랐던 급까지를 복귀 목표로 본다
+    const bt=Math.max(1,Math.min(4,OFF[S.best||'none'].tier)),back=!inOffice()&&offs.filter(o=>OFF[o].tier<=bt).sort((a,b)=>OFF[b].tier-OFF[a].tier||route(b)-route(a))[0];
+    const o=inOffice()?(up||re):back;if(o)return{o,y,re:o===re,kind:ELEC_OF[o]}}
+  return null}
+function goalHTML(){if(!S||(S.phase!=='queue'&&S.phase!=='summary'))return '';const x=s(),W=[],en={local:'지방선거',general:'총선',pres:'대선'};
+  if(!wrapMode()){if(x.mental<25)W.push(`멘탈 ${x.mental} · 0이 되면 번아웃 은퇴`);
+    if(!inOffice()&&!S.minister&&!S.pm&&!S.togul&&(S.idle||0)>=6)W.push(`야인 ${S.idle}년째 · 10년이면 잊혀진다`);
+    if(x.integrity<30)W.push('청렴도 30 미만 · 선거 감점');
+    {const up=UPKEEP[S.office]||0;if(up&&S.phase==='queue'&&x.money+OFF[S.office].sal<up)W.push('연말 운영비 부족 예상')}}
+  const g=goalOffice();let main='';
+  if(g){const need=Math.round(OFF[g.o].spend*(g.o==='pres'?1:(curR().fx.cost||1))+DEPOSIT[g.o]+(member()?NOMFEE[g.o]:0)),lack=need-x.money,q=(S.polls||{})[g.o],dy=g.y-S.year;
+    main=`<span><b>${g.y} ${en[g.kind]}</b> <span class="muted">${dy===0?'올해':dy===1?'내년':dy+'년 뒤'}</span></span><span>${OFF[g.o].n} ${g.re?'재선':'도전'}</span><span>정석 선거 ${won(need)} · ${lack>0?`<b class="bad">${won(lack)} 부족</b>`:'<b class="ok">자금 충분</b>'}</span>${q&&S.year-q.y<=1?`<span>여론조사 <b class="num ${q.me>q.op?'ok':q.me<q.op?'bad':''}">${q.me}:${q.op}</b></span>`:''}`}
+  if(!main&&!W.length)return '';
+  return `<div class="goal" role="status">${main?`<span class="gi" aria-hidden="true">🎯</span>${main}`:''}${W.map(w=>`<span class="gw">⚠ ${w}</span>`).join('')}</div>`}
+// 첫 판 안내: 장면마다 한 번씩만, 기기에 기억
+const TIPS={ev:'<b>처음이신가요?</b> 해마다 일정이 4~6개 찾아와요. 선택지 오른쪽 작은 글씨가 예상 효과예요.',
+  dark:'빨간 점선 선택지는 <b>검은돈</b>이에요. 큰돈이 들어오지만 청렴도가 깎이고, 몇 년 뒤 수사로 돌아올 수 있어요.',
+  sum:'해가 바뀌면 세비가 들어오고 운영비가 나가요. 인지도는 해마다 조금씩 식으니 꾸준히 채워 주세요. 위쪽 🎯 줄에서 다음 선거에 필요한 자금을 볼 수 있어요.',
+  elec:'출마하면 기탁금과 선거비용이 들어요. 돈을 많이 쓸수록 유리하지만 득표율이 낮으면 돌려받지 못해요. 자신이 없으면 현직을 지키는 것도 방법이에요.',
+  poll:'여론조사는 지금 판세예요. 크게 앞서거나 뒤지면 그 숫자만으로도 표심이 움직여요.'};
+function tipSeen(){try{return JSON.parse(localStorage.getItem('pol-tips'))||{}}catch(e){return {}}}
+function tipMark(k){try{const t=tipSeen();t[k]=1;localStorage.setItem('pol-tips',JSON.stringify(t))}catch(e){}}
+function tipKey(st){if(S.phase==='summary')return 'sum';const c=S.cur;if(!c||S.res)return null;
+  if(c.type==='elec')return S.elec&&S.elec.step==='choose'?'elec':null;if(c.type==='poll')return 'poll';
+  if(c.type==='ev'){const seen=tipSeen();if(!seen.ev)return 'ev';if(st.querySelector('.choice.dark'))return 'dark'}return null}
+function showTip(st){if(window.__NOSUSP)return;const k=tipKey(st);if(UI.tipCur&&UI.tipCur!==k){tipMark(UI.tipCur);UI.tipCur=null}
+  if(!k||tipSeen()[k])return;UI.tipCur=k;const d=document.createElement('div');d.className='tip';d.setAttribute('role','note');
+  d.innerHTML=`<span>${TIPS[k]}</span><button type="button" class="linkbtn" id="tipx">알겠어요</button>`;st.parentNode.insertBefore(d,st);
+  d.querySelector('#tipx').onclick=()=>{tipMark(k);UI.tipCur=null;d.remove()}}
 function statOpen(){if(window.__NOSUSP)return false;try{const v=localStorage.getItem('pol-statopen');if(v!=null)return v==='1'}catch(e){}return matchMedia('(min-width: 760px)').matches}
 function progHTML(){
   if(S.phase!=='queue'&&S.phase!=='summary')return '';const tot=S.qTotal||1,done=S.phase==='summary'?tot:tot-S.q.length-(S.cur&&!S.res?1:0);
@@ -3634,13 +3675,14 @@ function pollTargets(){const t0=inOffice()?OFF[S.office].tier:0,set=new Set();
 function runPolls(){S.polls=S.polls||{};const out=[];
   for(const o of pollTargets()){const B=elecBase(o,2),small=['basic','metro','mayor'].includes(o),moe=small?4.4:o==='pres'?2.2:3.1,
       share=clamp(50+(B.p-B.opp)*.9+gauss()*(small?3.5:2.2)+(R()-.5)*2,6,90),und=Math.round(small?ri(18,28):ri(10,18)),
-      me=Math.round(share*(100-und)/100),op=Math.round((100-share)*(100-und)/100),riv=rivalIn(o)?S.rival.name:null;
-    S.polls[o]={y:S.year,me,op,und,moe,lead:me-op,riv};out.push(o)}
+      ds=tight(share),me=Math.round(ds*(100-und)/100),op=Math.round((100-ds)*(100-und)/100),riv=rivalIn(o)?S.rival.name:null;
+    // lead: 판세 계산용(원래 격차), dl: 화면에 보이는 격차
+    S.polls[o]={y:S.year,me,op,und,moe,lead:Math.round(share*(100-und)/100)-Math.round((100-share)*(100-und)/100),dl:me-op,riv};out.push(o)}
   return out}
 
 function addPoll(q){if(S.age<65&&S.pollY!==S.year&&pollTargets().length)q.push({type:'poll'})}
 function pollTxt(o){const q=(S.polls||{})[o];if(!q||S.year-q.y>1)return '';return ` · 여론조사 ${q.me}% 대 ${q.op}%${q.y<S.year?'(작년)':''}`}
-function pollVerdict(q){return q.lead>2*q.moe?['오차범위 밖 우세','good']:q.lead>0?['오차범위 안 우세','']:q.lead<-2*q.moe?['오차범위 밖 열세','bad']:['오차범위 안 열세','']}
+function pollVerdict(q){const l=q.dl==null?q.lead:q.dl;return l>2*q.moe?['오차범위 밖 우세','good']:l>0?['오차범위 안 우세','']:l<-2*q.moe?['오차범위 밖 열세','bad']:l<0?['오차범위 안 열세','']:['동률','']}
 function renderPoll(st){
   if(S.pollY!==S.year){const L=runPolls();S.pollY=S.year;S.pollList=L;D=[];const notes=[];
     // 조사가 공표되는 순간 여론이 다시 움직인다
@@ -3682,6 +3724,8 @@ function tallyP(E){
     E.html=`<b>낙선.</b> 정당 득표율 ${v}%로 비례 ${seats}석. 순번 ${E.rank}번은 한 칸이 모자랐다.`}
   E.dh=deltaHTML();E.step='result';
 }
+// 표시용 득표율: 당락(50% 기준)은 그대로 두고 중간 격차만 좁혀 접전이 자주 보이게 한다. 격차 35%p 이상은 그대로라 보전 기준(15%·10%)도 그대로
+function tight(share){const d=share-50;return 50+d*Math.min(1,Math.sqrt(Math.abs(d)/35))}
 function tally(E){
   D=E.d0||[];const off=E.off,o=OFF[off],RR=curR(),dt=DTYPE[curD()[3]];chg({money:-E.cost-(E.dep||0)});
   E.name=offName(off);E.party=S.party;
@@ -3690,9 +3734,9 @@ function tally(E){
   if(E.far)p-=4;
   let opp=B.opp+gauss()*7;p+=gauss()*5;
   E.riv=rivalIn(off);if(E.riv){S.rivalRaced=S.year;E.rname=S.rival.name;E.rparty=S.rival.party}
-  const share=clamp(50+(p-opp)*.9,3,88);const win=share>50;
+  const share=tight(clamp(50+(p-opp)*.9,3,88));const win=share>50;
   E.share=+share.toFixed(1);E.win=win;
-  if(E.riv){const v=S.rival;E.rshare=+(win?clamp(100-share-ri(1,6),1,share-.3):clamp(100-share-ri(0,3),share+.3,97)).toFixed(1);
+  if(E.riv){const v=S.rival;E.rshare=+(win?clamp(100-share-R()*R()*7,1,share-.1):clamp(100-share-R()*R()*4,share+.1,97)).toFixed(1);
     if(win){v.l++;v.power=clamp(v.power-4,20,92);if(R()<.5)v.office='none'}else{v.w++;v.power=clamp(v.power+4,20,92);v.office=off;v.tier=OFF[off].tier}}
   const dref=share>=15?(E.dep||0):share>=10?(E.dep||0)/2:0;
   const refund=Math.round((share>=15?E.cost*.6:share>=10?E.cost*.3:0)+dref);if(refund)chg({money:refund});
@@ -3702,7 +3746,7 @@ function tally(E){
     S.office=off;S.termEnd=S.year+(off==='pres'?5:4);S.held[off]=(S.held[off]||0)+1;S.stats.wins++;if(S.togulBack)S.everTogulWin=1;
     if(o.tier>OFF[S.best].tier||(o.tier===OFF[S.best].tier&&off!==S.best&&off==='nat')){S.best=off;S.bestName=E.name}
     if(off==='pres'){S.ruling=S.party;S.presFrom=S.year;if(S.trial){S.trialHold=S.trial;S.trial=null;S.haltShown=0;achMark('halt');addLog(`대통령 당선으로 '${S.trialHold.name}' 재판이 중지됐다 (헌법 제84조).`)}}
-    if(S.togulRet){achMark('togul');S.togulRet=0}if(S.party==='np'&&OFF[off].tier>=3)achMark('npwin');if(off==='nat'&&!member())achMark('indnat');if(off==='nat'&&member()&&isHard())achMark('hardnat');if(S.joined&&member())achMark('joinwin');if(E.share>=65)achMark('land');if(E.riv&&E.share-E.rshare<=.5)achMark('squeak');
+    if(S.togulRet){achMark('togul');S.togulRet=0}if(S.party==='np'&&OFF[off].tier>=3)achMark('npwin');if(off==='nat'&&!member())achMark('indnat');if(off==='nat'&&member()&&isHard())achMark('hardnat');if(S.joined&&member())achMark('joinwin');if(E.share>=60)achMark('land');if(E.riv&&E.share-E.rshare<=.5)achMark('squeak');
     chg({fame:8,mental:5});S.idle=0;S.togul=0;
     S.path=(S.path||[]);S.path.push([S.year,E.name]);addLog(`${E.name} 당선 (${E.share}%).`);
     E.html=`<b>당선!</b> ${E.name}${S.held[off]>1?' ('+S.held[off]+'선)':''}. 득표율 ${E.share}%.${E.riv?` 라이벌 ${J(E.rname,'을를')} ${(E.share-E.rshare).toFixed(1)}%p 차로 눌렀다.`:''}${refund?' 기탁금·선거비용 '+won(refund)+' 보전.':''}`;
@@ -4111,7 +4155,7 @@ const ACH=[
  ['rival5','숙적 제압','라이벌에게 5번 이긴다',x=>x.rival&&x.rival.l>=5],
  ['rivalL','영원한 2인자','라이벌에게 3번 진다',x=>x.rival&&x.rival.w>=3],
  ['flip','출구조사 역전','출구조사 열세를 뒤집고 당선',x=>x.ach&&x.ach.flip],
- ['land','압승','득표율 65% 이상으로 당선',x=>x.ach&&x.ach.land],
+ ['land','압승','득표율 60% 이상으로 당선',x=>x.ach&&x.ach.land],
  ['squeak','0.5%p의 기적','라이벌을 0.5%p 이내 차로 꺾는다',x=>x.ach&&x.ach.squeak],
  ['togul','하산 후 당선','흙집 칩거에서 복귀해 당선',x=>x.ach&&x.ach.togul],
  ['indnat','무소속 금배지','무소속으로 국회의원 당선',x=>x.ach&&x.ach.indnat],
