@@ -47,6 +47,10 @@ for(let g=0;g<N;g++){console.error("G",g,Math.round(process.memoryUsage().heapUs
     if(S.cur&&S.cur.type==='elec'&&S.elec&&S.elec.step==='camp'&&!S.res){const v=[...d.querySelectorAll('[data-v]:not([disabled])')];if(!v.length){d.getElementById('giveup').click();return true}v[v.length-1].click();return true}
     if(S.cur&&S.cur.type==='elec'&&S.elec&&S.elec.step==='nom'&&!S.res){d.getElementById('n1').click();return true}
     if(S.cur&&S.cur.type==='ev'&&!S.res&&bs.length>1&&w.eval('EV').find(e=>e.id===S.cur.id).tempt){if(STRAT==='smart'||(STRAT==='mod'&&(!w.eval('broke()')||w.eval('S.s.integrity')<40||w.eval('!!S.trial'))))bs[bs.length-1].click();else bs[0].click();return true}
+    // 임기 공약: PLEDGE=ignore가 아니면 진척이 임기 경과에 못 미칠 때 공약 선택지를 고르고, 공약 후퇴·파기 선택지는 피한다
+    if(process.env.PLEDGE!=='ignore'&&S.pl&&!S.res&&S.cur&&S.cur.type==='ev'){const pc=bs.filter(b=>b.classList.contains('plc')&&!(/보고회로 연다/.test(b.textContent)&&w.eval('broke()')));
+      if(pc.length&&w.eval('plgPct()')<Math.min(100,(S.year-S.pl.y)*25+10)){pc[0].click();return true}
+      const nb=bs.filter(b=>!/공약 후퇴|공약 파기/.test(b.textContent));if(nb.length&&nb.length<bs.length){nb[Math.floor(Math.random()*nb.length)].click();return true}}
     return false;
   }
   const S=w.eval('S');
