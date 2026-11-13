@@ -123,6 +123,9 @@
 - 새 자세 `explain`(양손 펴서 설명), `chest`(손을 가슴에): 주인공 기본 자세를 장면 문자열 해시로 talkQ/explain/chest 중에서 고른다.
 - **작업 방법**: 배경은 `proto/dot3_bgs.js`를 고친 뒤 `python3 proto/dot3_sync.py`(src/game.html의 `DOT3-BGS-BEGIN/END` 사이를 갈아끼움, SCN3를 SCN에 덮어씀). 간판 새 글자는 dot3_sync.py의 `GLYPHS`에 더하면 Noto Sans CJK KR Bold로 비트맵을 만들어 넣는다(`proto/dot3_glyphs.py`). 거리 배경·얼굴·인물 코드는 이제 game.html에서 직접 고친다. `proto/dot3_patch.py`는 시안용 1회성이라 다시 돌리지 말 것(이미 반영됨).
 - 첫 그리기 시간(데스크톱): 거리 45ms, 나머지 2~22ms. 미리 그리기로 가려짐.
+- 주요 인물 다양화: `stageScene` 결과에 `vs`(장면 문자열+순번)를 붙이고 `pplCol`이 aide·rep·cit·cit2·old·biz를 `varyCol(col,seed,role)`로 섞는다(같은 장면이면 늘 같은 사람). 정장 역할(aide·biz·rep)은 `SUITC` 정장색·넥타이, 체형 `c.bw`(0.9~1.14), 피부색 4종. 주인공·라이벌·판사·정당 인사·의사는 고정.
+- 이벤트 분류별 자세: 이벤트 장면을 그릴 때 `PXH[장면]=e.tag`, `HINTPOSE`(태그 정규식→자세 후보)로 표정 없는 평소 장면의 주인공 자세를 고른다(논란→think/clasp, 정책→explain/paper, 가족·후일담→chest, 지역→wave, 라이벌→cross/point, 위기→think/clasp).
+- 검수(2026-11-13): 실제 쓰이는 장면 340종 전부 모음판으로 확인. house 소품은 거리·밤·비·기자회견장·기차역에서 숨김, 밤거리에 car 소품이 있으면 기본 차를 뺌.
 
 ## 아이디어 목록(아직 안 함)
 - 글자 크기 설정, 저장 슬롯 2~3개.

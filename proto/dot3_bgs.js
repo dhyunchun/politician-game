@@ -94,7 +94,7 @@ function bgCourt(c,H){const{P}=H;pceil(H,22,'#4a3424','#ffe9b0');pwall(H,22,'#7a
 const SCN3={
   street:{noOld:['house']},
   office:{full:bgOffice,extras:[['aide','paper',452,214,1]]},
-  press:{full:bgPress,extras:[['aide','idleQ',30,214,0],['aide','paper',482,214,1]]},
+  press:{noOld:['house'],full:bgPress,extras:[['aide','idleQ',30,214,0],['aide','paper',482,214,1]]},
   brief:{full:bgBrief,extras:[]},
   cabinet:{full:bgCabinet,extras:[['aide','idleQ',22,212,0],['aide','paper',490,212,1]]},
   audit:{full:bgAudit,extras:[['aide','paper',474,212,1]]},
@@ -245,14 +245,14 @@ function bgFire(c,H){const{P}=H;H.raw(true);H.bands(0,160,['#1a0a10','#2a0e12','
   H.raw(true);P(tx+140,tb-84,10,4,PF?'#ff3a3a':'#3a6aff');P(tx+152,tb-84,10,4,PF?'#3a6aff':'#ff3a3a');H.raw(false);H.wheel(tx+30,tb-10,12);H.wheel(tx+140,tb-10,12);
   pfl(H,186,{w:56,q:.34,c:['#3a2a26','#342622'],mode:'row'});H.raw(true);H.alpha(.08,()=>P(0,186,512,134,'#f58a24'));H.raw(false)}
 Object.assign(SCN3,{
-  night:{noOld:['house'],full:(c,H)=>streetV3(c,H,'night'),extras:[['cit2','phone',58,193,0],['aide','walk',470,192,1]],deco:()=>[[262,c=>hdCar(c,PF?352:358,282,mz(262),'#e8e4d8',false)]]},
+  night:{noOld:['house'],full:(c,H)=>streetV3(c,H,'night'),extras:[['cit2','phone',58,193,0],['aide','walk',470,192,1]],deco:pr=>pr.some(p=>['truck','bus','car'].includes(p))?[]:[[262,c=>hdCar(c,PF?352:358,282,mz(262),'#e8e4d8',false)]]},
   rain:{noOld:['house'],full:(c,H)=>streetV3(c,H,'rain'),extras:[['cit','umb',58,193,0],['cit2','umb',470,192,1]]},
   market:{full:bgMarket,extras:[['cit','walkB',30,206,0],['old','talkQ',140,204,0],['cit2','idleQ',360,204,1,{st:'bob',h:'#3a2a20'}],['cit','walk',486,208,1]]},
   school:{full:bgSchool,extras:[['cit','walk',30,200,0],['cit2','talkQ',66,204,0],['cit','talkQ',446,204,1,{st:'bob',h:'#3a2a20'}],['cit2','walkB',486,200,1]]},
   sea:{full:bgSea,extras:[['cit2','idleQ',24,206,0],['old','talkQ',60,210,0],['cit2','phone',478,208,1]]},
   field:{full:bgField,extras:[['old','idleQ',40,200,0],['cit','talkQ',96,204,0],['old','talkQ',452,206,1]]},
   plane:{full:bgPlane,extras:[['cit','walkB',28,206,0],['cit2','walkB',70,210,0],['aide','idleQ',478,210,1]]},
-  train:{full:bgTrain,extras:[['cit2','phone',24,210,0],['cit','walkB',62,212,0],['aide','walk',450,212,1],['cit2','idleQ',490,210,1]]},
+  train:{noOld:['house'],full:bgTrain,extras:[['cit2','phone',24,210,0],['cit','walkB',62,212,0],['aide','walk',450,212,1],['cit2','idleQ',490,210,1]]},
   factory:{full:bgFactory,extras:[['cit2','idleQ',30,206,0],['cit2','paper',66,208,0],['cit2','talkQ',448,208,1]]},
   fire:{full:bgFire,extras:[['cit2','idleQ',36,210,0]]},
 });

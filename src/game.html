@@ -2262,9 +2262,12 @@ const WHO={
   doc:{st:'short',h:'#333333',P:'#f4f4f4',t:'#7fb3d5',w:'#cfe6f5',L:'#7fb3d5',steth:1},
 };
 const EXV={P:['#b05a4a','#4a7a9a','#7a6a9a','#c8b070','#4f7a5a','#8a8f98','#d08a5a','#35507a','#a04a6a'],L:['#3b3f48','#2f343b','#4a4f5a','#3f5f8f','#5a4a3a','#26303c'],h:['#1f1f1f','#3a2a20','#5a3a22','#2b2421','#6a5a4a','#151515'],M:['short','part','slick'],F:['long','bob','bun']};
-function varyCol(col,seed){if(col.robe||col.steth)return col;const r=mkRng('ex'+seed),pk=a=>a[Math.floor(r()*a.length)],fem=['long','bob','bun'].includes(col.st),c=Object.assign({},col);
-  c.P=pk(EXV.P);c.L=pk(EXV.L);if(col.st!=='bald'){c.st=pk(fem?EXV.F:EXV.M);c.h=pk(EXV.h)}else if(r()<.5){c.st='slick';c.h='#b8b8b8'}
-  c.gl=r()<.25?1:0;c.hood=!fem&&r()<.3?1:0;if(c.hood)c.t=null;c.sk=fem&&r()<.4?1:0;return c}
+const SUITC=['#2f3239','#3b4250','#55606e','#4a3f38','#2a3550','#5a5f66','#6a5a4a','#3a4a3a'];
+function varyCol(col,seed,role){if(col.robe||col.steth)return col;const r=mkRng('ex'+seed),pk=a=>a[Math.floor(r()*a.length)],fem=['long','bob','bun'].includes(col.st),c=Object.assign({},col);
+  const suit=role==='aide'||role==='biz'||role==='rep';
+  c.P=pk(suit?SUITC:EXV.P);c.L=suit?shade(c.P,.75):pk(EXV.L);if(col.st!=='bald'){c.st=pk(fem?EXV.F:EXV.M);c.h=role==='biz'&&r()<.6?pk(['#a0a0a0','#8a8a8a','#c8c8c8']):pk(EXV.h)}else if(r()<.5){c.st='slick';c.h='#b8b8b8'}
+  if(role==='biz'||role==='aide')c.gl=r()<.5?1:0;else c.gl=r()<.25?1:0;c.hood=!suit&&!fem&&r()<.3?1:0;if(c.hood)c.t=null;else if(suit&&col.t)c.t=pk(['#9aa3ad','#c94040','#2f6be0','#c8a13a','#3a9e6a','#7a3fb0']);
+  c.sk=fem&&r()<.4?1:0;c.bw=pk([.9,.96,1,1,1.06,1.14]);c.s=pk(['#f1c7a0','#eab890','#f6d2b0','#e2b088']);return c}
 function whoCol(k){if(k==='me'){const l=(S&&S.look)||{};return{st:l.st||'part',h:l.h||'#2b2421',s:l.s||'#f1c7a0',gl:l.gl,sk:l.sk,P:PHEX[S.party],t:l.t===''?null:(l.t||'#f2c14e'),w:'#f4f4f4',L:l.sk?shade(PHEX[S.party],.6):'#2a2d34',pin:1}}
   if(k==='riv'&&S&&S.rival){const v=S.rival;return{st:v.look.st,h:v.look.h,gl:v.look.gl,sk:v.look.sk,P:PHEX[v.party],t:'#ffffff',w:'#f4f4f4',L:v.look.sk?shade(PHEX[v.party],.6):'#2a2d34'}}
   if(k==='fjj'||k==='fsm')return{st:'slick',h:'#a8a8a8',P:PHEX[k.slice(1)],t:'#ffffff',w:'#f4f4f4',L:'#2a2d34',gl:1};return WHO[k]||WHO.cit}
@@ -2856,7 +2859,7 @@ function personH(ctx,cx,fy,K,c,pose,flip){
   const s=c.s||'#f1c7a0',S2=shade(s,.84),S3=shade(s,.7),P=c.P||'#4a6fa5',L0=c.L||'#2a2d34',h=c.h||'#2b2421';
   const st=c.st||'short',FEM=st==='long'||st==='bob'||st==='bun',ROBE=!!c.robe,AC=ROBE?'#24242c':P,W=c.w||'#f4f4f4';
   let face=c.face||'';if(!face&&P0.face&&P0.face!=='talk')face=P0.face;const talk=!!(c.talk||P0.face==='talk');
-  const sw=FEM?8.8:10.5,wa=FEM?5.9:7.3,hp=FEM?7.9:7.6;
+  const bw=c.bw||1,sw=(FEM?8.8:10.5)*bw,wa=(FEM?5.9:7.3)*(bw>1?bw*1.08:bw),hp=(FEM?7.9:7.6)*bw;
   const hipC=[18+(P0.hip?P0.hip[0]:0),27+(P0.hip?P0.hip[1]:0)],lean=P0.lean||0,nk=[18+lean,2+Math.abs(lean)*.35];
   const front=[sw-4,sw-.6,sw,sw,sw-.6,sw-1.6,wa+1,wa,wa,wa+.5,hp];let wl,wr;
   if(d==='f'){wl=lerpA(front);wr=wl}
@@ -3428,7 +3431,7 @@ function bgCourt(c,H){const{P}=H;pceil(H,22,'#4a3424','#ffe9b0');pwall(H,22,'#7a
 const SCN3={
   street:{noOld:['house']},
   office:{full:bgOffice,extras:[['aide','paper',452,214,1]]},
-  press:{full:bgPress,extras:[['aide','idleQ',30,214,0],['aide','paper',482,214,1]]},
+  press:{noOld:['house'],full:bgPress,extras:[['aide','idleQ',30,214,0],['aide','paper',482,214,1]]},
   brief:{full:bgBrief,extras:[]},
   cabinet:{full:bgCabinet,extras:[['aide','idleQ',22,212,0],['aide','paper',490,212,1]]},
   audit:{full:bgAudit,extras:[['aide','paper',474,212,1]]},
@@ -3579,14 +3582,14 @@ function bgFire(c,H){const{P}=H;H.raw(true);H.bands(0,160,['#1a0a10','#2a0e12','
   H.raw(true);P(tx+140,tb-84,10,4,PF?'#ff3a3a':'#3a6aff');P(tx+152,tb-84,10,4,PF?'#3a6aff':'#ff3a3a');H.raw(false);H.wheel(tx+30,tb-10,12);H.wheel(tx+140,tb-10,12);
   pfl(H,186,{w:56,q:.34,c:['#3a2a26','#342622'],mode:'row'});H.raw(true);H.alpha(.08,()=>P(0,186,512,134,'#f58a24'));H.raw(false)}
 Object.assign(SCN3,{
-  night:{noOld:['house'],full:(c,H)=>streetV3(c,H,'night'),extras:[['cit2','phone',58,193,0],['aide','walk',470,192,1]],deco:()=>[[262,c=>hdCar(c,PF?352:358,282,mz(262),'#e8e4d8',false)]]},
+  night:{noOld:['house'],full:(c,H)=>streetV3(c,H,'night'),extras:[['cit2','phone',58,193,0],['aide','walk',470,192,1]],deco:pr=>pr.some(p=>['truck','bus','car'].includes(p))?[]:[[262,c=>hdCar(c,PF?352:358,282,mz(262),'#e8e4d8',false)]]},
   rain:{noOld:['house'],full:(c,H)=>streetV3(c,H,'rain'),extras:[['cit','umb',58,193,0],['cit2','umb',470,192,1]]},
   market:{full:bgMarket,extras:[['cit','walkB',30,206,0],['old','talkQ',140,204,0],['cit2','idleQ',360,204,1,{st:'bob',h:'#3a2a20'}],['cit','walk',486,208,1]]},
   school:{full:bgSchool,extras:[['cit','walk',30,200,0],['cit2','talkQ',66,204,0],['cit','talkQ',446,204,1,{st:'bob',h:'#3a2a20'}],['cit2','walkB',486,200,1]]},
   sea:{full:bgSea,extras:[['cit2','idleQ',24,206,0],['old','talkQ',60,210,0],['cit2','phone',478,208,1]]},
   field:{full:bgField,extras:[['old','idleQ',40,200,0],['cit','talkQ',96,204,0],['old','talkQ',452,206,1]]},
   plane:{full:bgPlane,extras:[['cit','walkB',28,206,0],['cit2','walkB',70,210,0],['aide','idleQ',478,210,1]]},
-  train:{full:bgTrain,extras:[['cit2','phone',24,210,0],['cit','walkB',62,212,0],['aide','walk',450,212,1],['cit2','idleQ',490,210,1]]},
+  train:{noOld:['house'],full:bgTrain,extras:[['cit2','phone',24,210,0],['cit','walkB',62,212,0],['aide','walk',450,212,1],['cit2','idleQ',490,210,1]]},
   factory:{full:bgFactory,extras:[['cit2','idleQ',30,206,0],['cit2','paper',66,208,0],['cit2','talkQ',448,208,1]]},
   fire:{full:bgFire,extras:[['cit2','idleQ',36,210,0]]},
 });
@@ -3653,6 +3656,15 @@ const FHC={};function headsLayer(){const key='h'+PF;if(FHC[key])return FHC[key];
 /* ── 장면 배치: spec의 인물·표정·소품으로 자세·자리·방향을 정한다 ── */
 const FACE2={'+':'smile','!':'angry','~':'sad','?':'shock'};
 function parseWho(who){return(who?who.split(','):[]).filter(Boolean).map(w=>{const m=w.match(/^([a-z0-9]+)([\^+!~?]*)$/i)||[0,w,''];return{k:m[1],wave:m[2].includes('^'),face:[...m[2]].map(ch=>FACE2[ch]).find(Boolean)||''}})}
+// 이벤트 분류 → 주인공 기본 자세 후보(표정이 없는 평소 장면에만)
+const PXH={};
+const HINTPOSE=[[/논란|의혹|폭로|단독|속보|스캔들|청문회|해임|탄핵|공작|처신|은밀|감사/,['think','clasp','talkQ']],
+  [/국정|정책|예산|표결|국회|외교|협치|원구성|공약|AI|청구서/,['explain','paper','talkQ']],
+  [/가족|흙집|후일담|유산|칩거|야인|건강/,['chest','idleQ','talkQ']],
+  [/지역|민심|민원|현장|일정|서울|경기|인천|부산|대구|광주|대전|제주|강원|충북|전북|전남|경북|경남|초청/,['wave','talkQ','chest']],
+  [/라이벌|계파|신당|여소야대|소수당|지낸당|시민의힘/,['cross','point','talkQ']],
+  [/참사|위기|감염병|부동산/,['think','clasp','explain']],
+  [/화제|SNS|해프닝|섭외|제안/,['explain','talkQ','chest']]];
 function stageScene(bg,who,props){
   const all=parseWho(who),crowd=all.some(p=>p.k==='crowd'),P=all.filter(p=>p.k!=='crowd'),n=P.length,has=k=>props.includes(k),meI=P.findIndex(p=>p.k==='me');
   const out=[];if(!n)return out;
@@ -3689,7 +3701,9 @@ function stageScene(bg,who,props){
       else if(mood==='sad')pose=anyone?'clasp':'despair';
       else if(mood==='shock')pose='shock';
       else if(has('desk'))pose='talkF';
-      else{const r=mkRng(bg+who+props.join(','))();pose=others.length?(r<.5?'talkQ':r<.75?'explain':'chest'):judges.length?'clasp':(r<.6?'talkF':'explain')}
+      else{const key=bg+'|'+who+'|'+props.join(','),r=mkRng(key)(),hp=PXH[key]&&HINTPOSE.find(([re])=>re.test(PXH[key]));
+        if(hp&&!judges.length){const L=hp[1].filter(q=>others.length||!['point','cross'].includes(q));pose=L[Math.floor(r*L.length)];if(!others.length&&pose==='talkQ')pose='talkF'}
+        else pose=others.length?(r<.5?'talkQ':r<.75?'explain':'chest'):judges.length?'clasp':(r<.6?'talkF':'explain')}
     }else{const k=p.k;
       if(giveMode&&k==='biz'){pose='give';if(!face)face='smile'}
       else if(shakeMode&&p===partner)pose='shake';
@@ -3703,7 +3717,7 @@ function stageScene(bg,who,props){
       else{pose=face==='smile'?(mood==='smile'||me&&me.wave?'cheerQ':'clap'):face==='angry'?'point':face==='sad'?'clasp':face==='shock'?'shock':p.wave?'wave':(i%2?'talkQ':'idleQ')}
     }
     if(has('desk')&&p.k!=='me'&&!['give','shake'].includes(pose))pose=pose==='paper'?'paper':'idleQ';
-    out.push({k:p.k,pose,x,fy,face,me:p.k==='me'})});
+    out.push({k:p.k,pose,x,fy,face,me:p.k==='me',vs:bg+'|'+who+'|'+props.join(',')+'|'+i})});
   // 악수·건네기: 손이 닿는 거리로 붙인다(배율 1.7에서 중심 사이 약 75픽셀)
   if(shakeMode||giveMode){const a=out.find(o=>o.me),b=out.find(o=>!o.me&&(o.pose==='shake'||o.pose==='give'));if(a&&b){const K=kz(Math.min(a.fy,b.fy)),gap=(b.pose==='give'?57:43.5)*K;if(b.x>a.x)b.x=a.x+gap;else b.x=a.x-gap;b.fy=a.fy-2}}
   // 판사: 법대 뒤 단상(배경의 법대에 맞춰 위로 들어 올림)
@@ -3719,7 +3733,7 @@ function clipDraw(c,y,fn){if(!y||y>=320){fn();return}c.save();c.beginPath();c.re
 /* ── 새 drawPx ── */
 const OLDPLANE=['gavel','cam','chart','car','house','flower','glassbox','truck'],OVERLAY=['banner','sun','heart','exclaim','xmark'];
 // 장면 인물의 색·표정(그리기와 미리 그리기가 같은 캐시 키를 쓰도록 공유)
-function pplCol(o){const col=Object.assign({},whoCol(o.k));if(o.face)col.face=o.face==='smile'&&o.me?'grin':o.face;if(o.me&&!o.face)col.talk=PF;return col}
+function pplCol(o){const col=Object.assign({},o.vs&&!o.me&&['aide','rep','cit','cit2','old','biz'].includes(o.k)?varyCol(whoCol(o.k),o.vs,o.k):whoCol(o.k));if(o.face)col.face=o.face==='smile'&&o.me?'grin':o.face;if(o.me&&!o.face)col.talk=PF;return col}
 function specParts(spec){let[bg,who='',props='']=spec.split('|');if(!SCN[bg]&&!['night','street'].includes(bg))bg=bg||'street';return[bg,who,props?props.split(','):[]]}
 /* 다음 장면 미리 그리기: 곧 쓸 장면을 배경 한 장·인물 한 명 단위로 쪼개 브라우저가 쉬는 틈에 캐시에 넣는다 */
 const WARM={q:[],done:new Set(),busy:false},LASTSPEC={};
@@ -3763,7 +3777,7 @@ function drawPx(spec,cv0){
   // 깊이 순서로 그릴 것들
   const items=[];
   (sc.deco?sc.deco(pr):[]).forEach(([fy,fn])=>items.push({fy,fn:()=>fn(c)}));
-  (sc.extras||[]).forEach(([kk,pose,x,fy,flip,o],xi)=>items.push({fy,fn:()=>{const K=kz(fy),col=Object.assign({},sc.full?varyCol(whoCol(kk),bg+xi):whoCol(kk),o||{});const cy=o&&o.clipY;if(!cy)shadowAt(c,x,fy,K);clipDraw(c,cy,()=>drawPerson(c,x,fy-(o&&o.lift||0),K,col,pose,flip))}}));
+  (sc.extras||[]).forEach(([kk,pose,x,fy,flip,o],xi)=>items.push({fy,fn:()=>{const K=kz(fy),col=Object.assign({},sc.full?varyCol(whoCol(kk),bg+xi,kk):whoCol(kk),o||{});const cy=o&&o.clipY;if(!cy)shadowAt(c,x,fy,K);clipDraw(c,cy,()=>drawPerson(c,x,fy-(o&&o.lift||0),K,col,pose,flip))}}));
   const ppl=stageScene(bg,who,pr);
   ppl.forEach((o,i)=>items.push({fy:o.fy,fn:()=>{const K=kz(o.fy),col=pplCol(o);
     const bob=(i+PF)%2&&o.k!=='judge'?1:0;if(!o.lift)shadowAt(c,o.x,o.fy,K);clipDraw(c,o.clipY,()=>drawPerson(c,o.x,o.fy-(o.lift||0)+bob,K,col,o.pose,o.flip))}}));
@@ -4038,7 +4052,7 @@ function renderQueueItem(st){
     if(S.cur.type==='trial'&&S.trial)S.trial.stage++;}
   const it=S.cur;
   if(S.res){st.innerHTML=`<div class="result">${S.res.html}${S.res.d||''}</div><button class="btn primary" id="nx">다음 →</button>`;
-    if(S.res.mood&&PXS){const sp=moodSpec(PXS,S.res.mood);if(sp!==PXS)try{paint(sp)}catch(e){}}
+    if(S.res.mood&&PXS){const sp=moodSpec(PXS,S.res.mood);if(sp!==PXS)try{PXH[sp]=PXH[PXS];paint(sp)}catch(e){}}
     document.getElementById('nx').onclick=()=>{S.cur=null;S.res=null;save();render();scrollStage()};return}
   if(it.type==='ev'){const ev=EV.find(e=>e.id===it.id);if(!ev||(!S.res&&(((ev.mn||ev.id==='mn_work'||ev.id==='mn_reshuffle')&&!S.minister)||((ev.pm||ev.id==='pm_work'||ev.id==='pm_end')&&!S.pm)))||(!ev.core&&ev.c&&!S.res&&(()=>{try{return !ev.c()}catch(e){return true}})())){S.cur=null;renderQueueItem(st);return}renderEvent(st,ev)}
   else if(it.type==='fig')renderFig(st);
@@ -4077,7 +4091,7 @@ function renderEvent(st,e){
   const V=x=>typeof x==='function'?x():x;const T=V(e.t),B=V(e.b),CH=V(e.ch);dexMark(e,T);
   st.innerHTML=`${pxTag(T)}<div class="news"><span class="tag ${e.tag==='화제'||e.tag==='정책'||e.core||e.tag==='다수당'||e.tag==='여대야소'?'blue':e.tag==='소수당'||e.tag==='여소야대'?'gray':''}">${e.tag}</span><h3>${T}</h3><p class="body">${B}</p></div>
     <div class="choices">${CH.map((c,i)=>{const o=c[2]||{};return `<button class="choice ${o.dark?'dark':''}${o.plc?' plc':''}" data-i="${i}" ${o.dis?'disabled':''}><span>${o.yo?'<span class="plg b">올해만</span>':''}${c[0]}</span>${o.hint?`<small>${o.hint}</small>`:''}</button>`}).join('')}</div>`;
-  paint(tagFace(V(e.px)||EVPX[e.id]||'street|me|',e.tag));
+  {const sp=tagFace(V(e.px)||EVPX[e.id]||'street|me|',e.tag);PXH[sp]=e.tag;paint(sp)}
   st.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{D=[];if(!e.core){S.seen[e.id]=S.year;S.evn=S.evn||{};S.evn[e.id]=(S.evn[e.id]||0)+1}const c=CH[+b.dataset.i],o=c[2]||{};MOODCASE=0;cbMark(e,+b.dataset.i);let t=withMode('ev',()=>c[1](),1,1,!!e.tempt||!!o.dark);if((e.tempt||o.dark)&&S.pl&&S.pl.k==='clean'&&D.some(d=>d[0]==='integrity'&&d[1]<0))t+=plgBreak('검은돈');addLog(T+' → '+c[0]);finish(`<b>${T}</b><br>${t}`)});
 }
 function renderFig(st){
