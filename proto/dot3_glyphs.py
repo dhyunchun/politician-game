@@ -1,7 +1,7 @@
 # 간판 글자 비트맵: Noto Sans CJK KR Black을 작은 크기로 그려 1비트로 자르고, 기기마다 같게 보이도록 코드에 박아 넣는다
 from PIL import Image, ImageDraw, ImageFont
 import sys, json
-F='/usr/share/fonts/opentype/noto/NotoSansCJK-Black.ttc'
+F='/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc'
 def bitmap(ch,size,th=110):
     # ttc 안에서 KR 글꼴 번호 찾기
     for idx in range(10):

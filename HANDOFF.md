@@ -112,5 +112,17 @@
 재미 개선 4단계는 모두 끝났다.
 단계마다 `tools/sim.js`로 대통령 도달률(mod 약 3%)이 그대로인지 확인.
 
+## 도트 3판 (2026-11-13 배포)
+사용자 확정 사항: 배경은 인물 크기에 맞춘 눈높이 구도로 새로 그림, 512 격자 밀도 유지, 간판 글자는 굵은 한글 상호(실제 체인점 이름 금지).
+- 인물: 음영 3단(`band`/`TT`), 체형(어깨·팔다리·손발 키움, 다리 길이 ×0.944 `LJ`), 목은 밝게 + 턱 밑 그늘.
+- 얼굴·머리(`headH`, `HAIR3`, `EYE3`/`BROW3`/`MOUTH3`, `glasses3`, `backHairH`): 이목구비는 픽셀 틀(`G.pixI`, 크기 3단계 sz=2/1/0 by K), 머리는 볼륨 + 앞머리 톱니 + 이마 그림자 + 결선·윤기. 옛 함수는 `headH0`/`backHairH0`/`hairH`로 남아 있으나 안 쓴다.
+- 행인: `SCN[bg].full`인 배경은 `varyCol`로 머리·옷을 자리마다 다르게.
+- 배경: 모든 배경(phone 제외)이 `SCN[bg].full(c,H)`로 512×320 전체를 그린다(`bgFrame`이 옛 배경 대신 사용, 옛 `BGX.back` 장식은 건너뜀). 실내 기준 뒷벽 바닥선 y=200(1m≈38px), 소실점 (256,118). 도구: `pfl` 원근 바닥, `pceil` 천장, `pwall`, `pdoor`, `pframe`, `pwindow`, `pshelf`, `pchair`, `emblem`, `signText`/`signW`(비트맵 글자, 배율 k).
+- 거리 `streetV3(c,H,M)`: M='night'|'rain'. 간판: 맛나김밥·늘봄마트24·커피한잔·노래방. 시장: 싱싱청과·황소정육·바다수산. 투표소·국정감사·출구 안내판. 현수막 소품(`PROPS.banner`) 문구 '함께 만드는 내일'.
+- `SCN[bg].noOld`: 그 배경에서 그리지 않을 옛 소품(법정 gavel, 거리 house).
+- 새 자세 `explain`(양손 펴서 설명), `chest`(손을 가슴에): 주인공 기본 자세를 장면 문자열 해시로 talkQ/explain/chest 중에서 고른다.
+- **작업 방법**: 배경은 `proto/dot3_bgs.js`를 고친 뒤 `python3 proto/dot3_sync.py`(src/game.html의 `DOT3-BGS-BEGIN/END` 사이를 갈아끼움, SCN3를 SCN에 덮어씀). 간판 새 글자는 dot3_sync.py의 `GLYPHS`에 더하면 Noto Sans CJK KR Bold로 비트맵을 만들어 넣는다(`proto/dot3_glyphs.py`). 거리 배경·얼굴·인물 코드는 이제 game.html에서 직접 고친다. `proto/dot3_patch.py`는 시안용 1회성이라 다시 돌리지 말 것(이미 반영됨).
+- 첫 그리기 시간(데스크톱): 거리 45ms, 나머지 2~22ms. 미리 그리기로 가려짐.
+
 ## 아이디어 목록(아직 안 함)
 - 글자 크기 설정, 저장 슬롯 2~3개.
