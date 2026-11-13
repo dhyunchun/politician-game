@@ -125,6 +125,9 @@
 - 첫 그리기 시간(데스크톱): 거리 45ms, 나머지 2~22ms. 미리 그리기로 가려짐.
 - 주요 인물 다양화: `stageScene` 결과에 `vs`(장면 문자열+순번)를 붙이고 `pplCol`이 aide·rep·cit·cit2·old·biz를 `varyCol(col,seed,role)`로 섞는다(같은 장면이면 늘 같은 사람). 정장 역할(aide·biz·rep)은 `SUITC` 정장색·넥타이, 체형 `c.bw`(0.9~1.14), 피부색 4종. 주인공·라이벌·판사·정당 인사·의사는 고정.
 - 이벤트 분류별 자세: 이벤트 장면을 그릴 때 `PXH[장면]=e.tag`, `HINTPOSE`(태그 정규식→자세 후보)로 표정 없는 평소 장면의 주인공 자세를 고른다(논란→think/clasp, 정책→explain/paper, 가족·후일담→chest, 지역→wave, 라이벌→cross/point, 위기→think/clasp).
+- 탈것 `veh3(c,{type:'sedan'|'suv'|'bus'|'truck',x,base,m,col,right,slogan})`: 실제 크기(m)를 깊이별 px/m로, 줄 단위로 칠해 테두리가 번지지 않음. `hdCar`/`hdBus`는 여기로 넘김(옛 것은 hdCar0/hdBus0). 소품 'car'는 검은 관용차(SUV, 깊이 236), 'truck'은 유세차(정당색 판·스피커·구호, 깊이 232). 옛 평면 OLDPLANE에서 car·truck 제외.
+- 현수막·유세차 정당색: `pxPartyCol(ws)`/`pxSlogan(ws)` — 주인공 없이 라이벌만 나오는 장면이면 라이벌 정당색과 구호 '새 바람 새 정치', 아니면 내 정당색과 '함께 만드는 내일'(`PXWHO`에 그 장면 인물 목록).
+- 인물 외곽선 정리: `HDR.flush`에서 바깥 외곽선이 대각선 계단에서 L자로 두꺼워지는 모서리 픽셀을 지워 1픽셀 선으로.
 - 검수(2026-11-13): 실제 쓰이는 장면 340종 전부 모음판으로 확인. house 소품은 거리·밤·비·기자회견장·기차역에서 숨김, 밤거리에 car 소품이 있으면 기본 차를 뺌.
 
 ## 아이디어 목록(아직 안 함)

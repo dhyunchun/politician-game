@@ -256,3 +256,59 @@ Object.assign(SCN3,{
   factory:{full:bgFactory,extras:[['cit2','idleQ',30,206,0],['cit2','paper',66,208,0],['cit2','talkQ',448,208,1]]},
   fire:{full:bgFire,extras:[['cit2','idleQ',36,210,0]]},
 });
+/* ── 탈것 3판: 실제 크기(m)를 깊이별 픽셀(m px/m)로, 배경과 같은 도트 그림체 ──
+   veh3(c,{type,x,base,m,col,right}) type: sedan|suv|bus|truck. x는 차 왼쪽 끝 픽셀, base는 바퀴 닿는 y */
+function veh3(c,o){const m=o.m,R=o.right!==false,col=o.col,P=(x,y,w,h,cl)=>{if(w<=0||h<=0)return;c.fillStyle=cl;c.fillRect(Math.round(x),Math.round(y),Math.max(1,Math.round(w)),Math.max(1,Math.round(h)))};
+  const SP={sedan:{L:4.6,pts:[[0,.3],[0,.76],[.18,.88],[.95,.95],[1.2,.98],[1.8,1.42],[3.0,1.45],[3.6,1.0],[4.35,.88],[4.6,.74],[4.6,.3]],glass:[[1.32,1.0],[1.86,1.36],[2.96,1.38],[3.48,1.0]],pil:[2.42],wh:[.95,3.62],r:.34,door:[1.55,2.45,3.42],belt:.98},
+    suv:{L:5.0,pts:[[0,.32],[0,.98],[.1,1.48],[.35,1.6],[3.4,1.62],[4.0,1.1],[4.8,1.02],[5.0,.86],[5.0,.32]],glass:[[.32,1.12],[.42,1.52],[3.3,1.54],[3.85,1.12]],pil:[1.5,2.62],wh:[1.0,3.95],r:.38,door:[1.45,2.6,3.75],belt:1.08}}[o.type]||null;
+  const X=u=>R?o.x+u*m:o.x+(SP?SP.L:o.L)*m-u*m,Y=v=>o.base-v*m;
+  // 바닥 그림자
+  c.save();c.globalAlpha=.28;c.fillStyle='#000';const L0=(SP?SP.L:o.type==='bus'?11:5.2);c.beginPath();c.ellipse((X(0)+X(L0))/2,o.base+.04*m,L0*m*.52,.12*m,0,0,7);c.fill();c.restore();
+  const spoly=(pp,cl,clipR)=>{let y0=1e9,y1=-1e9;for(const q of pp){y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1])}c.fillStyle=cl;
+    for(let y=Math.floor(y0);y<=Math.ceil(y1);y++){const yc=y+.5,xs=[];for(let i=0,j=pp.length-1;i<pp.length;j=i++){const[xi,yi]=pp[i],[xj,yj]=pp[j];if((yi>yc)!==(yj>yc))xs.push(xi+(yc-yi)/(yj-yi)*(xj-xi))}
+      xs.sort((a,b)=>a-b);for(let k=0;k+1<xs.length;k+=2){let a=Math.round(xs[k]),b=Math.round(xs[k+1]);if(clipR){a=Math.max(a,clipR[0]);b=Math.min(b,clipR[1])}if(b>a)c.fillRect(a,y,b-a,1)}}};
+  const poly=(pts,cl)=>spoly(pts.map(([u,v])=>[X(u),Y(v)]),cl);
+  const sdisc=(cx,cy,r,cl,top)=>{c.fillStyle=cl;cx=Math.round(cx);cy=Math.round(cy);for(let y=-Math.ceil(r);y<=(top?0:Math.ceil(r));y++){const w=Math.round(Math.sqrt(Math.max(0,r*r-(y+.5)*(y+.5))));if(w>0)c.fillRect(cx-w,cy+y,w*2,1)}};
+  const wheel=(u,r)=>{const cx=X(u),cy=Y(r);sdisc(cx,cy,(r+.07)*m,'#121216',true);
+    const disc=(rr,cl)=>sdisc(cx,cy,Math.max(1,rr*m),cl);
+    disc(r,'#1b1b22');disc(r*.94,'#26262e');c.fillStyle='#3a3a44';c.fillRect(Math.round(cx-r*m*.6),Math.round(cy-r*m*.86),Math.round(r*m*.5),Math.max(1,Math.round(.03*m)));
+    disc(r*.6,'#9aa3ad');disc(r*.52,'#c6ccd2');for(let k=0;k<5;k++){const a=k*1.2566+.3;c.fillStyle='#6a727c';c.fillRect(Math.round(cx+Math.cos(a)*r*m*.32)-1,Math.round(cy+Math.sin(a)*r*m*.32)-1,Math.max(2,.05*m),Math.max(2,.05*m))}
+    disc(r*.16,'#5a626c');c.fillStyle='#eef0f2';c.fillRect(Math.round(cx-r*m*.36),Math.round(cy-r*m*.4),Math.max(1,.04*m),Math.max(1,.04*m))};
+  if(SP){const pts=SP.pts,e=shade(col,.28);
+    // 외곽선(1px 바깥) → 몸체 → 띠 음영
+    for(const[dx,dy]of[[-1,0],[1,0],[0,-1],[0,1]])spoly(pts.map(([u,v])=>[X(u)+dx,Y(v)+dy]),e);poly(pts,col);
+    const band=(v0,v1,cl)=>{c.save();c.beginPath();c.rect(0,Math.round(Y(v1)),512,Math.max(1,Math.round((v1-v0)*m)));c.clip();poly(pts,cl);c.restore()};
+    band(SP.belt-.04,SP.belt+.06,shade(col,1.32));band(SP.belt-.16,SP.belt-.04,shade(col,1.12));band(.3,.5,shade(col,.74));band(.3,.38,shade(col,.5));
+    // 유리: 위는 어둡고 아래로 밝게, 사선 반사
+    const g=SP.glass;poly(g,'#1d2632');const gy0=Y(g[2][1]),gy1=Y(g[0][1]);
+    for(const[t0,t1,cl]of[[0,.35,'#2a3a4c'],[.35,.7,'#4a6a88'],[.7,1,'#7fa2c0']]){c.save();c.beginPath();c.rect(0,Math.round(gy0+(gy1-gy0)*t0)+1,512,Math.round((gy1-gy0)*(t1-t0)));c.clip();spoly(g.map(([u,v])=>[X(u)+(X(1)>X(0)?0:0),Y(v)]).map(([x,y],i)=>[x+(i===0?1:i===3?-1:0),y+(i>0&&i<3?1:0)]),cl);c.restore()}
+    c.save();c.beginPath();c.rect(0,Math.round(gy0)+1,512,Math.round(gy1-gy0)-1);c.clip();for(const s0 of[.3,.62]){const ux=g[0][0]+(g[3][0]-g[0][0])*s0;spoly([[X(ux),gy1],[X(ux+.18),gy1],[X(ux+.5),gy0],[X(ux+.32),gy0]],'#a9c4da')}c.restore();
+    for(const u of SP.pil)poly([[u-.05,g[0][1]],[u-.05,g[1][1]],[u+.06,g[1][1]],[u+.06,g[0][1]]],shade(col,.42));
+    // 문틈·손잡이·사이드미러
+    for(const u of SP.door)P(X(u),Y(SP.belt+.02),1,(SP.belt-.36)*m,shade(col,.45));
+    for(const u of[SP.door[0]+.25,SP.door[1]+.25]){P(Math.min(X(u),X(u+.18)),Y(SP.belt-.12),.18*m,Math.max(1,.04*m),shade(col,.4));P(Math.min(X(u),X(u+.18)),Y(SP.belt-.12),.18*m,1,'#dfe3e6')}
+    const mu=g[3][0]-.08;P(Math.min(X(mu),X(mu+.2)),Y(g[3][1]+.12),.2*m,.1*m,shade(col,.4));P(Math.min(X(mu),X(mu+.2)),Y(g[3][1]+.12),.2*m,1,shade(col,1.3));
+    // 등·범퍼
+    const fu=SP.L;P(Math.min(X(fu-.16),X(fu)),Y(SP.pts[SP.pts.length-2][1]-.02),.16*m,.09*m,'#fff6d0');P(Math.min(X(fu-.16),X(fu)),Y(SP.pts[SP.pts.length-2][1]-.02),.16*m,1,'#ffffff');
+    P(Math.min(X(0),X(.14)),Y(.82),.14*m,.1*m,'#d02a2a');P(Math.min(X(0),X(.14)),Y(.82),.14*m,1,'#ff7a7a');
+    P(Math.min(X(fu-.3),X(fu)),Y(.46),.3*m,.12*m,'#2a2d34');P(Math.min(X(0),X(.3)),Y(.46),.3*m,.12*m,'#2a2d34');
+    if(o.type==='suv'){P(Math.min(X(.4),X(3.4)),Y(1.66),3*m,.05*m,'#5a626c');P(Math.min(X(.3),X(4.8)),Y(.62),4.5*m,Math.max(1,.03*m),'#c6ccd2')}
+    for(const u of SP.wh)wheel(u,SP.r);return}
+  if(o.type==='bus'){const L=11,B=o.col||'#2f9e6a',e=shade(B,.28);P(X(0)-(R?0:L*m),0,0,0,B);const x0=Math.min(X(0),X(L)),W=L*m;
+    P(x0-1,Y(3.1)-1,W+2,3.1*m-.3*m+2,e);P(x0,Y(3.1),W,2.8*m,B);P(x0,Y(3.1),W,.12*m,shade(B,1.35));P(x0,Y(.62),W,.32*m,shade(B,.7));P(x0,Y(.42),W,.1*m,'#2a2d34');
+    P(x0,Y(2.95),W,.08*m,'#f4f1ea');for(let k=0;k<7;k++){const u=.5+k*1.32;if((R&&u>8.9&&u<10.2)||(!R&&u>.8&&u<2.1))continue;const wx=Math.min(X(u),X(u+1.12));P(wx-1,Y(2.7)-1,1.12*m+2,1.1*m+2,'#1d2632');
+      for(let y=0;y<1.1*m;y++){const t=y/(1.1*m);P(wx,Y(2.7)+y,1.12*m,1,t<.35?'#2a3a4c':t<.7?'#4a6a88':'#7fa2c0')}c.fillStyle='rgba(255,255,255,.5)';c.fillRect(wx+.2*m,Y(2.7)+2,2,1.0*m)}
+    const du=R?9.0:.9,dx=Math.min(X(du),X(du+1.2));P(dx-1,Y(2.75)-1,1.2*m+2,2.3*m+2,'#1d2632');P(dx,Y(2.75),1.2*m,2.3*m,'#7fa2c0');P(dx+.59*m,Y(2.75),2,2.3*m,'#1d2632');
+    const ax=Math.min(X(2.4),X(6.6));P(ax,Y(1.35),4.2*m,.55*m,'#f4f1ea');P(ax+3,Y(1.35)+3,4.2*m*.5,.18*m,'#c2321f');P(ax+3,Y(1.35)+.3*m,4.2*m*.35,.1*m,'#6a727c');
+    const fx=R?X(L)-.5*m:X(L);P(fx,Y(3.05),.5*m,.3*m,'#141418');c.fillStyle=PF?'#ffb347':'#ff8a3a';c.fillRect(Math.round(fx+3),Math.round(Y(3.0)),Math.round(.5*m-6),Math.round(.18*m));
+    P(R?X(L)-.18*m:X(L),Y(.95),.18*m,.16*m,'#fff6d0');P(R?X(0):X(0)-.14*m,Y(1.0),.14*m,.2*m,'#d02a2a');
+    for(const u of[2.2,8.6])wheel(u,.5);return}
+  if(o.type==='truck'){// 1톤 유세차: 앞 운전석 + 짐칸 무대(정당색 판, 스피커)
+    const L=5.2,x0=Math.min(X(0),X(L)),pc=o.col,cabU=R?3.6:0,cx0=Math.min(X(cabU),X(cabU+1.6));
+    P(x0-1,Y(.95)-1,L*m+2,.6*m+2,'#1b1b22');P(x0,Y(.95),L*m,.55*m,'#dfe3e6');P(x0,Y(.95),L*m,.06*m,'#ffffff');P(x0,Y(.48),L*m,.1*m,'#5a626c');
+    P(cx0-1,Y(2.0)-1,1.6*m+2,1.1*m+2,'#1b1b22');P(cx0,Y(2.0),1.6*m,1.1*m,'#f4f6f8');P(cx0,Y(2.0),1.6*m,.06*m,'#ffffff');
+    const wx=R?cx0+.5*m:cx0+.15*m;P(wx,Y(1.85),.95*m,.5*m,'#2a3a4c');P(wx,Y(1.6),.95*m,.25*m,'#7fa2c0');c.fillStyle='rgba(255,255,255,.5)';c.fillRect(Math.round(wx+.2*m),Math.round(Y(1.85)+2),2,Math.round(.45*m));
+    const bx=R?x0:x0+1.6*m;P(bx-1,Y(3.0)-1,3.6*m+2,2.05*m+2,'#1b1b22');P(bx,Y(3.0),3.6*m,2.05*m,pc);P(bx,Y(3.0),3.6*m,.08*m,shade(pc,1.35));P(bx,Y(1.05),3.6*m,.1*m,shade(pc,.6));
+    P(bx+.12*m,Y(2.75),3.36*m,.75*m,'#ffffff');const t=o.slogan||'함께 만드는 내일',tw=signW(t,15);if(tw<3.3*m)signText({P:(x,y,w,h,cl)=>P(x,y,w,h,cl)},Math.round(bx+(3.6*m-tw)/2),Math.round(Y(2.75)+(.75*m-15)/2),t,15,pc,shade(pc,.5));
+    for(const sx of[bx+.25*m,bx+3.0*m]){P(sx-1,Y(3.6)-1,.4*m+2,.6*m+2,'#1b1b22');P(sx,Y(3.6),.4*m,.6*m,'#3a3f48');sdisc(sx+.2*m,Y(3.3),Math.max(2,.13*m),'#6a727c')}
+    for(const u of R?[1.0,4.2]:[1.0,4.2])wheel(u,.38);return}}
