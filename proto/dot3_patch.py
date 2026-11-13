@@ -64,6 +64,16 @@ rep("(sc.extras||[]).forEach(([kk,pose,x,fy,flip,o])=>items.push({fy,fn:()=>{con
 # ⑤ 거리 배경: 인물 크기에 맞춘 전체 그림(sc.full)
 rep("  const sc=SCN[bg]||{};const ext=sc.ext||[216,256];\n", "  const sc=SCN[bg]||{};if(sc.full){c.clearRect(0,0,512,320);BGK.run(c,H=>sc.full(c,H));return BGF[key]=cv}const ext=sc.ext||[216,256];\n")
 rep("  const X=BGX[bg];try{if(X&&X.back)X.back(r,mkRng(spec+'b'),c,ws)}catch(e){}", "  const X=BGX[bg];try{if(X&&X.back&&!sc.full)X.back(r,mkRng(spec+'b'),c,ws)}catch(e){}")
+# ⑥ 얼굴·머리 3판: 픽셀 틀 이목구비, 볼륨 있는 머리카락(proto/dot3_head.js)
+rep("    flush(ctx,X,Y){const out=col.slice();", """    gx(ux){return (ux-U0x)*K},gy(uy){return (uy-U0y)*K},
+    pixI(i,j,rows,cols){const w=rows[0].length;const i0=flip?Math.round(UW*K-i-w):i;rows.forEach((row,r)=>{const rr=flip?[...row].reverse().join(''):row;for(let k=0;k<w;k++){const cl=cols[rr[k]];if(!cl)continue;const x=i0+k,y=j+r;if(x<0||x>=GW||y<0||y>=GH)continue;const q=y*GW+x;col[q]=cl;lay[q]=L;nol[q]=NL}})},
+    flush(ctx,X,Y){const out=col.slice();""")
+rep("function backHairH(G,c,d,dx,dy,st,h){", "function backHairH0(G,c,d,dx,dy,st,h){")
+rep("function headH(G,c,d,dx,dy,st,face,talk,FEM,pf){", "function headH0(G,c,d,dx,dy,st,face,talk,FEM,pf){")
+rep("part();cap(nk[0]+(d==='s'?.6:0),nk[1]-3,nk[0]+(d==='s'?.6:0),nk[1]+.4,2.6,2.8,S3,{flat:1});",
+    "part();cap(nk[0]+(d==='s'?.6:0),nk[1]-3,nk[0]+(d==='s'?.6:0),nk[1]+.4,2.4,2.6,S2,{flat:1});feat();rect(nk[0]-2.4+(d==='s'?.6:0),nk[1]-1.8,4.8,1.1,S3);")
+head = (Path(__file__).parent/'dot3_head.js').read_text(encoding='utf-8')
+rep("function hairH(G,X,Y,P,st,h,hd,H,FEM,d,s){", head + "\nfunction hairH(G,X,Y,P,st,h,hd,H,FEM,d,s){")
 street = (Path(__file__).parent/'dot3_street.js').read_text(encoding='utf-8')
 rep("/* ── 배경별 설정 ──", street + "\n/* ── 배경별 설정 ──")
 rep("""  street:{ext:c=>walkway(c,280,'#d6cfc0','#c2baab'),
