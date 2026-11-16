@@ -456,7 +456,9 @@ const isBattle=()=>member()?Math.abs(leanFor(S.party))<3:Math.abs(curD()[4]||0)<
 function distTxt(){const f=distFund();return f<.8?`후원금 적음(×${f})`:f<1?`후원금 보통(×${f}) · 인지도 쌓기 쉬움(+35%)`:`후원금 많음(×${f})`}
 const legalAmt=()=>(350+s().support*15+s().fame*12)*Math.sqrt(TM())*mulFor('fund')*(inOffice()?1:.6)*distFund();
 const bookAmt=()=>Math.round((600+s().fame*40+s().party*15+s().org*15)*(elecKinds(S.year+1).length?1.4:1)*Math.sqrt(TM())*mulFor('fund')*distFund()/10)*10;
-const cashAmt=()=>Math.round((legalAmt()*3.3+600*BM())/10)*10;
+// 검은돈은 급이 오를수록 판이 커진다: 국회의원·단체장급부터는 몇 번이면 대선 총력전 자금이 된다
+const DARKM=()=>OFF[S.office].tier>=3?2.2:1;
+const cashAmt=()=>Math.round((legalAmt()*3.3+600*BM())*DARKM()/10)*10;
 const slushAmt=()=>Math.round((legalAmt()*2.6+400*TM())/10)*10;
 const mh=k=>{const m=mulFor(k);return m>1.05?'▲지역 효과 큼 · ':m<.95?'▼지역 효과 작음 · ':''};
 function runAct(id,mm=1){const a=ACTS.find(z=>z.id===id);const m=mulFor(a.k);if(a.cost)chg({money:-a.cost});return withMode(id==='rest'?'none':'act',()=>a.run(),m,(a.k==='fund'?m:1)*mm)+plgAct(id)}
@@ -527,7 +529,7 @@ function newGame(cfg){
 function chg(o){
   for(const k in o){
     let v=o[k];
-    if(k==='money'){if(v>0)v*=CTX.money}
+    if(k==='money'){if(v>0)v*=CTX.money*(CTX.tempt&&CTX.mode==='ev'?DARKM():1)}
     else if(CTX.mode==='act'&&v>0)v*=0.85*CTX.m;
     else if(CTX.mode==='ev')v*=(CTX.tempt&&k==='integrity')?1:1.75;
     if(v>0&&k!=='money'&&k!=='mental')v*=Math.max(.3,1-S.s[k]/150);
@@ -4621,7 +4623,7 @@ function renderElection(st){
 // 무작위 요소를 뺀 기대 득표 구도(여론조사·선거 공용)
 const PRES_BAND=.65;
 function elecBase(off,lv){const o=OFF[off],RR=curR(),dt=DTYPE[curD()[3]];
-  const lvB=(off==='pres'?[-12,-6,0,6]:[-8,0,5,11])[lv];let p=s().support*.45+s().fame*.22+route(off)*.3+lvB+(S.office===off?5:0);
+  const lvB=(off==='pres'?[-12,-6,1,9]:[-8,0,5,11])[lv];let p=s().support*.45+s().fame*.22+route(off)*.3+lvB+(S.office===off?5:0);
   if(off==='pres'){if(S.ruling===S.party&&presAp()<40)p-=(40-presAp())*.35;if(s().integrity<40)p-=4;p-=2.5}
   if(member()){p+=(S.party==='np'?(S.pop.np-22):(S.pop[S.party]-S.pop[other(S.party)]))*.35*(RR.fx.popMul||1);
     if(off==='gov')p+=leanFor(S.party,false);else if(off!=='pres')p+=leanFor(S.party);
