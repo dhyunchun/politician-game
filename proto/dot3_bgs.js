@@ -88,6 +88,28 @@ function bgCourt(c,H){const{P}=H;pceil(H,22,'#4a3424','#ffe9b0');pwall(H,22,'#7a
   // 법봉과 받침(판사석 위)
   for(const x0 of[8,388]){P(x0,176,116,6,'#6b4426');P(x0,176,116,1,'#a8784a');P(x0+4,182,108,18,'#4a2e1c');P(x0+40,166,30,10,'#f4f1ea')}
   pfl(H,200,{w:36,q:.3,c:['#9a6a40','#8e6038'],ln:'#6b4426',mode:'plank'})}
+/* ── SNS: 커다란 휴대폰 화면 앞. 양옆에 말풍선·하트가 떠다닌다 ── */
+function bgPhone(c,H){const{P}=H;H.bands(0,200,['#ffdcea','#ffd3e6','#f8cbe8','#eec6ec','#e3c4f0']);
+  for(let y=12;y<196;y+=22)for(let x=((y/22)|0)%2?14:3;x<512;x+=22)P(x,y,2,2,'#ffeaf3');
+  pfl(H,200,{w:40,q:.3,c:['#f6e7f1','#eedbeb'],ln:'#dcc6de',mode:'check'});
+  const heart=(x,y,col,hi)=>{P(x+1,y,3,1,col);P(x+6,y,3,1,col);P(x,y+1,10,3,col);P(x+1,y+4,8,1,col);P(x+2,y+5,6,1,col);P(x+3,y+6,4,1,col);P(x+4,y+7,2,1,col);P(x+2,y+1,2,1,hi)};
+  const bub=(x,y,i,flip)=>{const w=66,h=28,ol='#8a6a94';P(x+2,y-1,w-4,1,ol);P(x+2,y+h,w-4,1,ol);P(x-1,y+2,1,h-4,ol);P(x+w,y+2,1,h-4,ol);P(x,y,w,h,'#ffffff');P(x,y,2,2,ol);P(x+w-2,y,2,2,ol);P(x,y+h-2,2,2,ol);P(x+w-2,y+h-2,2,2,ol);P(x+1,y+1,1,1,'#ffffff');P(x+w-2,y+1,1,1,'#ffffff');P(x+1,y+h-2,1,1,'#ffffff');P(x+w-2,y+h-2,1,1,'#ffffff');
+    P(x+2,y+h-3,w-4,2,'#efe6f2');const tx=flip?x+w-18:x+10;for(let k=0;k<6;k++){P(tx+(flip?k:0),y+h+k,6-k,1,'#ffffff');P(tx+(flip?k-1:-1),y+h+k,1,1,ol);P(tx+(flip?6:6-k),y+h+k,1,1,ol)}
+    const cs=[['#ffd27a','#f2a84a','#d8862a','#a8601a'],['#9fd0ff','#5aa0e8','#3a78c0','#285a94'],['#b8e89a','#6fbf5a','#4a9a3e','#32722a'],['#f4a6c0','#e0688e','#b84a6c','#8a3450']][i%4];
+    H.blob(x+14,y+14,8,8,cs,'#5a4660');P(x+27,y+8,30,4,'#5a5f70');P(x+27,y+16,22,3,'#b8bcc8');if(i%2)heart(x+w-14,y+16,'#e0486a','#ffb0c4')};
+  const d=PF*2;bub(18,34+d,0);bub(70,88-d,1,1);bub(14,142+d,2);bub(398,26-d,3,1);bub(428,82+d,0);bub(376,138-d,1,1);
+  for(const[x,y,cl]of[[118,24+d,'#e0486a'],[142,150-d,'#f28aa8'],[366,70-d,'#f28aa8'],[472,150+d,'#e0486a'],[352,186,'#f4a6c0'],[56,70-d,'#f4a6c0']])heart(x,y,cl,'#ffd6e2');
+  // 큰 휴대폰
+  const x0=168,y0=8,w=176,h=192,B='#1b1d24';P(x0+5,y0,w-10,h,B);P(x0+2,y0+2,w-4,h-2,B);P(x0,y0+5,w,h-5,B);P(x0+5,y0+1,w-10,1,'#4a4f5c');P(x0+1,y0+6,1,h-8,'#3a3e4a');P(x0+w-3,y0+6,2,h-6,'#0c0d12');
+  const sx=x0+8,sy=y0+13,sw=w-16,sh=h-13;P(sx,sy,sw,sh,'#fbfbfd');P(x0+w/2-17,y0+5,34,4,'#0c0d12');P(x0+w/2+24,y0+5,4,4,'#2a3a5a');
+  P(sx,sy,sw,10,'#eef0f5');P(sx+5,sy+3,16,3,'#8a8f9c');for(let i=0;i<4;i++)P(sx+sw-40+i*4,sy+7-i-1,3,i+2,'#8a8f9c');P(sx+sw-18,sy+3,12,5,'#5a5f6c');P(sx+sw-17,sy+4,8,3,'#7ad08a');
+  H.blob(sx+15,sy+25,9,9,['#ffd27a','#f2a84a','#d8862a','#a8601a'],'#5a3a14');P(sx+30,sy+18,58,5,'#3a3f4c');P(sx+30,sy+27,36,3,'#aeb4c0');for(let i=0;i<3;i++)P(sx+sw-20+i*5,sy+23,3,3,'#8a8f9c');
+  const ix=sx+6,iy=sy+39,iw=sw-12,ih=76;P(ix-1,iy-1,iw+2,ih+2,'#c8ccd6');['#5aaee8','#72bdee','#8fcdf4','#aedcf8'].forEach((cl,i)=>P(ix,iy+i*19,iw,19,cl));
+  H.blob(ix+iw-24,iy+18,9,9,['#fff6c8','#ffe27a','#f2c14e','#d89a2a']);P(ix+14,iy+14,26,5,'#ffffff');P(ix+20,iy+10,14,5,'#ffffff');P(ix+70,iy+26,20,4,'#ffffff');
+  for(let k=0;k<26;k++){const t=k/26,wd=Math.round(Math.sqrt(1-t*t)*52);P(ix+48-wd,iy+ih-26+k+0,wd*2,1,k<4?'#8fd66f':'#62ad4c')}
+  for(let k=0;k<18;k++){const t=k/18,wd=Math.round(Math.sqrt(1-t*t)*44);P(Math.max(ix,ix+118-wd),iy+ih-18+k,Math.min(iw-(118-wd),wd*2),1,k<3?'#62ad4c':'#3f8a3b')}
+  const ay=iy+ih+8;heart(sx+8,ay,'#e0486a','#ffb0c4');P(sx+26,ay,11,8,'#3a3f4c');P(sx+27,ay+1,9,6,'#fbfbfd');P(sx+28,ay+8,3,2,'#3a3f4c');P(sx+44,ay+3,10,2,'#3a3f4c');P(sx+50,ay,2,8,'#3a3f4c');P(sx+52,ay+1,2,6,'#3a3f4c');P(sx+sw-16,ay,8,9,'#3a3f4c');P(sx+sw-14,ay+6,4,3,'#fbfbfd');
+  P(sx+8,ay+15,40,4,'#3a3f4c');P(sx+8,ay+24,sw-30,3,'#aeb4c0');P(sx+8,ay+31,sw-64,3,'#aeb4c0')}
 const SCN3={
   street:{noOld:['house']},
   office:{full:bgOffice,extras:[['aide','paper',452,214,1]]},
@@ -95,6 +117,7 @@ const SCN3={
   brief:{full:bgBrief,extras:[]},
   cabinet:{full:bgCabinet,extras:[['aide','idleQ',22,212,0],['aide','paper',490,212,1]]},
   audit:{full:bgAudit,extras:[['aide','paper',474,212,1]]},
+  phone:{full:bgPhone,extras:[]},
   court:{full:bgCourt,bench:128,noOld:['gavel'],extras:[['rep','idleQ',40,206,0,{clipY:182}],['aide','paper',468,206,1,{clipY:182}]]},
 };
 /* ── 유세 무대(야외, 해 질 녘): 트러스, 대형 화면, 스피커 ── */
