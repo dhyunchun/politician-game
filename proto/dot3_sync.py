@@ -10,7 +10,7 @@ root = Path(__file__).parent.parent
 g = root/'src'/'game.html'
 s = g.read_text(encoding='utf-8')
 # 간판에 쓰는 글자(크기:글자들). 새 간판 글자는 여기에 더한다
-GLYPHS = {15: '맛나김밥늘봄마트커피한잔싱청과황소정육바다수산투표소국감사함께만드는내일새바람치', 13: '노래방제회의원선거관위응급실', 11: '출구입'}
+GLYPHS = {15: '맛나김밥늘봄마트커피한잔싱청과황소정육바다수산투표소국감사함께만드는내일새바람치', 13: '노래방제회의원선거관위응급실기자견희망의시작', 11: '출구입'}
 args = [f'{k}:{"".join(dict.fromkeys(v))}' for k, v in GLYPHS.items()]
 gl = json.loads(subprocess.check_output([sys.executable, str(root/'proto'/'dot3_glyphs.py'), *args]))
 a = "const H={P,dith,bands,vbands,blk,panel,blob,alpha,glow,poly,cloud,tree,win,floor,tiles,flag,lamp,wheel,flame,bust,"
@@ -25,5 +25,8 @@ i = s.index('const SCN={'); j = s.index('\n};', i) + 3
 merge = "\nfor(const k in SCN3)SCN[k]=Object.assign({},SCN[k],SCN3[k]);"
 if not s[j:j+len(merge)] == merge:
     s = s[:j] + merge + s[j:]
+# 소품·앞줄 관중(proto/dot3_props.js)
+pb = "/* DOT3-PROPS-BEGIN */\n" + (root/'proto'/'dot3_props.js').read_text(encoding='utf-8') + "/* DOT3-PROPS-END */\n"
+s = re.sub(r'/\* DOT3-PROPS-BEGIN \*/.*?/\* DOT3-PROPS-END \*/\n', lambda m: pb, s, flags=re.S)
 g.write_text(s, encoding='utf-8')
 print('synced', len(body))
