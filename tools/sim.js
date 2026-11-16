@@ -1,4 +1,4 @@
-// 시뮬레이션 봇: node --max-old-space-size=3000 tools/sim.js <판 수(≤60)> <rand|smart|mod>
+// 시뮬레이션 봇: node --max-old-space-size=3000 tools/sim.js <판 수(≤60)> <rand|smart|mod|pro|prod>  (pro·prod는 한 수 앞을 눌러 보는 숙련자 봇, 한 판 30~40초. MCAP=자금 목표)
 // 출력: 엔딩 분포, 로그 키워드 집계, 최고 직위, 출신·정당별 성과, errs(런타임 오류). SEENOUT=파일 지정 시 이벤트별 등장한 판 수, EVNOUT=파일 지정 시 이벤트별 총 등장 횟수(S.evn 합)를 JSON으로 저장
 // FORCEPRES=1 이면 국회의원 3선 상태로 시작(대선 구간 점검용). HTML=경로 로 다른 빌드 검사
 const {JSDOM,VirtualConsole}=require('jsdom');const fs=require('fs');
@@ -20,14 +20,22 @@ for(let g=0;g<N;g++){console.error("G",g,Math.round(process.memoryUsage().heapUs
   let steps=0;
   while(steps++<8000){
     const S=w.eval('S');if(!S||S.phase==='ending')break;
+    // pro·prod: 한 수 앞을 실제로 눌러 보고(2번씩) 가장 나은 선택지를 고르는 숙련자 봇. pro는 검은돈 선택지를 아예 안 누르고, prod는 이득이면 누른다
+    if((STRAT==='pro'||STRAT==='prod')&&!S.res&&(S.phase==='action'?S.ap>0:(S.cur&&S.cur.type==='ev'))){
+      const sel=S.phase==='action'?'.act:not([disabled])':'#stage button:not([disabled])',list=()=>[...d.querySelectorAll(sel)];
+      const cand=list().map((b,i)=>({i,dark:b.classList.contains('dark'),t:b.textContent})).filter(c=>STRAT==='prod'||!c.dark);
+      if(cand.length>1){const snap=w.eval('JSON.stringify(S)');w.__snap=snap;
+        const MC=+(process.env.MCAP||30000);const U=()=>w.eval(`(()=>{const MC=${MC};if(!S||S.phase==='ending')return S&&S.end==='pres'?500:-500;const x=S.s;return x.support*1+x.fame*.55+x.party*.35+(x.legis+x.speech+x.admin+x.org)*.15+x.integrity*.25+Math.min(x.mental,60)*.3+Math.min(x.money,MC)/MC*28-(S.cases||[]).length*12-(S.trial?40:0)+(S.pl?plgPct()*.08:0)})()`);
+        let best=null;for(const c of cand){let u=0;const K=c.dark?3:2;for(let k=0;k<K;k++){try{const b=list()[c.i];if(b)b.click();const jb=d.querySelector('#joinbox [data-p]');if(jb)jb.click();u+=U()}catch(e){u-=100}w.eval('S=JSON.parse(__snap);render()')}u/=K;if(!best||u>best.u)best={c,u}}
+        const b=list()[best.c.i];if(b){b.click();const jb=d.querySelector('#joinbox [data-p]');if(jb)jb.click();continue}}}
     if(S.phase==='action'){
-      let acts=[...d.querySelectorAll('.act:not([disabled])')];if(STRAT==='smart')acts=acts.filter(a=>!a.classList.contains('dark'));if(STRAT==='mod'){const S0=w.eval('S');acts=acts.filter(a=>!a.classList.contains('dark')||(w.eval('broke()')&&!w.eval('!!S.trial')&&Math.random()<.35))}
+      let acts=[...d.querySelectorAll('.act:not([disabled])')];if(STRAT==='smart'||STRAT==='pro')acts=acts.filter(a=>!a.classList.contains('dark'));if(STRAT==='mod'){const S0=w.eval('S');acts=acts.filter(a=>!a.classList.contains('dark')||(w.eval('broke()')&&!w.eval('!!S.trial')&&Math.random()<.35))}
       if(STRAT==='dirty'&&Math.random()<.5){const dk=acts.filter(a=>a.classList.contains('dark'));if(dk.length)acts=dk}
       if(S.ap>0&&acts.length){acts[Math.floor(Math.random()*acts.length)].click();const jb=d.querySelector('#joinbox [data-p]');if(jb)jb.click();continue}
       d.getElementById('endyr').click();continue}
     let bs=[...d.querySelectorAll('#stage button:not([disabled])')];
     {const nd=bs.filter(b=>!b.classList.contains('dark'));
-     if(STRAT==='smart'&&nd.length)bs=nd;
+     if((STRAT==='smart'||STRAT==='pro')&&nd.length)bs=nd;
      if(STRAT==='mod'&&nd.length&&!(w.eval('broke()')&&!w.eval('!!S.trial')&&w.eval('S.s.integrity')>=40))bs=nd;
      if(STRAT==='mod'&&bs.length>nd.length&&w.eval('broke()')&&!w.eval('!!S.trial')&&w.eval('S.s.integrity')>=40){const dk=bs.filter(b=>b.classList.contains('dark'));if(Math.random()<.6)bs=dk}
      if(STRAT==='dirty'){const dk=bs.filter(b=>b.classList.contains('dark'));if(dk.length)bs=dk}}
@@ -44,9 +52,9 @@ for(let g=0;g<N;g++){console.error("G",g,Math.round(process.memoryUsage().heapUs
   const est=w.eval(`(o)=>{const x=S.s;let p=x.support*.45+x.fame*.22+route(o)*.3+7+(S.office===o?5:0);if(member()&&o!=='pres')p+=(o==='gov'?leanFor(S.party,false):leanFor(S.party));return p-OFF[o].base}`);
   const cand=o.map(b=>({b,o:b.dataset.o,e:est(b.dataset.o)})).filter(c=>c.e>=0);
   const pickc=cand.length?cand[cand.length-1]:o.map(b=>({b,e:est(b.dataset.o)})).sort((a,b)=>b.e-a.e)[0];pickc.b.click();return true}}
-    if(S.cur&&S.cur.type==='elec'&&S.elec&&S.elec.step==='camp'&&!S.res){const v=[...d.querySelectorAll('[data-v]:not([disabled])')];if(!v.length){d.getElementById('giveup').click();return true}v[v.length-1].click();return true}
+    if(S.cur&&S.cur.type==='elec'&&S.elec&&S.elec.step==='camp'&&!S.res){const v=[...d.querySelectorAll('[data-v]:not([disabled])')];if(!v.length){d.getElementById('giveup').click();return true}{const o=S.elec.off,lv=+v[v.length-1].dataset.v,B=w.eval(`elecBase('${o}',${lv})`);global.CAMP=global.CAMP||{};const C=CAMP[o]=CAMP[o]||{n:0,lv:[0,0,0,0],money:0,marg:0,integ:0};C.n++;C.lv[lv]++;C.money+=S.s.money;C.marg+=B.p-B.opp;C.integ+=S.s.integrity}v[v.length-1].click();return true}
     if(S.cur&&S.cur.type==='elec'&&S.elec&&S.elec.step==='nom'&&!S.res){d.getElementById('n1').click();return true}
-    if(S.cur&&S.cur.type==='ev'&&!S.res&&bs.length>1&&w.eval('EV').find(e=>e.id===S.cur.id).tempt){if(STRAT==='smart'||(STRAT==='mod'&&(!w.eval('broke()')||w.eval('S.s.integrity')<40||w.eval('!!S.trial'))))bs[bs.length-1].click();else bs[0].click();return true}
+    if(S.cur&&S.cur.type==='ev'&&!S.res&&bs.length>1&&w.eval('EV').find(e=>e.id===S.cur.id).tempt){if(STRAT==='smart'||STRAT==='pro'||(STRAT==='mod'&&(!w.eval('broke()')||w.eval('S.s.integrity')<40||w.eval('!!S.trial'))))bs[bs.length-1].click();else bs[0].click();return true}
     // 임기 공약: PLEDGE=ignore가 아니면 진척이 임기 경과에 못 미칠 때 공약 선택지를 고르고, 공약 후퇴·파기 선택지는 피한다
     if(process.env.PLEDGE!=='ignore'&&S.pl&&!S.res&&S.cur&&S.cur.type==='ev'){const pc=bs.filter(b=>b.classList.contains('plc')&&!(/보고회로 연다/.test(b.textContent)&&w.eval('broke()')));
       if(pc.length&&w.eval('plgPct()')<Math.min(100,(S.year-S.pl.y)*25+10)){pc[0].click();return true}
@@ -61,4 +69,4 @@ for(let g=0;g<N;g++){console.error("G",g,Math.round(process.memoryUsage().heapUs
   else errs.push('not ended steps='+steps);
   w.close();
 }
-if(process.env.SEENOUT)require('fs').writeFileSync(process.env.SEENOUT,JSON.stringify(global.SEEN||{}));if(process.env.EVNOUT)require('fs').writeFileSync(process.env.EVNOUT,JSON.stringify(global.EVN||{}));console.log(STRAT,'ends',res);console.log(JSON.stringify(KW),'prespoor',typeof PRESPOOR==='undefined'?0:PRESPOOR);console.log('best',bestC);console.log('rival',JSON.stringify(RIV));console.log('avg years',(yearsTot/N).toFixed(1),'trials',trials,'paints',paints);console.log('BG',JSON.stringify(BGR));console.log('PT',JSON.stringify(PTR));console.log('errs',[...new Set(errs)].slice(0,8),errs.length);
+if(process.env.SEENOUT)require('fs').writeFileSync(process.env.SEENOUT,JSON.stringify(global.SEEN||{}));if(process.env.EVNOUT)require('fs').writeFileSync(process.env.EVNOUT,JSON.stringify(global.EVN||{}));console.log(STRAT,'ends',res);{const C=global.CAMP||{};for(const o in C){const c=C[o];console.log('camp',o,'n',c.n,'lv',c.lv.join('/'),'money',Math.round(c.money/c.n),'margin',(c.marg/c.n).toFixed(1),'integ',Math.round(c.integ/c.n))}}console.log(JSON.stringify(KW),'prespoor',typeof PRESPOOR==='undefined'?0:PRESPOOR);console.log('best',bestC);console.log('rival',JSON.stringify(RIV));console.log('avg years',(yearsTot/N).toFixed(1),'trials',trials,'paints',paints);console.log('BG',JSON.stringify(BGR));console.log('PT',JSON.stringify(PTR));console.log('errs',[...new Set(errs)].slice(0,8),errs.length);

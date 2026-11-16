@@ -131,3 +131,33 @@ const BH3={hair:['#1f1f1f','#3a2a20','#4a2f1f','#c8c8c8','#6b4426','#222222','#2
 function frontHeads(c,rnd){const L=[];for(let i=0;i<10;i++){const st=BH3.st[i],hair=st==='bald'?'#b8b8b8':BH3.hair[(i*5)%BH3.hair.length];
     L.push({i,x:i*56-10+(rnd()*10|0),y:297+(i%2)*6-((i+PF)%3===0?1:0),o:{st,hair,cloth:BH3.cloth[(i*3)%BH3.cloth.length],skin:BH3.skin[i%4],r:15+(i*7)%3,hood:i%4===2,cap:['#c2321f','#2f6be0'][i%2]}})}
   L.sort((a,b)=>a.y-b.y).forEach(q=>{const cv=p3('bh'+q.i,92,72,g=>backHead3(g,46,30,q.o));c.drawImage(cv,q.x-46,q.y-30)})}
+
+/* 회의 탁자: 위에서 살짝 내려다본 윗면 + 앞판. 사람은 탁자 뒤에 선다 */
+function hdDesk(c,fy){const m=mz(fy),x0=66,x1=446,h=Math.round(.74*m),dp=Math.round(.3*m),W=x1-x0+8,Hh=h+dp+8;
+  const cv=p3('desk'+Math.round(m),W,Hh,g=>{const L=4,R=W-4,top=dp+4,bot=top+h,ins=22;
+    g.P([[L+ins,4],[R-ins,4],[R,top],[L,top]],'#c08a52',(u,v)=>shade('#c08a52',v<.12?1.22:u>.86?.86:1));
+    for(let i=1;i<6;i++){const u=i/6;g.L(L+ins+(R-L-2*ins)*u,5,L+(R-L)*u,top-1,'#b07c46',1)}
+    g.R(L,top,R-L,5,'#9a6a3a');g.R(L,top,R-L,1,'#e2b47c');g.R(L,top+4,R-L,1,'#5a3a20');
+    g.R(L+5,top+5,R-L-10,h-5,'#6b4426');g.R(L+5,top+5,2,h-5,'#8a5a33');g.R(R-8,top+5,3,h-5,'#4e3018');g.R(L+5,bot-5,R-L-10,5,'#4e3018');
+    const n=4,pw=(R-L-10-(n+1)*8)/n;for(let i=0;i<n;i++){const x=Math.round(L+5+8+i*(pw+8)),y=top+13,ph=h-28;g.R(x,y,pw,ph,'#5a3a20');g.R(x,y,pw,1,'#3e2814');g.R(x,y,1,ph,'#3e2814');g.R(x,y+ph-1,pw,1,'#8a5a33');g.R(x+pw-1,y,1,ph,'#8a5a33')}
+    // 탁자 위: 서류·컵·물병
+    const paper=(x,y)=>{g.P([[x+3,y],[x+25,y],[x+22,y+9],[x,y+9]],'#f8f5ea');g.R(x+5,y+2,14,1,'#aeb4c0');g.R(x+4,y+4,15,1,'#aeb4c0');g.R(x+3,y+6,10,1,'#aeb4c0')};
+    const cup=(x,y,cl)=>{g.R(x,y,7,7,cl);g.R(x,y,7,1,shade(cl,1.3));g.R(x+5,y+1,2,6,shade(cl,.76));g.R(x+1,y+1,5,1,'#5a3a20');g.R(x+7,y+2,2,3,cl)};
+    const bottle=(x,y)=>{g.R(x+1,y,3,2,'#2f6be0');g.R(x,y+2,5,11,'#bfe0f4');g.R(x,y+2,1,11,'#eaf6fc');g.R(x+4,y+2,1,11,'#8fbfdc');g.R(x,y+6,5,3,'#ffffff')};
+    paper(Math.round(W*.2),top-14);paper(Math.round(W*.47),top-13);paper(Math.round(W*.72),top-14);cup(Math.round(W*.33),top-13,'#f4f1ea');cup(Math.round(W*.63),top-12,'#e0384c');bottle(Math.round(W*.13),top-19);bottle(Math.round(W*.87),top-19)});
+  c.drawImage(cv,x0-4,Math.round(fy-Hh+4))}
+
+/* 머리 위 말풍선 표시(느낌표·가위표·의사봉) */
+function hdEmote(c,kind,x,y){const W=30,Hh=32;
+  const cv=p3('emo'+kind,W,Hh,g=>{g.R(3,1,W-6,22,'#ffffff');g.R(1,3,W-2,18,'#ffffff');g.R(2,2,W-4,20,'#ffffff');g.R(3,21,W-6,2,'#dfe3ea');g.R(W-4,5,2,14,'#eceff3');
+    g.P([[7,22],[14,22],[6,30]],'#ffffff');
+    const red='#d3321f',hi='#f0705c',dk='#9a2012';
+    if(kind==='exclaim'){g.R(13,4,5,11,red);g.R(13,4,2,11,hi);g.R(17,4,1,11,dk);g.R(14,15,3,1,red);g.R(13,17,5,4,red);g.R(13,17,2,2,hi);g.R(17,18,1,3,dk)}
+    else if(kind==='xmark'){for(let i=0;i<14;i++){g.R(8+i,5+i,3,3,red);g.R(21-i,5+i,3,3,red)}for(let i=0;i<14;i++)g.R(8+i,5+i,1,1,hi)}
+    else{g.R(6,16,13,3,'#5a3a20');g.R(6,16,13,1,'#8a5a3a');g.R(7,8,11,7,'#8a5a33');g.R(7,8,11,1,'#b8844e');g.R(7,13,11,2,'#6b4426');g.R(9,8,2,7,'#e8b94a');g.R(14,8,2,7,'#e8b94a');g.L(17,11,24,5,'#6b4426',2)}});
+  c.drawImage(cv,Math.round(Math.max(2,Math.min(480,x))),Math.round(Math.max(2,y)))}
+function heartArt(s,cl){const w=s===2?13:9,h=s===2?12:8;return p3('hrt'+s+cl,w+2,h+2,g=>{const rows=s===2?[[2,4,8,4],[1,6,7,6],[1,12],[1,12],[1,12],[2,10],[3,8],[4,6],[5,4],[6,2]]:[[2,3,6,3],[1,9],[1,9],[1,9],[2,7],[3,5],[4,3],[5,1]];
+    rows.forEach((r,j)=>{for(let k=0;k<r.length;k+=2)g.R(r[k],j+1,r[k+1],1,j>rows.length*.55?shade(cl,.82):cl)});g.R(s===2?3:2,2,2,s===2?2:1,shade(cl,1.5))})}
+function hdHearts(c,x,y){const d=PF*2;[[0,0-d,2,'#ff4f7a'],[16,-16+d,1,'#ff7f9e'],[-6,-24-d,1,'#ff4f7a'],[12,-34+d,2,'#ff8fab']].forEach(([dx,dy,s,cl])=>{const cv=heartArt(s,cl);c.drawImage(cv,Math.round(Math.max(2,Math.min(496,x+dx))),Math.round(Math.max(2,y+dy)))})}
+function hdSun(c,x,y){const cv=p3('sun'+PF,44,44,g=>{const cx=22,cy=22;for(let a=0;a<8;a++){const an=a/8*6.283+PF*.39,rx=Math.cos(an),ry=Math.sin(an);g.L(cx+rx*15,cy+ry*15,cx+rx*19,cy+ry*19,'#ffb347',2)}
+    g.E(cx,cy,12,12,'#ffd23f',(u,v)=>shade('#ffd23f',u+v<-.5?1.5:u+v>.6?.86:1))});c.drawImage(cv,x-22,y-22)}
