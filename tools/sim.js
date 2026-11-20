@@ -1,5 +1,5 @@
 // 시뮬레이션 봇: node --max-old-space-size=3000 tools/sim.js <판 수(≤60)> <rand|smart|mod|pro|prod|prox>  (pro·prod는 한 수 앞을 눌러 보는 숙련자 봇, 한 판 30~40초. MCAP=자금 목표)
-// 출력: 엔딩 분포, 로그 키워드 집계, 최고 직위, 출신·정당별 성과, errs(런타임 오류). SEENOUT=파일 지정 시 이벤트별 등장한 판 수, EVNOUT=파일 지정 시 이벤트별 총 등장 횟수(S.evn 합)를 JSON으로 저장
+// 출력: 엔딩 분포, 로그 키워드 집계, 최고 직위, 출신·정당별 성과, errs(런타임 오류). SEENOUT=파일 지정 시 이벤트별 등장한 판 수, EVNOUT=파일 지정 시 이벤트별 총 등장 횟수(S.evn 합)를 JSON으로 저장. TRACEOUT=파일 지정 시 판마다 [연도,나이,직위 등급,이벤트 id] 순서 기록
 // FORCEPRES=1 이면 국회의원 3선 상태로 시작(대선 구간 점검용). HTML=경로 로 다른 빌드 검사
 const {JSDOM,VirtualConsole}=require('jsdom');const fs=require('fs');
 const html=fs.readFileSync(process.env.HTML||require('path').join(__dirname,'../src/game.html'),'utf8');
@@ -17,9 +17,10 @@ for(let g=0;g<N;g++){console.error("G",g,Math.round(process.memoryUsage().heapUs
   const ds=d.querySelectorAll('#ds button');ds[g%ds.length].click();
   d.querySelectorAll('#bgc button')[Math.floor(g/3)%6].click();
   d.getElementById('go').click();if(process.env.FORCEPRES){w.eval("S.office='nat';S.held.nat=3;S.everChair=true;S.s.fame=70;S.s.party=70;S.s.support=45;S.s.money=60000")}
-  let steps=0;
+  let steps=0;const TR=[];let TRK='';
   while(steps++<8000){
     const S=w.eval('S');if(!S||S.phase==='ending')break;
+    if(process.env.TRACEOUT&&S.cur&&!S.res){const k=S.year+'|'+(S.cur.id||S.cur.type)+'|'+(S.q?S.q.length:0);if(k!==TRK){TRK=k;TR.push([S.year,S.age,w.eval('OFF[S.office].tier'),S.cur.type==='ev'?S.cur.id:S.cur.type])}}
     // pro·prod: 한 수 앞을 실제로 눌러 보고(2번씩) 가장 나은 선택지를 고르는 숙련자 봇. pro는 검은돈 선택지를 아예 안 누르고, prod는 이득이면 누른다
     // prox: pro처럼 두되, 국회의원급 이상이고 대선이 2년 안이면 모금 때 영수증 없는 현금을 받는다(재판 중이거나 혐의가 2건 쌓이면 멈춤). 대선 자금을 검은돈으로 채우는 사람을 흉내 낸다
     if(STRAT==='prox'&&!S.res&&S.cur&&S.cur.type==='ev'&&S.cur.id==='c_fund'&&!S.trial&&(S.cases||[]).length<2&&S.s.money<125000&&w.eval("OFF[S.office].tier>=3&&[0,1,2].some(k=>elecKinds(S.year+k).includes('pres'))")){const b=[...d.querySelectorAll('#stage button:not([disabled])')].find(b=>/영수증 없는 현금/.test(b.textContent));if(b){b.click();global.DARKN=(global.DARKN||0)+1;continue}}
@@ -72,6 +73,7 @@ for(let g=0;g<N;g++){console.error("G",g,Math.round(process.memoryUsage().heapUs
   if(S&&S.evn){global.EVN=global.EVN||{};for(const k in S.evn)EVN[k]=(EVN[k]||0)+S.evn[k]}
   if(S&&S.phase==='ending'){const tier=w.eval('OFF[S.best].tier');for(const [M,k] of [[BGR,S.bg],[PTR,['jj','sm','ind'][g%3]]]){M[k]=M[k]||{n:0,t3:0,t4:0,pres:0,yrs:0};M[k].n++;if(tier>=3)M[k].t3++;if(tier>=4)M[k].t4++;if(S.end==='pres'||S.held.pres)M[k].pres++;M[k].yrs+=S.year-2026}res[S.end]=(res[S.end]||0)+1;AGES.push(S.end+':'+S.age);if(S.rival)RIV.push(S.rival.l+'-'+S.rival.w);bestC[S.best]=(bestC[S.best]||0)+1;yearsTot+=S.year-2026;trials+=S.stats.trials}
   else errs.push('not ended steps='+steps);
+  if(process.env.TRACEOUT&&S){global.TRC=global.TRC||[];TRC.push({end:S.end,best:S.best,start:S.startYear||2026,y:S.year,age:S.age,bg:S.bg,tr:TR})}
   w.close();
 }
-if(process.env.SEENOUT)require('fs').writeFileSync(process.env.SEENOUT,JSON.stringify(global.SEEN||{}));if(process.env.EVNOUT)require('fs').writeFileSync(process.env.EVNOUT,JSON.stringify(global.EVN||{}));console.log(STRAT,'ends',res,'dark',global.DARKN||0);{const C=global.CAMP||{};for(const o in C){const c=C[o];console.log('camp',o,'n',c.n,'lv',c.lv.join('/'),'money',Math.round(c.money/c.n),'margin',(c.marg/c.n).toFixed(1),'integ',Math.round(c.integ/c.n))}}console.log(JSON.stringify(KW),'prespoor',typeof PRESPOOR==='undefined'?0:PRESPOOR);console.log('best',bestC);console.log('rival',JSON.stringify(RIV));console.log('avg years',(yearsTot/N).toFixed(1),'trials',trials,'paints',paints);console.log('BG',JSON.stringify(BGR));console.log('PT',JSON.stringify(PTR));console.log('errs',[...new Set(errs)].slice(0,8),errs.length);
+if(process.env.TRACEOUT)require('fs').writeFileSync(process.env.TRACEOUT,JSON.stringify(global.TRC||[]));if(process.env.SEENOUT)require('fs').writeFileSync(process.env.SEENOUT,JSON.stringify(global.SEEN||{}));if(process.env.EVNOUT)require('fs').writeFileSync(process.env.EVNOUT,JSON.stringify(global.EVN||{}));console.log(STRAT,'ends',res,'dark',global.DARKN||0);{const C=global.CAMP||{};for(const o in C){const c=C[o];console.log('camp',o,'n',c.n,'lv',c.lv.join('/'),'money',Math.round(c.money/c.n),'margin',(c.marg/c.n).toFixed(1),'integ',Math.round(c.integ/c.n))}}console.log(JSON.stringify(KW),'prespoor',typeof PRESPOOR==='undefined'?0:PRESPOOR);console.log('best',bestC);console.log('rival',JSON.stringify(RIV));console.log('avg years',(yearsTot/N).toFixed(1),'trials',trials,'paints',paints);console.log('BG',JSON.stringify(BGR));console.log('PT',JSON.stringify(PTR));console.log('errs',[...new Set(errs)].slice(0,8),errs.length);
