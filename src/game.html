@@ -457,6 +457,7 @@ function distTxt(){const f=distFund();return f<.8?`후원금 적음(×${f})`:f<1
 const legalAmt=()=>(eraK()==='crisis'?.85:1)*(350+s().support*15+s().fame*12)*Math.sqrt(TM())*mulFor('fund')*(inOffice()?1:.6)*distFund();
 const bookAmt=()=>Math.round((600+s().fame*40+s().party*15+s().org*15)*(elecKinds(S.year+1).length?1.4:1)*Math.sqrt(TM())*mulFor('fund')*distFund()/10)*10;
 // 검은돈은 급이 오를수록 판이 커진다: 국회의원·단체장급부터는 몇 번이면 대선 총력전 자금이 된다
+const DMX=()=>CTX.mode==='ev'&&CTX.tempt?CTX.money*DARKM():1;// 유혹 이벤트 결과 문구의 금액을 실제 받은 액수와 맞춘다
 const DARKM=()=>(OFF[S.office].tier>=3?2.2:1)*(eraK()==='scandal'?1.2:1);
 const cashAmt=()=>Math.round((legalAmt()*3.3+600*BM())*DARKM()/10)*10;
 const slushAmt=()=>Math.round((legalAmt()*2.6+400*TM())/10)*10;
@@ -645,11 +646,13 @@ const CB={redevelop:{i:{0:'a',1:'b'},d:[3,6]},flood:{i:{0:'a',1:'b'},d:[2,5]},tr
   burnout:{i:{1:'b'},d:[1,3]},e_pet:{i:{0:'a',1:'b'},d:[3,6]},mou:{i:{0:'a',1:'b'},d:[3,6]},cityhall:{i:{0:'a',1:'b'},d:[3,5]},deputy:{i:{0:'a',1:'b'},d:[2,4]},
   e_jeonse:{i:{0:'a'},d:[2,5]},h_tablet:{i:{0:'a'},d:[1,3]},x_lawsuit:{i:{0:'a'},d:[2,4]},d_ind:{i:{0:'a',1:'b'},d:[2,5]},busstrike:{i:{0:'a',1:'b'},d:[2,5]},
   festbudget:{i:{0:'a',1:'b'},d:[2,5]},variety:{i:{0:'a'},d:[2,5]},porkbarrel:{i:{0:'a',1:'b'},d:[3,6]},youth:{i:{0:'a'},d:[4,8]},banner:{i:{0:'a'},d:[2,5]},
-  e_ai:{i:{0:'a'},d:[2,5]},gapjil:{i:{1:'b'},d:[2,4]},h_lh:{i:{2:'c'},d:[2,5]},tail:{i:{},d:[2,5]}};
+  e_ai:{i:{0:'a'},d:[2,5]},gapjil:{i:{1:'b'},d:[2,4]},h_lh:{i:{2:'c'},d:[2,5]},tail:{i:{},d:[2,5]},
+  k_nomcash:{i:{0:'a'},d:[2,4]},k_church:{i:{0:'a'},d:[2,5]},k_accuse:{i:{0:'a'},d:[1,3]},k_office:{i:{0:'a'},d:[2,3]},k_oil:{i:{0:'a'},d:[1,2]},k_medic:{i:{0:'a'},d:[1,1]},k_disaster:{i:{2:'c'},d:[1,2]}};
+const PRESCB=k=>/^k_(oil|medic|office|disaster)$/.test(k);// 대통령 임기 중에도 나오는 후일담
 const cbV=()=>(S.cbNow||{}).v,ago=()=>Math.max(1,S.year-((S.cbNow||{}).y||S.year));
 function cbMark(e,i){const d=CB[e.id];if(d&&d.i[i]){S.mem=S.mem||{};S.mem[e.id]={y:S.year,v:d.i[i]}}}
-function cbDue(){const M=S.mem||{};for(const k in M)if(!CB[k]||S.year-M[k].y>12)delete M[k];
-  const due=Object.keys(M).filter(k=>S.year-M[k].y>=CB[k].d[0]);if(!due.length)return null;
+function cbDue(f){const M=S.mem||{};for(const k in M)if(!CB[k]||S.year-M[k].y>12)delete M[k];
+  const due=Object.keys(M).filter(k=>S.year-M[k].y>=CB[k].d[0]&&(!f||f(k)));if(!due.length)return null;
   const k=due.find(k=>S.year-M[k].y>=CB[k].d[1])||(R()<.4?pick(due):null);if(!k)return null;
   S.cbNow={k,v:M[k].v,y:M[k].y};delete M[k];S.cbn=(S.cbn||0)+1;return 'cb_'+k}
 /* ============ 올해만 나오는 선택지 ============
@@ -756,7 +759,7 @@ const EV=[
  ch:[['감사히 받는다',()=>{chg({money:Math.round(6000*BM()),integrity:-8});addCase('출판기념회 편법 후원',1);return '통장이 두둑해졌다. 대표는 "다음에 밥 한번"이라며 웃었다.'}],
      ['정중히 거절한다',()=>{chg({integrity:4});return '대표의 표정이 굳었다. 깨끗하지만 춥다.'}]]},
 {id:'bag',tempt:true,tag:'단독',t:'명절 선물이라며 쇼핑백 하나',c:inOffice,b:'개발업자가 "고향 특산물"이라며 쇼핑백을 놓고 갔다. 안에는 굴비 대신 5만원권 다발이 들어 있다.',
- ch:[['조용히 받는다',()=>{const m=Math.round(ri(3,8)*1000*BM());chg({money:m,integrity:-12});addCase('개발업자 금품 수수',2);S.stats.bribes++;return `${won(m)}. 굴비보다 무겁다.`}],
+ ch:[['조용히 받는다',()=>{const m=Math.round(ri(3,8)*1000*BM());chg({money:m,integrity:-12});addCase('개발업자 금품 수수',2);S.stats.bribes++;return `${won(m*DMX())}. 굴비보다 무겁다.`}],
      ['돌려보낸다',()=>{chg({integrity:5});return '퀵으로 돌려보냈다. 업자는 다른 사람을 찾겠지.'}],
      ['받은 뒤 바로 신고한다',()=>{chg({integrity:10,fame:6,party:-3});return '"청렴 의원" 기사가 났다. 업계에선 "독한 사람"이라 수군댄다.'}]]},
 {id:'trip',tag:'논란',t:'해외연수 일정표가 관광지뿐',c:isLocalCouncil,b:'의회 공무국외연수 일정의 70%가 관광지다. 동료 의원들은 다 간다고 한다.',
@@ -868,7 +871,7 @@ const EV=[
  ch:[['들어준다',()=>{chg({org:5,integrity:-6,admin:-2});if(R()<.3)addCase('인사 청탁(직권남용)',1);return '공무원 노조 게시판이 들끓었다.'}],
      ['원칙대로 한다',()=>{chg({integrity:3,org:-3,admin:2});return '유력 인사는 다음 선거를 기약하자고 했다.'}]]},
 {id:'permit',tempt:true,tag:'단독',t:'대형 개발 인허가 접대',c:isAdmin,b:'대형 쇼핑몰 인허가를 앞두고 시행사가 골프와 "자문료"를 제안했다.',
- ch:[['받는다',()=>{const m=Math.round(ri(8,20)*1000*BM());chg({money:m,integrity:-14});addCase('인허가 뇌물 수수',S.office==='gov'?3:2);S.stats.bribes++;return `자문료 명목 ${won(m)}. 인허가 도장은 빨리 찍혔다.`}],
+ ch:[['받는다',()=>{const m=Math.round(ri(8,20)*1000*BM());chg({money:m,integrity:-14});addCase('인허가 뇌물 수수',S.office==='gov'?3:2);S.stats.bribes++;return `자문료 명목 ${won(m*DMX())}. 인허가 도장은 빨리 찍혔다.`}],
      ['거절하고 원칙대로 심사한다',()=>{chg({integrity:5,admin:3});return '심사는 6개월 걸렸다. 시행사는 소송을 예고했다.'}]]},
 {id:'festbudget',tag:'예산',t:'축제 예산 vs 복지 예산',c:isAdmin,b:'예산이 빠듯하다. 대표 축제를 키울지, 돌봄 예산을 늘릴지.',
  ch:[['축제를 확대한다',()=>{chg({fame:5,support:1,money:0});return '불꽃놀이가 전국 뉴스를 탔다.'}],
@@ -1094,7 +1097,7 @@ const EV=[
      ['절차를 지켜보자며 신중론을 편다',()=>{chg({party:-4,integrity:2});return '"미지근하다"는 당원들의 항의 문자가 쏟아졌다.'+res(0)}]]}},
 // ---- 정치사 풍자 ----
 {id:'h_truck',tempt:true,tag:'단독',px:'night|biz,me|car',c:()=>elecKinds(S.year).length>0&&OFF[S.office].tier>=2,t:'고속도로 휴게소의 2.5톤 트럭',b:'대기업 임원이 "선거자금은 트럭째 보내겠다"고 한다. 휴게소에서 열쇠만 넘겨받으면 된다고.',
- ch:[['열쇠를 받는다',()=>{const m=Math.round(needMoney()*1.6/100)*100;chg({money:m,integrity:-16});addCase('불법 대선자금(트럭 수수)',elecKinds(S.year).includes('pres')?3:2);S.stats.bribes++;return `${won(m)}이 실린 트럭. 훗날 이 사건은 "트럭떼기"로 불리게 된다.`}],
+ ch:[['열쇠를 받는다',()=>{const m=Math.round(needMoney()*1.6/100)*100;chg({money:m,integrity:-16});addCase('불법 대선자금(트럭 수수)',elecKinds(S.year).includes('pres')?3:2);S.stats.bribes++;return `${won(m*DMX())}이 실린 트럭. 훗날 이 사건은 "트럭떼기"로 불리게 된다.`}],
      ['"트럭은 좀…" 거절한다',()=>{chg({integrity:4});return '임원은 "다른 캠프는 받던데"라며 떠났다.'}]]},
 {id:'h_reply',tempt:true,tag:'은밀',px:'phone|me|heart',c:()=>s().fame>=25,t:'"여론은 만드는 겁니다"',b:'온라인 홍보 대행사가 계정 300개로 댓글과 공감을 관리해 주겠다고 한다. 실검 순위도 책임진다고.',
  ch:[['맡긴다',()=>{chg({money:-Math.round(800*TM()),support:6,fame:4,integrity:-9});if(R()<.4)addCase('여론 조작(댓글 공작)',2);return '포털 댓글 1위가 매일 내 칭찬이다. 누가 봐도 이상하다.'}],
@@ -1103,7 +1106,7 @@ const EV=[
  ch:[['계속 맡긴다',()=>{chg({speech:3,admin:-2,integrity:-6});if(R()<.35)addCase('비선 국정 개입 방조',3);return '연설은 매끄러워졌다. 지인의 태블릿에 무엇이 들어 있는지는 아무도 모른다.'}],
      ['공식 라인으로만 일한다',()=>{chg({admin:3,integrity:3,mental:-3});return '지인은 서운해하며 연락을 끊었다.'}]]},
 {id:'h_daebak',tempt:true,tag:'의혹',px:'field|biz,me|house,env',c:isAdmin,t:'민관합동 개발 "천화대박" 프로젝트',b:'신도시 개발 민간사업자가 공공은 확정이익만 받고 초과이익은 민간이 갖는 구조를 제안한다. "50억 클럽"에 자리를 마련해 두겠단다.',
- ch:[['민간 제안대로 간다',()=>{const m=Math.round(ri(6,12)*1000*BM());chg({money:m,admin:2,integrity:-14});addCase('개발 특혜·배임',2);return `사업은 대박이 났다. ${won(m)}이 "자문료"로 돌아왔다. 훗날 녹취록이 문제가 된다.`}],
+ ch:[['민간 제안대로 간다',()=>{const m=Math.round(ri(6,12)*1000*BM());chg({money:m,admin:2,integrity:-14});addCase('개발 특혜·배임',2);return `사업은 대박이 났다. ${won(m*DMX())}이 "자문료"로 돌아왔다. 훗날 녹취록이 문제가 된다.`}],
      ['초과이익 환수 조항을 넣는다',()=>{chg({admin:4,support:4,integrity:3});return '사업자는 "사업성이 없다"며 투덜댔지만 사업은 굴러갔다.'}]]},
 {id:'h_spec',tag:'논란',px:'school|cit,me|book',c:()=>s().fame>=30&&hasKid(15,30)&&!S.seen.f_exam,t:'자녀 입시 서류에 내 직함이',b:'지인 교수가 고등학생 자녀를 논문 공저자와 인턴으로 올려 주겠다고 한다. "다들 이 정도는 한다"고.',
  ch:[['못 이기는 척 받는다',()=>{chg({integrity:-8});S.flags=S.flags||{};S.flags.spec=S.year;if(R()<.45)addCase('입시 서류 허위 작성 공모',1);return '자녀는 원하는 학교에 붙었다. 서류는 남는다.'}],
@@ -1123,7 +1126,7 @@ const EV=[
  ch:[['"만난 적도 없다"',()=>{if(S.stats.bribes>0&&R()<.6){chg({support:-9,integrity:-6});addCase('불법 정치자금 수수(메모)',2);return '같이 찍은 사진이 나왔다. 수사가 시작됐다.'}chg({support:-2});return '알리바이가 확인됐다. 억울한 이름만 남았다.'}],
      ['일정표·계좌를 전부 공개한다',()=>{chg({support:1,integrity:4,mental:-5});return '"떳떳하다"는 인상을 남겼다.'}]]},
 {id:'h_lh',tempt:true,tag:'투기',px:'field|aide,me|house',c:inOffice,t:'신도시 발표 전, "그 땅 사 두세요"',b:'개발공사 직원이 신도시 후보지를 귀띔한다. 발표는 석 달 뒤.',
- ch:[['차명으로 사 둔다',()=>{const m=Math.round(4000*BM()/10)*10;chg({money:m,integrity:-12});if(R()<.5)addCase('내부정보 이용 투기',2);return `보상금과 시세 차익 ${won(m)}. 땅에 왕버들 묘목을 빽빽이 심어 뒀다.`}],
+ ch:[['차명으로 사 둔다',()=>{const m=Math.round(4000*BM()/10)*10;chg({money:m,integrity:-12});if(R()<.5)addCase('내부정보 이용 투기',2);return `보상금과 시세 차익 ${won(m*DMX())}. 땅에 왕버들 묘목을 빽빽이 심어 뒀다.`}],
      ['못 들은 걸로 한다',()=>{chg({integrity:2});return '석 달 뒤 신도시가 발표됐다. 그 직원은 부자가 됐다.'}],
      ['내부 정보 유출을 공개 경고한다',()=>{chg({fame:5,support:4,party:-2});return '"투기 방지법" 기사가 나왔다.'}]]},
 {id:'h_coin',tag:'논란',px:'hall|me|phone,chart',c:isNat,t:'상임위 회의 중 코인 차트',b:'회의 중 휴대폰으로 가상화폐를 사고팔다가 국회 사진기자 렌즈에 걸렸다.',
@@ -1158,7 +1161,7 @@ const EV=[
  ch:[['"불법 도청물 보도 금지" 가처분을 낸다',()=>{if(S.stats.bribes>0){chg({support:-6,fame:5});if(R()<.4)addCase('정치자금법 위반(녹취)',2);return '가처분은 기각됐다. "떡값" 대목이 전파를 탔다.'}chg({support:-3});return '보도된 대목은 평범한 덕담이었다. 가처분 신청만 우스워졌다.'}],
      ['"전부 공개해도 좋다"',()=>{if(S.stats.bribes>0){chg({support:-9,integrity:-3});addCase('정치자금법 위반(녹취)',2);return '정말 전부 공개됐다. 후회가 늦었다.'}chg({support:5,integrity:4,fame:4});return '테이프 속 나는 밥값을 각자 냈다. 뜻밖의 미담이 됐다.'}]]},
 {id:'h_slush',tempt:true,tag:'비자금',px:'office|biz,me|cash,boxes',c:()=>OFF[S.office].tier>=3&&S.stats.bribes>0,t:'차명계좌 400개짜리 비자금 관리',b:'오래된 후원자가 "통치자금은 쪼개야 안 걸린다"며 친척·운전기사 명의 계좌로 나눠 굴려 주겠다고 한다. 수수료는 이자에서 떼겠단다.',
- ch:[['맡긴다',()=>{const m=Math.round(3000*BM()/10)*10;chg({money:m,integrity:-12});addCase('차명계좌 비자금 은닉',2);return `이자만 ${won(m)}. 운전기사가 자기 통장 잔고를 보고 놀라 은행에 전화했다는 얘기가 들린다.`}],
+ ch:[['맡긴다',()=>{const m=Math.round(3000*BM()/10)*10;chg({money:m,integrity:-12});addCase('차명계좌 비자금 은닉',2);return `이자만 ${won(m*DMX())}. 운전기사가 자기 통장 잔고를 보고 놀라 은행에 전화했다는 얘기가 들린다.`}],
      ['실명으로 정리해 신고한다',()=>{chg({integrity:5,money:-Math.round(300*TM())});return '세금이 꽤 나왔다. 대신 잠은 편히 잔다.'}]]},
 {id:'h_29',tempt:true,tag:'추징금',px:'court|judge,me|cash,xmark',c:()=>S.stats.bribes>=2&&s().money>=2000,t:'"전 재산이 29만원입니다"',b:'측근이 "재판에서 지면 추징금이 나오니 재산을 미리 아들·처남 명의로 돌려 두자"고 한다. 법정에선 통장을 보여 주며 "전 재산이 이것뿐"이라 하면 된단다.',
  ch:[['재산을 돌려 둔다',()=>{const m=Math.round(s().money*.4);chg({money:-m,integrity:-10,mental:6});if(R()<.5)addCase('강제집행 면탈',2);return `${won(m)}이 친척 명의로 사라졌다. 골프장에서 찍힌 사진 한 장이 마음에 걸린다.`}],
@@ -1676,7 +1679,7 @@ const EV=[
  ch:[['광장으로 가서 직접 듣는다',()=>{const ok=R()<.6;chg({support:ok?4:-3,mental:-5,fame:3});return ok?'마이크 대신 수첩을 들었다. 그 모습이 좋게 보였다.':'"보여주기"라는 야유를 들었다.'}],
      ['청년 일자리 예산을 밀어붙인다',()=>{chg({policy:3,support:2,party:inOffice()?2:0});return '예산은 늘었고 체감은 더뎠다.'}]]},
 {id:'f_virus',w:4,tempt:true,tag:'감염병',px:'night|aide,me,biz|glass',c:()=>crOn('virus')&&S.year>S.crisis.y&&inOffice(),t:'5인 이상 모임 금지인데, 후원회 만찬이…',b:'방역 지침상 5인 이상 모임 금지. 그런데 큰손 후원자들이 "조용한 룸"에서 만찬을 하자고 한다.',
- ch:[['룸에서 만난다',()=>{const m=Math.round(800*TM()/10)*10;chg({money:m});if(R()<.45){chg({support:-10,integrity:-6});return `후원금 ${won(m)}. 그리고 같은 식당에 있던 손님의 휴대폰 사진.`}chg({integrity:-3});return `후원금 ${won(m)}. 아무도 몰랐다. 아직은.`}],
+ ch:[['룸에서 만난다',()=>{const m=Math.round(800*TM()/10)*10;chg({money:m});if(R()<.45){chg({support:-10,integrity:-6});return `후원금 ${won(m*DMX())}. 그리고 같은 식당에 있던 손님의 휴대폰 사진.`}chg({integrity:-3});return `후원금 ${won(m*DMX())}. 아무도 몰랐다. 아직은.`}],
      ['온라인 후원 행사로 돌린다',()=>{chg({support:2,integrity:2,money:Math.round(200*TM())});return '화면 속 후원자들은 꽤 즐거워 보였다.'}]]},
 {id:'f_tragedy',w:4,tag:'대형 참사',px:'hall|cit,me,rep|ballot',c:()=>crOn('tragedy')&&S.year>S.crisis.y&&isCouncil(),t:'참사 진상규명 특별법 표결',b:()=>`유가족들이 1년째 국회 앞에서 농성 중이다. ${rulingP()===S.party?'우리 당 지도부는 "정쟁화"를 우려하며 반대 당론을 정했다.':'우리 당은 찬성 당론이다.'}`,
  ch:[['찬성한다',()=>{chg({support:4,integrity:3,party:rulingP()===S.party?-6:3});return '본회의장 방청석에서 유가족들이 울었다.'}],
@@ -1907,11 +1910,11 @@ const EV=[
  ch:[['독설 캐릭터로 간다',()=>{chg({fame:8,money:Math.round(300*TM()),support:-2,party:-2});return '"사이다"와 "막말" 사이를 매주 오갔다.'}],
      ['점잖은 분석가로 간다',()=>{chg({fame:3,policy:3,money:Math.round(200*TM())});return '시청률은 평범했다. 평판은 좋았다.'}]]},
 {id:'y_advisor',w:2,tempt:true,tag:'야인',px:'office|biz,me|env',c:()=>!inOffice()&&!wrapMode()&&OFF[S.best].tier>=2,t:'"고문님, 인허가 쪽에 아는 분 계시죠?"',b:'고문으로 모시겠다는 회사가 사실은 인허가 담당 공무원 연락처를 원한다. 고문료는 매달 꽂힌다.',
- ch:[['고문을 맡고 전화 몇 통 돌린다',()=>{const m=Math.round(1200*BM()/10)*10;chg({money:m,integrity:-10});addCase('알선수재(고문료)',2);S.stats.bribes++;return `연 ${won(m)}. 통화 기록은 남는다.`}],
+ ch:[['고문을 맡고 전화 몇 통 돌린다',()=>{const m=Math.round(1200*BM()/10)*10;chg({money:m,integrity:-10});addCase('알선수재(고문료)',2);S.stats.bribes++;return `연 ${won(m*DMX())}. 통화 기록은 남는다.`}],
      ['거절한다',()=>{chg({integrity:3});return '"요즘 다 이렇게 산다"며 회사 대표가 혀를 찼다.'}]]},
 // ---- 출신별 이벤트 ----
 {id:'b_law_case',w:2,tempt:true,tag:'변호사 출신',px:'office|biz,me|book,cash',c:()=>S.bg==='lawyer'&&inOffice(),t:()=>`"${J(hon(),'이가')} 직접 맡아 주시면 좋겠는데요"`,b:'옛 로펌 고객이던 지역 건설사가 행정소송을 맡아 달라고 한다. 겸직 신고만 하면 된다지만, 상대는 내가 감시해야 할 지자체다. 수임료는 시세의 세 배.',
- ch:[['수임한다',()=>{const m=Math.round(1500*BM()/10)*10;chg({money:m,legis:2,integrity:-8});if(R()<.35)addCase('변호사 겸직 이해충돌',1);return `수임료 ${won(m)}. 국정감사 피감기관 명단에 그 지자체가 올라와 있다.`}],
+ ch:[['수임한다',()=>{const m=Math.round(1500*BM()/10)*10;chg({money:m,legis:2,integrity:-8});if(R()<.35)addCase('변호사 겸직 이해충돌',1);return `수임료 ${won(m*DMX())}. 국정감사 피감기관 명단에 그 지자체가 올라와 있다.`}],
      ['후배 변호사를 소개한다',()=>{chg({org:2,integrity:-1});return '"소개비는 사양하겠다"고 했지만 명절 선물은 왔다.'}],
      ['겸직하지 않는다고 거절한다',()=>{chg({integrity:3});return '"원칙이 너무 세다"는 말과 함께 거래가 끝났다.'}]]},
 {id:'b_law_spouse',w:2,tag:'전관예우',px:'press|rep,me|cam,exclaim',c:()=>S.bg==='lawyer'&&s().fame>=30,t:'배우자의 수임료 22억',b:'로펌에서 일하는 배우자가 검사장 출신 경력을 앞세워 1년에 22억을 벌었다는 보도가 나왔다. 기자들은 내가 예전에 "전관예우는 엄벌해야 한다"고 한 영상을 함께 튼다.',
@@ -1943,7 +1946,7 @@ const EV=[
  ch:[['사과하고 사비로 이자까지 지급한다',()=>{chg({money:-Math.round(500*TM()),support:5,integrity:3});return '"사장님이 뒤늦게 철들었다"는 댓글이 베스트가 됐다.'}],
      ['"그때 다 정산했다"고 반박한다',()=>{chg({support:-5,fame:3});return '정산 증빙이 일부만 있었다.'}]]},
 {id:'b_cr_chat',w:2,tempt:true,tag:'유튜버 출신',px:'phone|me^|heart,cash',c:()=>S.bg==='creator'&&inOffice(),t:'의정 보고 라이브에 슈퍼챗이 쏟아진다',b:'구독자 40만 채널에서 의정 보고 라이브를 켰더니 슈퍼챗이 쏟아졌다. 한 시간에 300만원. 선관위는 "정치자금 해당 여부를 검토 중"이라고 한다.',
- ch:[['방송을 계속하고 수익도 받는다',()=>{const m=Math.round(900*TM()/10)*10;chg({money:m,fame:5,integrity:-6});if(R()<.35)addCase('정치자금법 위반(슈퍼챗)',1);return `한 해 슈퍼챗 ${won(m)}. 상대 당이 고발장을 들고 선관위로 갔다.`}],
+ ch:[['방송을 계속하고 수익도 받는다',()=>{const m=Math.round(900*TM()/10)*10;chg({money:m,fame:5,integrity:-6});if(R()<.35)addCase('정치자금법 위반(슈퍼챗)',1);return `한 해 슈퍼챗 ${won(m*DMX())}. 상대 당이 고발장을 들고 선관위로 갔다.`}],
      ['슈퍼챗을 끄고 방송만 한다',()=>{chg({fame:3,support:2});return '시청자 수는 그대로였다. 의외로 "깔끔하다"는 반응.'}],
      ['수익 전액 기부 선언한다',()=>{chg({fame:4,support:4,integrity:3});return '기부 인증 영상이 방송보다 조회수가 높았다.'}]]},
 {id:'b_cr_clip',w:2,tag:'유튜버 출신',px:'tv|rep,me|cam,exclaim',c:()=>S.bg==='creator'&&s().fame>=30,t:'8년 전 방송 클립이 발굴됐다',b:'방송인 시절 "웃자고 한" 막말 클립을 누군가 발굴해 퍼뜨렸다. 지금 기준으로는 꽤 아슬아슬하다.',
@@ -1995,7 +1998,7 @@ const EV=[
      ['내 계파 편을 든다',()=>{chg({party:3,support:-4});addFac(1);return '계파는 고마워했고 당은 더 갈라졌다.'}],
      ['한발 물러서 지켜본다',()=>{chg({mental:3,party:-2});return '"어른이 없다"는 칼럼이 실렸다.'}]]},
 {id:'g_nomslot',tempt:true,w:2,tag:'공천',px:'office|aide,me,biz|env',c:()=>big()&&member()&&elecKinds(S.year+1).length>0,t:'내 사람 공천 명단',b:'공천 심사를 앞두고 측근들이 "우리 사람 몇 자리는 챙겨야 계파가 산다"며 명단을 내민다. 한 후보 측은 "성의 표시"를 하겠다고 한다.',
- ch:[['명단도, 성의도 받는다',()=>{const m=Math.round(1500*TM()/10)*10;chg({money:m,party:5,integrity:-10});addFac(3);addCase('공천 대가 금품 수수',2);S.stats.bribes++;return `${won(m)}의 "특별당비"와 함께 측근 공천이 확정됐다.`}],
+ ch:[['명단도, 성의도 받는다',()=>{const m=Math.round(1500*TM()/10)*10;chg({money:m,party:5,integrity:-10});addFac(3);addCase('공천 대가 금품 수수',2);S.stats.bribes++;return `${won(m*DMX())}의 "특별당비"와 함께 측근 공천이 확정됐다.`}],
      ['명단만 밀어 넣는다',()=>{chg({party:4,support:-3,integrity:-3});addFac(2);return '"사천(私薦)" 논란이 따라왔다.'}],
      ['시스템 공천에 맡긴다',()=>{chg({integrity:4,support:3,party:-3});return '측근 몇 명이 탈락했다. 대신 당 지지율이 올랐다.'}]]},
 {id:'g_memoir',w:2,tag:'출판',px:'press|me|book,cam',c:()=>(big()||senior())&&S.age>=50&&!S.memoir,t:'회고록 출간 제안',b:'대형 출판사가 정치 인생 회고록을 내자고 한다. 선인세가 두둑하다. 다만 "솔직하게 쓰셔야 팔린다"고 한다.',
@@ -2045,17 +2048,17 @@ const EV=[
  ch:[['맡긴다',()=>{const m=Math.round(2500*TM());if(s().money<m){chg({integrity:-2});return '줄 돈조차 없었다. 브로커는 혀를 차며 떠났다.'}chg({money:-m,org:10,support:5,integrity:-10});if(R()<.45)addCase('선거 브로커 금품 제공',2);return `${won(m)}을 건넸다. 산악회 단톡방에 내 이름이 돌기 시작했다.`}],
      ['돌려보낸다',()=>{chg({integrity:3});return '브로커는 상대 캠프로 갔다는 소문이 들린다.'}]]},
 {id:'loan',tempt:true,tag:'은밀',px:'office|biz,me|cash',c:()=>s().money<needMoney()*1.2,t:'"선거자금, 제가 대 드리죠"',b:'지역 건설업자가 선거자금을 통째로 대겠다고 한다. 조건은 "당선되면 사업 하나만 챙겨 달라".',
- ch:[['받는다',()=>{const m=Math.round(needMoney()*1.1/100)*100;chg({money:m,integrity:-15});addCase('불법 선거자금 수수',2);S.stats.bribes++;return `${won(m)}. 이제 선거는 걱정 없다. 빚은 다른 형태로 갚게 될 것이다.`}],
-     ['절반만 받고 차용증을 쓴다',()=>{const m=Math.round(needMoney()*.45/100)*100;chg({money:m,integrity:-6});if(R()<.4)addCase('정치자금법 위반(차용 위장)',1);return `${won(m)}을 "빌렸다". 이자 약정은 없다.`}],
+ ch:[['받는다',()=>{const m=Math.round(needMoney()*1.1/100)*100;chg({money:m,integrity:-15});addCase('불법 선거자금 수수',2);S.stats.bribes++;return `${won(m*DMX())}. 이제 선거는 걱정 없다. 빚은 다른 형태로 갚게 될 것이다.`}],
+     ['절반만 받고 차용증을 쓴다',()=>{const m=Math.round(needMoney()*.45/100)*100;chg({money:m,integrity:-6});if(R()<.4)addCase('정치자금법 위반(차용 위장)',1);return `${won(m*DMX())}을 "빌렸다". 이자 약정은 없다.`}],
      ['거절한다',()=>{chg({integrity:4,mental:-4});return '통장 잔고를 보며 한숨을 쉬었다.'}]]},
 {id:'split',tempt:true,tag:'은밀',px:'office|aide,me|cash',c:()=>s().org>=15,t:'"쪼개기 후원" 제안',b:'회계 담당 보좌관이 지역 업체 직원 수십 명 이름으로 소액 후원을 나눠 받자고 한다. 한도 규정을 피하는 방법이다.',
- ch:[['진행시켜',()=>{const m=Math.round(3000*BM());chg({money:m,integrity:-8});if(R()<.35)addCase('쪼개기 후원(정치자금법 위반)',1);return `후원 명단에 처음 보는 이름이 87개. ${won(m)}.`}],
+ ch:[['진행시켜',()=>{const m=Math.round(3000*BM());chg({money:m,integrity:-8});if(R()<.35)addCase('쪼개기 후원(정치자금법 위반)',1);return `후원 명단에 처음 보는 이름이 87개. ${won(m*DMX())}.`}],
      ['하지 마',()=>{chg({integrity:2});return '보좌관이 "다들 하는데요"라며 고개를 저었다.'}]]},
 {id:'contract',tempt:true,tag:'단독',px:'office|biz,me|env',c:isAdmin,t:'"용역 하나만 몰아주시면"',b:'수의계약 업체 선정을 앞두고 업체 대표가 "감사 인사"를 약속한다.',
- ch:[['몰아준다',()=>{const m=Math.round(ri(4,9)*1000*BM());chg({money:m,integrity:-12,admin:-2});addCase('수의계약 뇌물',2);S.stats.bribes++;return `${won(m)}. 감사팀장이 서류를 오래 들여다봤다.`}],
+ ch:[['몰아준다',()=>{const m=Math.round(ri(4,9)*1000*BM());chg({money:m,integrity:-12,admin:-2});addCase('수의계약 뇌물',2);S.stats.bribes++;return `${won(m*DMX())}. 감사팀장이 서류를 오래 들여다봤다.`}],
      ['공개 입찰로 돌린다',()=>{chg({integrity:4,admin:3});return '업체는 다른 줄을 찾아 나섰다.'}]]},
 {id:'agency',tempt:true,tag:'은밀',px:'hall|biz,me|env',c:isNat,t:'피감기관의 "후원 행사"',b:'상임위 피감기관 산하 협회가 의원 후원 행사를 열어 주겠다고 한다. 국정감사 직전이다.',
- ch:[['수락한다',()=>{const m=Math.round(4000*BM());chg({money:m,integrity:-9});if(R()<.4)addCase('피감기관 금품 수수',2);return `협회 회원들이 줄지어 후원했다. ${won(m)}. 국감 질의가 무뎌졌다.`}],
+ ch:[['수락한다',()=>{const m=Math.round(4000*BM());chg({money:m,integrity:-9});if(R()<.4)addCase('피감기관 금품 수수',2);return `협회 회원들이 줄지어 후원했다. ${won(m*DMX())}. 국감 질의가 무뎌졌다.`}],
      ['거절한다',()=>{chg({integrity:3,legis:2});return '날 선 국감 질의를 준비했다.'}]]},
 // ---- 지역 전용 ----
 {id:'r_seoul',c:()=>S.region==='seoul',tag:'서울',px:'street|old,me,cit|banner',t:'재건축 규제를 풀어 달라는 아파트 주민들',b:'준공 40년 아파트 주민들이 재건축 규제 완화를 요구하며 사무실 앞에 모였다. 세입자 단체는 반대 집회를 예고했다.',
@@ -2205,7 +2208,99 @@ const EV=[
      ['1위 주자의 약점을 판다',res(clamp(p0+.1,.05,.9),'상대 캠프의 옛 녹취가 터졌다. 출처는 끝내 밝혀지지 않았다.',()=>chg({integrity:-5,party:-3})),{hint:`청렴도↓ · 승리 확률 약 ${Math.round(clamp(p0+.1,.05,.9)*100)}%`}]]}},
 {id:'rc_fold',core:true,tag:'대권',px:'night|me?|',t:'대권의 꿈을 접을 때',b:'대선 출마 요건도, 시간도 모자랐다. 캠프 준비 모임은 몇 해째 같은 사람들끼리 밥만 먹고 있다.',
  ch:[['후배 주자를 민다',()=>{S.race=null;S.raceNext=S.year+5;chg({party:4,integrity:2});return '"저보다 나은 사람이 있습니다." 모임은 그날로 후배의 캠프가 됐다.'},{hint:'당내 입지·청렴도↑'}],
-     ['"아직 끝나지 않았다"',()=>{S.race=null;S.raceNext=S.year+3;chg({fame:2,mental:-3});return '모임 이름만 바꿨다. 「다시 대한민국」.'},{hint:'3년 뒤 다시'}]]}
+     ['"아직 끝나지 않았다"',()=>{S.race=null;S.raceNext=S.year+3;chg({fame:2,mental:-3});return '모임 이름만 바꿨다. 「다시 대한민국」.'},{hint:'3년 뒤 다시'}]]},
+/* ── 최근 15년 정치 뉴스 모티프(2026-11-20). 실제 사건은 모티프만, 인물·정당은 모두 가상 ── */
+{id:'k_nomcash',tempt:true,tag:'단독',px:'office|biz,me|env',c:()=>isNat()&&member()&&elecKinds(S.year+1).includes('local'),t:'"당비로 생각해 주십시오"',b:'내년 지방선거 시의원 공천을 바라는 지역 사업가가 쇼핑백을 내려놓았다. "당비로 생각해 주십시오. 공천은 의원님 뜻대로." 쇼핑백 바닥에 5만 원권 묶음이 보인다.',
+ ch:[['받는다',()=>{const m=Math.round(ri(5,9)*1000*BM());chg({money:m,integrity:-12});addCase('공천 헌금 수수',2);S.stats.bribes++;return `${won(m*DMX())}. 그는 공천 명단 발표 날 제일 먼저 축하 문자를 보냈다.`},{dark:true,hint:'큰돈 · 청렴도↓ · 몇 년 뒤 녹취가 돌아올 수도'}],
+     ['돌려보낸다',()=>{chg({integrity:3,mental:-2});return '쇼핑백은 그대로 돌아갔다. 그는 다른 의원실 문을 두드렸다.'},{hint:'청렴도↑'}],
+     ['당 윤리위에 신고한다',()=>{chg({integrity:6,party:-5,fame:3});return '"자정 능력"을 보여 줬다는 평과 "당 망신"이라는 평이 반반이었다. 지도부는 전화를 받지 않았다.'},{hint:'청렴도·인지도↑ · 당내 입지↓'}]]},
+{id:'k_church',tempt:true,tag:'의혹',px:'stage|aide,me,crowd|banner',c:()=>OFF[S.office].tier>=2&&(elecKinds(S.year).length>0||elecKinds(S.year+1).length>0),t:'"교인 3만 표 드리겠습니다"',b:'한 종교단체의 "대외협력국장"이 찾아왔다. 전국 교인 조직이 선거 때마다 한 몸처럼 움직인다고 한다. 대가는 단체 숙원 법안 하나와 "행사 축사 몇 번".',
+ ch:[['손을 잡는다',()=>{chg({support:5,org:4,integrity:-8});return '주말마다 축사를 했다. 박수 소리가 이상할 만큼 일정했다. 교인 조직표가 움직이기 시작했다.'},{dark:true,hint:'지지율·조직력↑ · 청렴도↓ · 나중에 특검 소환'}],
+     ['예배에는 가되 약속은 안 한다',()=>{chg({fame:2,support:1});return '앞줄에 앉아 박수를 쳤다. 법안 이야기가 나오자 화장실에 갔다.'},{hint:'인지도 조금↑'}],
+     ['거절한다',()=>{chg({integrity:4,support:-2});return '"정치와 종교는 따로 갑니다." 단체 소식지에 내 이름이 "협조 불가" 명단에 올랐다.'},{hint:'청렴도↑ · 지지율 조금↓'}]]},
+{id:'k_accuse',tag:'공작',px:'night|aide,me|env',c:()=>isNat()&&opp(),t:'익명 메신저로 온 고발장 초안',b:'익명 메신저로 PDF 하나가 왔다. 여당 인사들을 겨냥한 고발장 초안이다. 법리 구성이 너무 깔끔하다. 보좌관이 속삭였다. "이거… 수사기관 쪽 솜씨인데요."',
+ ch:[['우리 당 이름으로 접수한다',()=>{chg({fame:5,party:4,integrity:-6});return '고발장이 접수됐다. 수사가 신기할 만큼 빨리 진행됐다. 메신저 대화방은 지웠다. 지웠다고 생각했다.'},{hint:'인지도·당내 입지↑ · 청렴도↓ · 기록이 남는다'}],
+     ['못 본 걸로 한다',()=>{chg({mental:-2});return '파일을 지웠다. 몇 달 뒤 다른 당 의원 이름으로 같은 고발장이 접수됐다.'}],
+     ['언론에 제보한다',()=>{chg({integrity:6,fame:4,party:-6});return '"수사기관이 야당에 고발을 사주했다"는 보도가 나왔다. 당 지도부는 "왜 우리 공격 기회를 날리냐"며 화를 냈다.'},{hint:'청렴도·인지도↑ · 당내 입지↓'}]]},
+{id:'k_whohit',tag:'팬덤',px:'phone|me?|heart,exclaim',c:()=>isNat()&&member(),t:'"가결파 명단"이 돈다',b:'당 대표 체포동의안이 무기명 표결에서 아슬아슬하게 처리됐다. 강성 지지층 커뮤니티에 "이탈표 추정 명단"이 돌기 시작했다. 내 이름 옆에 물음표가 붙어 있다.',
+ ch:[['투표 용지 인증 사진을 올린다',()=>{chg({party:5,fame:2,integrity:-2});return '"부결에 찍었습니다" 인증 글에 하트 3만 개. 헌법학자들은 "무기명 투표의 의미"를 칼럼으로 썼다.'},{hint:'당내 입지↑ · 청렴도 조금↓'}],
+     ['"무기명 투표는 무기명이다"',()=>{chg({integrity:4,party:-6,fame:3});return '소신 발언 다음 날, 사무실 팩스에서 "수박"이라는 글자가 300장 나왔다.'},{hint:'청렴도·인지도↑ · 당내 입지↓'}],
+     ['색출에 앞장선다',()=>{chg({party:7,support:-5,integrity:-3});return '당원 게시판에서 "진짜 투사"가 됐다. 동료 의원들은 나와 밥을 먹지 않는다.'},{hint:'당내 입지 크게↑ · 지지율·청렴도↓'}]]},
+{id:'k_shorts',tag:'국정감사',px:'audit|me!,rep|chart,cam',c:isNat,t:'국감은 쇼츠다',b:'보좌관이 오늘 국정감사 질의 콘티를 내밀었다. "의원님, 15초 안에 터져야 합니다. 소품 준비했습니다." 책상 위에 짝퉁 명품 가방과 대형 피켓이 놓여 있다.',
+ ch:[['소품을 들고 질의한다',()=>{chg({fame:7,speech:3,support:-1});return '"장관님, 이 가방 진품입니까?" 쇼츠 조회수 410만. 정작 질의 답변은 아무도 기억하지 못한다.'},{hint:'인지도 크게↑ · "국감 쇼" 비판'}],
+     ['자료로 조용히 판다',()=>{chg({policy:4,legis:3,fame:1});return '두 시간짜리 자료 질의. 다음 날 감사원이 해당 사업을 감사하겠다고 발표했다. 조회수는 1,200회.'},{hint:'정책·의정 역량↑'}],
+     ['장관에게 호통을 친다',()=>{if(R()<.5){chg({fame:6,support:2});return '"어디서 거짓말을!" 호통 영상이 밈이 됐다.'}chg({fame:4,support:-4,integrity:-2});return '호통 중에 반말이 섞였다. "갑질 국감" 기사가 질의 내용보다 많았다.'},{hint:'도박 · 밈이 되거나 갑질 논란'}]]},
+{id:'k_prosec',tag:'표결',px:'hall|aide,me?,rep|ballot',c:isNat,t:()=>`검찰청 폐지법, 본회의 표결`,b:()=>`정부조직법 개정안이 본회의에 올라왔다. 검찰청을 없애고 기소와 수사를 나눈다. 우리 당 당론은 ${S.ruling===S.party?'찬성':'반대'}. 지역구 변호사회는 반대 성명을, 시민단체는 찬성 성명을 냈다.`,
+ ch:[['당론대로 표를 던진다',()=>{chg({party:4});return '전자 투표판에 내 이름이 당 색깔로 켜졌다. 다음 날 신문은 의원 이름을 색깔별로 실었다.'},{hint:'당내 입지↑'}],
+     ['당론을 거슬러 소신 투표한다',()=>{chg({integrity:4,fame:4,party:-7});return '"한 명의 헌법기관으로서." 본회의장이 술렁였다. 지도부는 "당론 위반 징계 검토"를 언급했다.'},{hint:'청렴도·인지도↑ · 당내 입지↓'}],
+     ['표결에 불참한다',()=>{chg({party:-2,support:-2});return '"지역 일정"을 이유로 자리를 비웠다. 지역 일정은 장례식장 조문 한 건이었다.'},{hint:'당내 입지·지지율 조금↓'}]]},
+{id:'k_grant',tag:'민심',px:'market|old,me,cit|cash',c:()=>(isAdmin()||isPres())&&(crAny()||eraK()==='crisis'||S.year%2===0),t:'전 국민에게 줄까, 어려운 사람만 줄까',b:()=>`경기가 얼어붙었다. ${isPres()?'정부':'시청'} 금고에 쓸 수 있는 돈이 있다. 기획 부서는 "선별 지급", 정무 라인은 "전 국민 지급", 상인회는 "지역화폐"를 원한다.`,
+ ch:[['전 국민에게 똑같이 준다',()=>{chg({support:6,admin:-1,policy:-2});return '"정치인 돈이 아니라 세금"이라는 비판과 "통장에 찍혔다"는 인증 글이 같은 날 1면을 다퉜다.'},{hint:'지지율 크게↑ · 재정 건전성 비판'}],
+     ['어려운 사람만 두텁게 준다',()=>{chg({policy:4,admin:3,support:1});return '선별 기준을 두고 민원 4만 건. 기준선 바로 위 사람들이 제일 화가 났다.'},{hint:'정책·행정력↑ · 지지율 조금↑'}],
+     ['지역화폐로 준다',()=>{chg({support:4,admin:2});return '전통시장 매출이 석 달 동안 올랐다. 대형마트 노조가 성명을 냈다.'},{hint:'지지율·행정력↑'}]]},
+{id:'k_martial',tag:'속보',px:'night|aide,me!|exclaim',c:()=>isNat()&&!S.kMartial&&!isPres(),t:'새벽 1시, 국회 정문이 닫혔다',b:'밤 10시 반, 대통령이 긴급 담화를 냈다. 비상계엄 선포. 국회로 달려가니 정문이 닫혀 있고, 헬기 소리가 머리 위를 지나간다. 본회의장에 과반이 모여야 해제 요구안을 표결할 수 있다.',
+ ch:[['담을 넘어 본회의장으로 간다',()=>{S.kMartial=1;chg({fame:8,support:5,integrity:3,mental:-6});achMark('wall');return '정장 바지가 찢어졌다. 담을 넘는 영상이 아침까지 1,000만 번 재생됐다. 새벽 1시, 해제 요구안이 가결됐다.'},{hint:'인지도·지지율↑ · 멘탈↓'}],
+     ['당사로 가서 지도부 지시를 기다린다',()=>{S.kMartial=1;chg({party:3,support:-4});return '당사 회의실에서 TV를 봤다. 본회의장의 표결 화면에 내 이름은 없었다. 이 일은 오래 따라다녔다.'},{hint:'당내 입지↑ · 지지율↓'}],
+     ['집에서 상황을 지켜본다',()=>{S.kMartial=1;chg({support:-6,fame:-2,mental:3});return '새벽 4시, 계엄이 해제됐다는 속보를 보고 잠들었다. 이튿날부터 "그날 밤 어디 있었냐"는 질문을 받았다.'},{hint:'지지율↓'}]]},
+{id:'k_martialp',tempt:true,tag:'속보',px:'office|aide,me?,aide|desk',c:()=>isPres()&&s().support<30&&myMaj()===false&&!S.martial,t:'"각하, 비상조치를 검토하시죠"',b:'지지율 20%대, 여소야대 국회는 예산과 인사를 모두 막았다. 경호처 출신 참모가 문을 닫고 서류철을 내밀었다. 표지에 "비상조치 검토(대외비)"라고 적혀 있다.',
+ ch:[['비상계엄을 선포한다',()=>{S.martial=1;chg({support:-25,integrity:-30,party:-10,mental:-10});addCase('내란 우두머리',3);S.q.splice(0,0,{type:'impeach'});achMark('martial');addLog('비상계엄 선포. 국회가 두 시간 만에 해제 요구안을 가결했다.');return '밤 10시 반 담화. 국회 담을 넘는 의원들의 영상이 생중계됐다. 두 시간 반 만에 해제 요구안이 가결됐고, 나라가 뒤집혔다.'},{dark:true,hint:'돌이킬 수 없다 · 탄핵과 형사재판'}],
+     ['서류철을 돌려보낸다',()=>{chg({integrity:3,mental:-3});return '"이런 건 다시 가져오지 마시오." 참모는 그 주에 사표를 냈다.'},{hint:'청렴도↑'}],
+     ['그 참모를 경질한다',()=>{chg({integrity:4,party:-2,support:1});return '"대통령실 내부 기강 확립" 발표. 경질 이유는 끝내 공개되지 않았다.'},{hint:'청렴도·지지율 조금↑'}]]},
+{id:'k_office',tag:'국정',px:'office|aide,me,biz|chart,boxes',c:()=>isPres()&&S.year===S.presFrom+1,t:'집무실을 옮길까',b:'취임 첫해. 참모들은 "구중궁궐을 벗어나 국민 곁으로"를 외친다. 이전 비용은 496억이라고 보고됐다. 보고서 글씨가 유난히 작다.',
+ ch:[['과감하게 옮긴다',()=>{chg({fame:4,support:-3});return '이사 트럭이 한 달 내내 오갔다. "소통"이 새 정부의 첫 키워드가 됐다.'},{hint:'인지도↑ · 지지율↓ · 비용이 불어날 수도'}],
+     ['그대로 쓴다',()=>{chg({support:1,policy:1});return '"일할 곳은 문제가 아닙니다." 이전 공약은 조용히 사라졌다.'},{hint:'지지율 조금↑'}]]},
+{id:'k_oil',tag:'국정',px:'tv|me+,rep|chart',c:()=>isPres()&&!S.kOil,t:'"동해에 석유가 있을 수 있습니다"',b:'해외 자문 업체가 "동해 심해에 최대 140억 배럴 매장 가능성"이라는 보고서를 냈다. 성공률은 20%. 정무수석이 말한다. "대통령님이 직접 발표하시면 지지율이 오릅니다."',
+ ch:[['직접 브리핑룸에 선다',()=>{S.kOil=1;chg({support:6,fame:5});return '"산유국의 꿈" 발표. 관련 주식이 상한가를 쳤다. 시추선 일정은 내년이다.'},{hint:'지지율·인지도↑ · 시추 결과가 돌아온다'}],
+     ['조용히 시추부터 한다',()=>{S.kOil=1;chg({policy:3});return '보도자료 한 장. 기사는 경제면 하단에 실렸다.'},{hint:'정책↑'}]]},
+{id:'k_medic',tag:'국정',px:'hospital|doc,me?,doc|',c:()=>isPres()&&!S.kMedic,t:'의대 정원, 숫자 하나',b:'지방 응급실이 문을 닫는다. 의대 정원을 늘리자는 여론은 높고, 의사 단체는 "집단행동"을 예고했다. 보건 라인이 숫자 세 개를 들고 왔다.',
+ ch:[['한 번에 2,000명 늘린다',()=>{S.kMedic=1;chg({support:6,fame:3});return '"27년 만의 증원." 지지율이 뛰었다. 다음 날 전공의 대표가 기자회견 날짜를 공지했다.'},{hint:'지지율↑ · 의료 공백이 돌아온다'}],
+     ['해마다 500명씩 단계적으로',()=>{S.kMedic=1;chg({policy:3,support:1});return '양쪽 다 불만이었다. 그래서인지 아무 일도 일어나지 않았다.'},{hint:'정책↑ · 무난'}],
+     ['의사 단체와 협의체부터 꾸린다',()=>{S.kMedic=1;chg({integrity:2,support:-3});return '협의체 회의가 열한 번 열렸다. 응급실은 그사이 두 곳이 더 문을 닫았다.'},{hint:'청렴도↑ · 지지율↓'}]]},
+{id:'k_server',tag:'속보',px:'office|aide,me!,aide|desk,exclaim',c:()=>isPres()||(isMin()&&S.minister.d==='mois'),t:'국가 전산망이 멈췄다',b:'정부 데이터센터 배터리실에서 불이 났다. 주민등록 발급, 우체국 금융, 민원 사이트 수백 개가 멈췄다. 복구까지 "최소 몇 주". 기자들이 책임자를 찾는다.',
+ ch:()=>{const mn=isMin()&&!isPres();return[[mn?'책임지고 사퇴한다':'행안부 장관을 경질한다',()=>{if(mn){chg({integrity:5,support:3});endMin('전산망 마비의 책임을 지고 사퇴했다.');return '"모든 책임은 저에게 있습니다." 사퇴 회견 9분. 복구는 후임 장관이 마쳤다.'}chg({support:2,party:-2});return '경질 발표는 화재 사흘 만이었다. "꼬리 자르기"라는 말이 붙었다.'},{hint:mn?'장관직 사퇴 · 청렴도·지지율↑':'지지율 조금↑ · 당내 입지↓'}],
+   ['"시스템의 문제"라고 설명한다',()=>{chg({support:-5});return '"이중화 예산은 전 정부가 깎았습니다." 민원 창구 앞 줄은 그래도 줄지 않았다.'},{hint:'지지율↓'}],
+   ['상황실에서 밤샘 복구를 지휘한다',()=>{chg({mental:-8,admin:3,support:3});return '열흘 동안 상황실 간이침대에서 잤다. 복구율 그래프가 매일 아침 뉴스에 나왔다.'},{hint:'행정력·지지율↑ · 멘탈↓'}]]}},
+{id:'k_detain',tag:'외교',px:'plane|aide,me?|',c:isPres,t:'해외 공장에서 우리 근로자 300명이 구금됐다',b:'동맹국 이민 당국이 우리 기업의 배터리 공장을 급습했다. 비자 문제로 근로자 300여 명이 쇠사슬에 묶인 채 끌려가는 영상이 돌았다. 관세 협상은 아직 진행 중이다.',
+ ch:[['강하게 항의한다',()=>{if(R()<.5){chg({support:6,fame:3});return '"국민의 존엄은 협상 대상이 아니다." 지지율이 올랐다. 협상은 조금 늦어졌지만 깨지지는 않았다.'}chg({support:2,policy:-3});return '여론은 환호했지만 관세 협상 테이블이 한 달 멈췄다. 수출 기업들이 속을 끓였다.'},{hint:'지지율↑ · 협상에 불똥 튈 수도'}],
+     ['조용히 협상해 데려온다',()=>{chg({policy:3,support:-2});return '전세기가 뜨기까지 일주일. "저자세 외교"라는 비판을 들으며 모두 데려왔다.'},{hint:'정책↑ · 지지율 조금↓'}],
+     ['전세기 앞에 직접 마중 나간다',()=>{chg({fame:5,support:3,mental:-3});return '공항 귀국장에서 한 사람씩 손을 잡았다. 사진은 좋았다. 비자 제도는 그대로다.'},{hint:'인지도·지지율↑'}]]},
+{id:'k_disaster',tag:'참사',px:'night|me~,aide|',c:()=>isAdmin()||isPres(),t:'참사의 밤',b:()=>`${isPres()?'수도권':'우리 지역'}에서 대형 참사가 일어났다. 사망자 수가 시간마다 늘어난다. 유가족들이 체육관에 모여 소식을 기다린다. 첫 대응이 모든 것을 정한다.`,
+ ch:[['현장으로 가서 밤새 지휘한다',()=>{chg({support:4,admin:2,mental:-10});return '현장 지휘소에서 아침을 맞았다. 유가족 한 명이 내 손을 놓지 않았다. 그날의 얼굴을 오래 잊지 못했다.'},{hint:'지지율·행정력↑ · 멘탈 크게↓'}],
+     ['고개 숙여 사과하고 책임을 진다',()=>{chg({support:3,integrity:5,party:-3});return '"모든 책임은 저에게 있습니다." 당에서는 "법적 책임을 스스로 인정한 꼴"이라는 말이 나왔다.'},{hint:'청렴도·지지율↑ · 당내 입지↓'}],
+     ['"법적 책임은 없다"고 선을 긋는다',()=>{chg({support:-9,integrity:-6});return '"주최자가 없는 행사였습니다." 법리로는 맞는 말일지도 모른다. 유가족들은 그 문장을 피켓에 적었다.'},{hint:'지지율·청렴도↓ · 국정조사로 돌아온다'}]]},
+/* 후일담 */
+{id:'cb_k_nomcash',core:true,tag:'후일담',px:'press|rep,me!,rep|cam',t:'그 쇼핑백, 녹취가 있었다',b:()=>`${ago()}년 전 "당비"를 받았던 그 사업가. 시의원에 당선된 뒤 다른 비리로 수사를 받자, 휴대폰에서 녹음 파일이 나왔다. 내 목소리가 또렷하다.`,
+ ch:[['"기억에 없다"고 버틴다',()=>{chg({support:-6,integrity:-4});addCase('공천 헌금 수수(녹취)',2);return '녹취가 저녁 뉴스에 나왔다. "기억에 없다"는 답변과 나란히.'},{hint:'지지율↓ · 새 혐의'}],
+     ['사과하고 당직에서 물러난다',()=>{chg({party:-8,integrity:3,support:-2});return '"모든 당직을 내려놓겠습니다." 당은 그날 저녁 "개인의 일탈"이라는 논평을 냈다.'},{hint:'당내 입지↓ · 청렴도↑'}]]},
+{id:'cb_k_church',core:true,tag:'후일담',px:'press|rep,me?,rep|cam',t:'정교유착 특검의 소환장',b:()=>`${ago()}년 전 손잡았던 그 종교단체. 단체 간부의 수첩이 특검 손에 들어갔다. 수첩에는 "협조 의원" 명단이 있고, 세 번째 줄이 내 이름이다.`,
+ ch:[['성실히 출석한다',()=>{chg({integrity:2,support:-3});if(R()<.5)addCase('정교유착 청탁',2);return '조사 11시간. 포토라인에서 "축사를 했을 뿐"이라고 말했다.'},{hint:'지지율 조금↓ · 기소될 수도'}],
+     ['"종교 탄압"이라며 불응한다',()=>{chg({party:3,support:-6,integrity:-4});addCase('정교유착 청탁',2);return '교인들이 특검 사무실 앞에서 찬송가를 불렀다. 특검은 체포영장을 검토한다고 밝혔다.'},{hint:'새 혐의 · 지지율↓'}]]},
+{id:'cb_k_accuse',core:true,tag:'후일담',px:'press|rep,me!,rep|cam',t:'지웠다던 메신저 대화방',b:()=>`${ago()}년 전 우리 당 이름으로 접수한 그 고발장. 공수처가 당시 수사관의 휴대폰을 복원했다. "손 준비"라는 메시지와 내 보좌관 이름이 함께 나왔다.`,
+ ch:[['"받기만 했다"고 해명한다',()=>{chg({support:-4,integrity:-3});if(R()<.5)addCase('고발 사주 공모',2);return '"받기만 했다"는 말이 새 유행어가 됐다.'},{hint:'지지율↓ · 기소될 수도'}],
+     ['보좌관 탓으로 돌린다',()=>{chg({integrity:-5,mental:-3});return '보좌관이 사표를 냈다. 기자들은 그 보좌관의 다음 직장을 추적하기 시작했다.'},{hint:'청렴도↓'}]]},
+{id:'cb_k_office',core:true,tag:'후일담',px:'office|aide,me?,biz|boxes,chart',t:'집무실 이전, 영수증이 도착했다',b:()=>`${ago()}년 전 옮긴 집무실. 496억이라던 비용이 부대 공사와 경호 시설을 합쳐 세 배가 됐다. 공사 수의계약 업체 대표가 누구와 아는 사이인지 기사가 쏟아진다.`,
+ ch:[['감사원 감사를 자청한다',()=>{chg({integrity:3,support:-2});return '감사 결과 "절차상 문제". 업체는 여전히 다른 공사를 하고 있다.'},{hint:'청렴도↑ · 지지율 조금↓'}],
+     ['"안보 시설이라 공개할 수 없다"',()=>{chg({support:-6,integrity:-3});return '국정감사에서 "안보"라는 단어가 47번 나왔다.'},{hint:'지지율·청렴도↓'}]]},
+{id:'cb_k_oil',core:true,tag:'후일담',px:'tv|me?,rep|chart',t:'시추 결과 발표',b:()=>`${ago()}년 전 "산유국의 꿈"을 발표했던 동해 심해. 첫 시추공 결과가 나왔다.`,
+ ch:()=>{const hit=R()<.15;return[[hit?'결과를 직접 발표한다':'결과를 직접 설명한다',()=>{if(hit){chg({support:9,fame:8});return '"상업성 있는 가스층 확인." 이번엔 진짜였다. 담당 공무원들이 회견장 뒤에서 울었다.'}chg({support:-7,fame:2});return '"경제성 있는 매장량은 확인되지 않았다." 발표 때 상한가를 쳤던 주식이 다시 바닥으로 갔다.'},{hint:'성공률 약 15%'}],
+   ['담당 부처에 발표를 맡긴다',()=>{if(hit){chg({support:5,policy:2});return '차관 브리핑으로 발표했다. 뉴스는 대통령 사진을 썼다.'}chg({support:-4});return '금요일 오후 6시 보도자료. 그래도 기자들은 다 찾아냈다.'},{hint:'성공률 약 15% · 결과 충격을 줄인다'}]]}},
+{id:'cb_k_medic',core:true,tag:'후일담',px:'hospital|doc,me~,doc|',t:'전공의들이 병원을 떠났다',b:()=>`${ago()}년 전 결정한 의대 증원. 전공의 1만 명이 사직서를 냈다. 수술 일정이 밀리고 응급실 "뺑뺑이" 기사가 매일 나온다.`,
+ ch:[['원칙대로 간다',()=>{chg({support:-6,integrity:2,mental:-6});return '"숫자는 협상 대상이 아닙니다." 의정 갈등은 해를 넘겼다.'},{hint:'지지율·멘탈↓'}],
+     ['숫자를 물리고 사과한다',()=>{chg({support:-3,party:-4,policy:-2});return '증원 규모를 절반으로 줄였다. 양쪽 모두 "결국 뭘 얻었냐"고 물었다.'},{hint:'지지율·당내 입지↓'}]]},
+{id:'cb_k_disaster',core:true,tag:'후일담',px:'audit|rep,me~,rep|',t:'"그날 밤 어디 계셨습니까"',b:()=>`${ago()}년 전 참사의 밤. 국정조사 청문회가 열렸다. 유가족들이 방청석 맨 앞줄에 앉았다. 위원장이 묻는다. "그날 밤 어디 계셨습니까."`,
+ ch:[['그날 동선을 모두 공개한다',()=>{chg({integrity:4,support:-2,mental:-5});return '분 단위 동선표를 냈다. 빈칸 40분에 대해 끝까지 질문이 이어졌다.'},{hint:'청렴도↑ · 지지율 조금↓'}],
+     ['"기억이 정확하지 않다"',()=>{chg({support:-7,integrity:-5});return '유가족 한 명이 일어나 나갔다. 그 뒷모습이 저녁 뉴스의 마지막 장면이었다.'},{hint:'지지율·청렴도↓'}]]},
+/* 선거 직후 */
+{id:'el_recount',core:true,tag:'개표',px:'ballot|cit,me?,cit|ballot',t:()=>`${(S.lastEl||{}).gap||'0.1'}%p 차 낙선`,b:()=>{const L=S.lastEl||{};return `${L.name||'선거'} 개표가 끝났다. 표 차는 ${L.votes||'수백'}표. 무효표가 그보다 많다. 캠프 변호사가 말한다. "재검표를 신청하면 뒤집힐 수도 있습니다. 아주 가끔요."`},
+ ch:()=>{const L=S.lastEl||{},p=L.gap<.15?.3:L.gap<.4?.15:.06,c=Math.round(600*TM()/10)*10;return[['재검표를 신청한다',()=>{chg({money:-c,mental:-4});if(R()<p){elFlip();chg({fame:8});achMark('recount');return `<b>재검표로 뒤집혔다!</b> 무효표 더미에서 내 표가 쏟아져 나왔다. ${L.name} 당선. 상대 캠프는 대법원 소송을 예고했다.`}chg({fame:2});return '재검표 결과 표 차가 오히려 늘었다. 개표 사무원들의 야근 수당만 남았다.'},{hint:`${won(c)} · 뒤집힐 확률 약 ${Math.round(p*100)}%`,dis:s().money<c}],
+   ['깨끗이 승복한다',()=>{chg({integrity:3,support:3,fame:2});return '"유권자의 선택을 존중합니다." 낙선 인사 영상이 당선 소감보다 많이 공유됐다.'},{hint:'청렴도·지지율↑'}]]}},
+{id:'el_ballot',core:true,tag:'선관위',px:'ballot|cit,cit,me?|ballot,exclaim',t:'투표용지가 떨어졌다',b:()=>`예상보다 투표율이 높았다. 투표소 열네 곳에서 투표용지가 떨어져 유권자들이 줄을 서다 돌아갔다. ${S.lastEl&&S.lastEl.win?'나는 이겼다. 상대 캠프는 "선거 무효"를 외친다.':'나는 졌다. 캠프에서는 "선거가 오염됐다"는 말이 나온다.'}`,
+ ch:()=>S.lastEl&&S.lastEl.win?[['선관위에 책임을 묻는다',()=>{chg({integrity:3,fame:2});return '"이긴 쪽도 문제를 제기합니다." 선관위원장이 사과했다.'},{hint:'청렴도↑'}],['"결과에 영향 없었다"',()=>{chg({support:-2,party:2});return '맞는 말일 수도 있다. 다만 이긴 사람이 할 말은 아니었다.'},{hint:'지지율 조금↓'}]]
+   :[['"선거가 오염됐다" 개표 중단을 요구한다',()=>{chg({party:5,support:-5,integrity:-3});return '지지자들이 선관위 앞에 모였다. 재선거는 열리지 않았다.'},{hint:'당내 입지↑ · 지지율·청렴도↓'}],['아쉽지만 결과를 받아들인다',()=>{chg({integrity:3,support:2});return '"제도를 고치는 데 힘을 보태겠습니다."'},{hint:'청렴도·지지율↑'}]]},
+{id:'el_rigged',core:true,tag:'음모론',px:'phone|me?|exclaim',t:'"사전투표 조작" 영상이 돈다',b:'낙선 이틀 뒤. 지지자 단톡방에 "사전투표 조작 증거"라는 영상이 돈다. 조회수 200만. 캠프 사무장이 묻는다. "후보님이 한마디만 해 주시면 다들 힘을 낼 텐데요."',
+ ch:[['"의혹을 밝혀야 한다"고 올라탄다',()=>{chg({party:6,fame:4,support:-6,integrity:-4});return '부정선거 집회 연단에 섰다. 박수 소리는 컸고, 다음 여론조사 지지율은 낮았다.'},{hint:'당내 입지·인지도↑ · 지지율·청렴도↓'}],
+     ['"근거 없는 이야기"라고 선을 긋는다',()=>{chg({integrity:3,support:2,party:-4});return '"선거는 졌지만 제도는 지킵니다." 지지자 단톡방에서 강퇴당했다.'},{hint:'청렴도·지지율↑ · 당내 입지↓'}],
+     ['아무 말도 하지 않는다',()=>{chg({mental:2});return '침묵은 해석의 자유를 남겼다. 양쪽 모두 내 침묵을 자기편이라 여겼다.'}]]}
 ];
 
 const FIG_BAD=[
@@ -2304,7 +2399,7 @@ function buildQueue0(){
   if(!isPres()&&S.age<64&&elecKinds(S.year+1).includes('pres')&&(presPaths().council||presPaths().admin))q.splice(1,0,{type:'ev',id:'p_camp'});
   if(S.rvEv&&rvOk()){q.splice(1,0,{type:'ev',id:S.rvEv});S.rvEv=null}
   {const lid=lgDue();if(lid)q.splice(1,0,{type:'ev',id:lid})}
-  if(!isPres()){const cbid=cbDue();if(cbid)q.splice(Math.min(2,q.length),0,{type:'ev',id:cbid})}
+  {const cbid=isPres()?cbDue(PRESCB):cbDue();if(cbid)q.splice(Math.min(2,q.length),0,{type:'ev',id:cbid})}
   if(S.pl&&!S.pl.ev&&!S.pl.broke&&S.year-S.pl.y===2&&S.office===S.pl.o&&plgPct()<100){S.pl.ev=1;q.splice(1,0,{type:'ev',id:'plg_'+S.pl.k})}
   if(isPres())presQueue(q);
   if(pmOfferOk()&&R()<.5){S.pmOfferY=S.year;q.splice(1,0,{type:'ev',id:'pm_offer'})}
@@ -4470,8 +4565,8 @@ function pIndict(n,sev,L,adj=0){return clamp(adj+.86-L.b*.85+(sev-1)*.05+(n-1)*.
 const APPEAL2=.30,APPEAL3=.55;
 function pBase(t,L){return clamp(.36-(t.sev-1)*.08-((t.n||1)-1)*.07+L.b*1.2+(s().integrity-40)/300,.03,.9)}
 function pAcq(t,L){const b=pBase(t,L);if(t.stage===1)return b;if(t.stage===2)return clamp(b*.85+(t.prev?APPEAL2:0),.03,.95);return clamp(b*.35+(t.prev?APPEAL3:0),.03,.97)}
-function impPass(adj){return clamp(.25+(25-s().support)*.03+(myMaj()?-.3:.25)+(100-s().integrity)/300+(S.trial?.12:0)+adj,.05,.95)}
-function impUphold(L){return clamp(.55+(30-s().support)*.01+(100-s().integrity)/250+(S.trial?.1:0)-L.b*.6,.08,.95)}
+function impPass(adj){return clamp((S.martial?.55:0)+.25+(25-s().support)*.03+(myMaj()?-.3:.25)+(100-s().integrity)/300+(S.trial?.12:0)+adj,.05,.95)}
+function impUphold(L){return clamp((S.martial?.35:0)+.55+(30-s().support)*.01+(100-s().integrity)/250+(S.trial?.1:0)-L.b*.6,.08,.95)}
 function renderImpeach(st){
   if(!S.imp)S.imp={step:'motion'};
   if(S.imp.step==='motion'){
@@ -4688,12 +4783,12 @@ function renderElection(st){
   if(E.step==='camp'){
     const dep=DEPOSIT[E.off],base=OFF[E.off].spend*(E.off==='pres'?1:(curR().fx.cost||1)),lv=[{n:'맨몸 선거',m:0,d:'자원봉사자와 발로 뛰기'},{n:'조용한 선거',m:.3,d:'명함·SNS 위주'},{n:'정석 선거',m:1,d:'유세차·현수막·문자'},{n:'총력전',m:2,d:'TV 광고, 대규모 유세'}];
     st.innerHTML=`${pxTag('유세 현장')}<div class="news"><span class="tag ink">본선</span><h3>${offName(E.off)} 선거운동</h3>
-      <p class="body">${E.nomOk?'공천 확정! ':''}${E.off==='pres'?`대선은 전국 조직과 광고 싸움이라 선거운동 규모가 판세를 크게 가른다. 내가 앞서 갈수록 상대 진영도 결집한다. 총력전은 한도 초과 지출로 당선무효 소송을 부를 수 있다. 본선에선 검증 공세와 TV 토론이 기다린다. ${S.presLost?`지난 대선 패배로 "재수" 꼬리표가 붙어 있다. `:''}`:''}기탁금 ${won(dep)}은 따로 낸다. 선거비용은 득표율 15% 이상이면 보전 대상 항목(약 60%)만, 10% 이상이면 그 절반만 돌려받는다. 돈을 많이 쓸수록 득표에 크게 반영된다.${curR().fx.cost>1&&E.off!=='pres'?` ${J(curR().n,'은는')} 선거비용이 ${curR().fx.cost}배 든다.`:''}</p></div>
+      <p class="body">${E.nomOk?'공천 확정! ':''}${E.off==='pres'?`대선은 전국 조직과 광고 싸움이라 선거운동 규모가 판세를 크게 가른다. 내가 앞서 갈수록 상대 진영도 결집한다. 총력전은 한도 초과 지출로 당선무효 소송을 부를 수 있다. 본선에선 검증 공세와 TV 토론이 기다린다. ${S.presLossN?`지난 대선 패배로 "재수" 꼬리표가 붙어 있다. `:''}`:''}기탁금 ${won(dep)}은 따로 낸다. 선거비용은 득표율 15% 이상이면 보전 대상 항목(약 60%)만, 10% 이상이면 그 절반만 돌려받는다. 돈을 많이 쓸수록 득표에 크게 반영된다.${curR().fx.cost>1&&E.off!=='pres'?` ${J(curR().n,'은는')} 선거비용이 ${curR().fx.cost}배 든다.`:''}</p></div>
       <div class="choices">${lv.map((l,i)=>`<button class="choice" data-v="${i}" ${s().money<base*l.m+dep?'disabled':''}><span><b>${l.n}</b> <span class="muted">${l.d}</span></span><small class="num">${won(base*l.m+dep)}</small></button>`).join('')}</div>
       ${s().money<dep?`<p style="color:var(--bad);font-size:13px;margin-top:10px">기탁금 ${won(dep)}조차 없다. 출마를 포기해야 한다.</p><button class="choice" id="giveup"><span>출마 포기</span></button>`:''}`;
     paint('street|me,crowd|truck');
     const gu=document.getElementById('giveup');if(gu)gu.onclick=()=>{D=E.d0||[];if(S.termEnd===S.year&&inOffice()){S.office='none';S.titles={}}addLog('기탁금이 없어 출마 포기.');finish('<b>출마 포기</b><br>돈이 없어서 선거를 접었다. 사무실 앞 현수막을 내렸다.')};
-    st.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{E.lv=+b.dataset.v;E.cost=Math.round(base*lv[E.lv].m);E.dep=dep;if(E.off==='pres'){E.step='pverify';save();render();return}if(plgOk(E.off)){E.plo=plgOffer(E.off);E.step='pledge';save();render();return}tally(E);save();render()});
+    st.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{E.lv=+b.dataset.v;E.cost=Math.round(base*lv[E.lv].m);E.dep=dep;if(E.off==='pres'){E.step=R()<.5?'punify':'pverify';save();render();return}if(plgOk(E.off)){E.plo=plgOffer(E.off);E.step='pledge';save();render();return}tally(E);save();render()});
     return;
   }
   if(E.step==='pledge'){const L=E.plo||(E.plo=plgOffer(E.off));
@@ -4705,6 +4800,15 @@ function renderElection(st){
     st.querySelectorAll('[data-pl]').forEach(b=>b.onclick=()=>{E.pl=L[+b.dataset.pl];tally(E);save();render()});
     return;
   }
+  if(E.step==='punify'){const th=E.thN||(E.thN=kname()),pu=clamp(.5+(s().support-35)/100,.2,.85);
+    st.innerHTML=`${pxTag('단일화 협상')}<div class="news"><span class="tag ink">단일화</span><h3>제3후보 ${th}와 막판 단일화 협상</h3><p class="body">지지율 8%의 제3후보가 완주와 단일화 사이에서 몸값을 올리고 있다. 그의 표가 어디로 가느냐에 따라 박빙 승부가 갈린다. 밤 11시, 양쪽 협상단이 호텔 방에 마주 앉았다.</p></div>
+      <div class="choices"><button class="choice" data-pu="pm"><span>국무총리 자리를 약속한다</span><small>확실한 단일화 · "자리 나눠 먹기" 비판</small></button><button class="choice" data-pu="poll"><span>여론조사로 담판 짓는다</span><small>성사 확률 약 ${Math.round(pu*100)}% · 결렬되면 3자 구도</small></button><button class="choice" data-pu="no"><span>"단일화는 야합"이라며 거절한다</span><small>3자 구도 · 청렴도↑</small></button></div>`;
+    paint('press|cit,me,aide|podium,cam');
+    st.querySelectorAll('[data-pu]').forEach(b=>b.onclick=()=>{const k=b.dataset.pu;D=E.d0||[];
+      if(k==='pm'){E.uni=3;withMode('ev',()=>chg({integrity:-2,party:-2}));addLog(`대선 단일화: ${th} 후보와 "공동정부" 합의.`)}
+      else if(k==='poll'){if(R()<pu){E.uni=4;addLog(`대선 단일화: 여론조사 끝에 ${th} 후보가 사퇴.`)}else{E.uni=-1;addLog('대선 단일화 결렬. 3자 구도로 간다.')}}
+      else{E.uni=-1;withMode('ev',()=>chg({integrity:3}))}
+      E.d0=D.slice();E.step='pverify';save();render()});return}
   if(E.step==='pverify'){
     const dirt=(S.cases||[]).reduce((a,c)=>a+c.sev,0)+(S.trial?3:0)+(S.stats.bribes>0?1:0)+(s().integrity<40?1:0);E.pv=E.pv||{};
     st.innerHTML=`${pxTag('검증 공세')}<div class="news"><span class="tag">검증</span><h3>상대 캠프의 검증 공세</h3><p class="body">상대 후보 캠프가 내 과거를 샅샅이 뒤진다. 재산, 가족, 옛 발언, 후원금 장부까지. ${dirt>=4?'털면 나올 게 많다.':dirt>=1?'몇 가지는 걸릴 수 있다.':'털어도 크게 나올 건 없어 보인다.'}</p></div>
@@ -4779,7 +4883,7 @@ function elecBase(off,lv){const o=OFF[off],RR=curR(),dt=DTYPE[curD()[3]];
   if(rivalIn(off))opp+=(S.rival.power-50)*.18;
   if(eraK()==='three'&&off!=='pres')opp-=(S.party==='ind'||S.party==='np')?4:2;// 제3지대 바람: 상대 표가 갈린다
   // 대선은 앞서 갈수록 상대 진영이 결집한다: 선거운동 규모를 뺀 우세의 65%를 상대가 따라붙는다. 남은 차이는 돈과 조직(선거운동 규모)으로 벌려야 한다
-  if(off==='pres'){p-=Math.min(2,S.presLost||0)*3;const m0=p-lvB-opp;if(m0>0)opp+=m0*PRES_BAND}
+  if(off==='pres'){p-=Math.min(2,S.presLossN||0)*3;const m0=p-lvB-opp;if(m0>0)opp+=m0*PRES_BAND}
   return {p,opp}}
 // 여론조사가 다시 여론을 움직인다: 밴드왜건(앞서면 더 몰림)·언더독·낙인(뒤지면 조직·후원 이탈)
 function pollFx(off){const f=(S.pollFx||{})[off];return f&&S.year-f.y<=1?f.v:0}
@@ -4891,13 +4995,13 @@ function tally(E){
   D=E.d0||[];const off=E.off,o=OFF[off],RR=curR(),dt=DTYPE[curD()[3]];chg({money:-E.cost-(E.dep||0)});
   E.name=offName(off);E.party=S.party;
   const B=elecBase(off,E.lv);let p=B.p;
-  if(off==='pres'){p+=(E.pv?E.pv.m:0)+(E.pd||0);if(E.lv===3&&R()<.3)addCase('대선 선거비용 한도 초과',2);p+=2.5-ri(0,5)}
+  if(off==='pres'){p+=(E.pv?E.pv.m:0)+(E.pd||0)+(E.uni||0);if(E.lv===3&&R()<.3)addCase('대선 선거비용 한도 초과',2);p+=2.5-ri(0,5)}
   if(E.far)p-=4;
   const pe=off!=='pres'&&S.pl?plgEval():null,pn=S.pl&&S.pl.n;if(E.pl)p+=PLG_SZ[E.pl.z].now;
   let opp=B.opp+gauss()*(off==='pres'?5.5:7);p+=gauss()*(off==='pres'?4:5);// 대선은 운보다 판세가 더 크게 갈린다
   E.riv=rivalIn(off);if(E.riv){S.rivalRaced=S.year;E.rname=S.rival.name;E.rparty=S.rival.party}
   const share=tight(clamp(50+(p-opp)*.9,3,88));const win=share>50;
-  E.share=+share.toFixed(1);E.win=win;if(off==='pres'&&!win)S.presLost=(S.presLost||0)+1;
+  E.share=+share.toFixed(1);E.win=win;if(off==='pres'&&!win)S.presLossN=(S.presLossN||0)+1;
   if(E.riv){const v=S.rival;E.rshare=+(win?clamp(100-share-R()*R()*7,1,share-.1):clamp(100-share-R()*R()*4,share+.1,97)).toFixed(1);
     if(win){v.l++;v.power=clamp(v.power-4,20,92);if(R()<.5)v.office='none'}else{v.w++;v.power=clamp(v.power+4,20,92);v.office=off;v.tier=OFF[off].tier}}
   const dref=share>=15?(E.dep||0):share>=10?(E.dep||0)/2:0;
@@ -4922,8 +5026,19 @@ function tally(E){
     addLog(`${E.name} 낙선 (${E.share}%).`);
     E.html=`<b>낙선.</b> 득표율 ${E.share}%.${E.riv?` 라이벌 ${J(E.rname,'이가')} ${E.rshare}%로 당선됐다.`:''}${pt}${refund?' 기탁금·선거비용 '+won(refund)+' 보전.':' 기탁금도 선거비용도 한 푼 못 돌려받았다.'} 내일 아침 낙선 인사를 돌아야 한다.`;
   }
+  elAfter(E,off,win);
   E.dh=deltaHTML();E.step='result';
 }
+// 선거 직후 이벤트: 1%p 안쪽 낙선이면 재검표, 가끔 투표용지 부족, 낙선한 정당 후보에게는 부정선거 음모론
+const ELV={basic:30000,metro:60000,mayor:220000,nat:150000,gov:1600000,pres:33000000};
+function elAfter(E,off,win){const gap=E.riv?Math.abs(E.share-E.rshare):Math.abs(E.share-50)*2;
+  S.lastEl={off,name:E.name,win,gap:+gap.toFixed(2),votes:Math.max(1,Math.round(gap/100*(ELV[off]||100000))).toLocaleString(),riv:!!E.riv};
+  const add=[];if(!win&&off!=='pres'&&off!=='natp'&&gap<1)add.push('el_recount');else if(R()<.03)add.push('el_ballot');
+  if(!win&&member()&&off!=='natp'&&!add.length&&R()<.22)add.push('el_rigged');
+  add.forEach(id=>S.q.unshift({type:'ev',id}));S.qTotal=(S.qTotal||0)+add.length}
+function elFlip(){const L=S.lastEl,off=L.off;S.office=off;S.termEnd=S.year+4;S.held[off]=(S.held[off]||0)+1;S.stats.wins++;S.stats.losses=Math.max(0,S.stats.losses-1);
+  if(OFF[off].tier>OFF[S.best].tier){S.best=off;S.bestName=L.name}S.idle=0;S.path=(S.path||[]);S.path.push([S.year,L.name]);
+  if(L.riv&&S.rival){S.rival.w=Math.max(0,S.rival.w-1);S.rival.l++;S.rival.office='none'}addLog(`재검표 끝에 ${L.name} 결과가 뒤집혔다. 당선.`)}
 function yearEnd(){
   D=[];const x=s(),o=OFF[S.office],notes=[];
   if(S.pendingEnd){endGame(S.pendingEnd);return}
@@ -5337,6 +5452,9 @@ const ACH=[
  ['forget','기억나지 않습니다','검찰 앞에서 기억을 잃는다',x=>x.ach&&x.ach.forget],
  ['bullet','방탄 당선','재판 중에 당선된다',x=>x.ach&&x.ach.bullet],
  ['racewin','대선 후보','당내 대선 경선에서 이긴다',x=>x.ach&&x.ach.racewin],
+ ['wall','담을 넘은 의원','계엄의 밤, 담을 넘어 본회의장으로',x=>x.ach&&x.ach.wall],
+ ['martial','두 시간 반의 계엄','비상계엄을 선포한다',x=>x.ach&&x.ach.martial],
+ ['recount','재검표의 기적','재검표로 낙선을 뒤집는다',x=>x.ach&&x.ach.recount],
  ['impsurv','기각입니다','탄핵 심판에서 살아남는다',x=>x.ach&&x.ach.impsurv],
  ['rival5','숙적 제압','라이벌에게 5번 이긴다',x=>x.rival&&x.rival.l>=5],
  ['rivalL','영원한 2인자','라이벌에게 3번 진다',x=>x.rival&&x.rival.w>=3],
