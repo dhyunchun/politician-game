@@ -534,7 +534,7 @@ function chg(o){
     else if(CTX.mode==='ev')v*=(CTX.tempt&&k==='integrity')?1:1.75;
     if(v>0&&k!=='money'&&k!=='mental')v*=Math.max(.3,1-S.s[k]/150);
     if(k==='fame'&&v>0&&CTX.mode!=='none'&&S.office!=='pres'&&isBattle())v*=1.35;
-    if(k==='fame'&&v>0&&eraK()==='media')v*=1.2;if(k==='party'&&eraK()==='two')v*=1.25;
+    if(k==='fame'&&v>0&&eraK()==='media')v*=1.2;if(k==='mental'&&v<0&&isPres())v*=.85;// 대통령 임기 중 멘탈 소모 15% 완화if(k==='party'&&eraK()==='two')v*=1.25;
     v=Math.round(v);if(!v)continue;
     if(k==='party'&&!member())continue;
     const before=S.s[k];
@@ -4941,7 +4941,7 @@ function yearEnd(){
   if(r==='council')chg({legis:S.office==='nat'?3:2,speech:S.office==='nat'?3:1});
   if(r==='admin')chg({admin:S.office==='gov'?4:3,org:S.office==='gov'?3:2});
   if(r==='both')chg({admin:3,legis:2,speech:2,org:2});
-  chg({fame:-Math.max(inOffice()?3:5,Math.round(x.fame*.07)),support:Math.round((35-x.support)*.15),integrity:x.integrity<75?1:0,mental:inOffice()?-Math.max(0,OFF[S.office].tier-1)-(isPres()?2:0):6});
+  chg({fame:-Math.max(inOffice()?3:5,Math.round(x.fame*.07)),support:Math.round((35-x.support)*.15),integrity:x.integrity<75?1:0,mental:inOffice()?-Math.max(0,OFF[S.office].tier-1):6});
   if(inOffice()&&!isPres()&&S.termEnd<=S.year&&S.age>=65){addLog(`${offName(S.office)} 임기를 마치고 퇴임했다.`);notes.push('마지막 임기를 마쳤다');S.office='none';S.titles={}}
   if(!inOffice()&&!S.minister&&!S.pm&&!wrapMode())S.idle++;
   if(!isPres()){S.presAp=clamp(Math.round((S.presAp==null?50:S.presAp)-3+gauss()*5),8,75);
