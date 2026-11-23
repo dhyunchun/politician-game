@@ -5121,7 +5121,7 @@ function renderElection(st){
 // 무작위 요소를 뺀 기대 득표 구도(여론조사·선거 공용)
 const PRES_BAND=.65;
 function elecBase(off,lv){const o=OFF[off],RR=curR(),dt=DTYPE[curD()[3]];
-  const lvB=(off==='pres'?[-12,-6,1,9]:[-8,0,5,11])[lv];let p=s().support*.45+s().fame*.22+route(off)*.3+lvB+(S.office===off?5:0);
+  const lvB=(off==='pres'?[-12,-6,1,11]:[-8,0,5,11])[lv];let p=s().support*.45+s().fame*.22+route(off)*.3+lvB+(S.office===off?5:0);
   if(off==='pres'){if(S.ruling===S.party&&presAp()<40)p-=(40-presAp())*.35;if(s().integrity<40)p-=4;p-=2.5}
   if(member()){p+=(S.party==='np'?(S.pop.np-22):(S.pop[S.party]-S.pop[other(S.party)]))*.35*(RR.fx.popMul||1);
     if(off==='gov')p+=leanFor(S.party,false);else if(off!=='pres')p+=leanFor(S.party);
@@ -5135,7 +5135,7 @@ function elecBase(off,lv){const o=OFF[off],RR=curR(),dt=DTYPE[curD()[3]];
   if(rivalIn(off))opp+=(S.rival.power-50)*.18;
   if(eraK()==='three'&&off!=='pres')opp-=(S.party==='ind'||S.party==='np')?4:2;// 제3지대 바람: 상대 표가 갈린다
   // 대선은 앞서 갈수록 상대 진영이 결집한다: 선거운동 규모를 뺀 우세의 65%를 상대가 따라붙는다. 남은 차이는 돈과 조직(선거운동 규모)으로 벌려야 한다
-  if(off==='pres'){p-=Math.min(2,S.presLossN||0)*3;const m0=p-lvB-opp;if(m0>0)opp+=m0*PRES_BAND}
+  if(off==='pres'){p-=Math.min(2,S.presLossN||0)*5;const m0=p-lvB-opp;if(m0>0)opp+=m0*PRES_BAND}
   return {p,opp}}
 // 여론조사가 다시 여론을 움직인다: 밴드왜건(앞서면 더 몰림)·언더독·낙인(뒤지면 조직·후원 이탈)
 function pollFx(off){const f=(S.pollFx||{})[off];return f&&S.year-f.y<=1?f.v:0}
