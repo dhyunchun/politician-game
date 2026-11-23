@@ -28,5 +28,14 @@ if not s[j:j+len(merge)] == merge:
 # 소품·앞줄 관중(proto/dot3_props.js)
 pb = "/* DOT3-PROPS-BEGIN */\n" + (root/'proto'/'dot3_props.js').read_text(encoding='utf-8') + "/* DOT3-PROPS-END */\n"
 s = re.sub(r'/\* DOT3-PROPS-BEGIN \*/.*?/\* DOT3-PROPS-END \*/\n', lambda m: pb, s, flags=re.S)
+# 도트 4판 배경(proto/dot4_bgs.js): 3판 배경 블록 바로 뒤에 넣고, SCN 병합 뒤에 연결한다
+d4 = "/* DOT4-BEGIN */\n" + (root/'proto'/'dot4_bgs.js').read_text(encoding='utf-8') + "\n/* DOT4-END */\n"
+if '/* DOT4-BEGIN */' in s:
+    s = re.sub(r'/\* DOT4-BEGIN \*/.*?/\* DOT4-END \*/\n', lambda m: d4, s, flags=re.S)
+else:
+    s = s.replace('/* DOT3-BGS-END */\n', '/* DOT3-BGS-END */\n' + d4, 1)
+wire = "\n/* DOT4-WIRE */for(const k in D4OVER){if(!SCN[k]||!SCN[k].full)continue;const f0=SCN[k].full;SCN[k].full=(c,H)=>{f0(c,H);H.raw(false);H.nt(false);D4OVER[k](c,H)}}SCN.office.full=bgOffice4;for(const[k,m]of[['street',''],['night','night'],['rain','rain']]){const f0=SCN[k].full;SCN[k].full=(c,H)=>{f0(c,H);H.raw(false);H.nt(false);streetDetail4(c,H,m)}}"
+if '/* DOT4-WIRE */' not in s:
+    s = s.replace(merge, merge + wire, 1)
 g.write_text(s, encoding='utf-8')
 print('synced', len(body))
